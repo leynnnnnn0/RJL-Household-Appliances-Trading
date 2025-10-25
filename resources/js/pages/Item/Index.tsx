@@ -22,15 +22,15 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Eye, Pencil, Plus, Filter, X } from 'lucide-react';
-import { Category, Item } from '@/types';
+import { Category, ItemWithRelations } from '@/types';
 interface PageProps {
   categories: Category[];
-  items: Item[];
+  items: ItemWithRelations[];
 }
 export default function Index({ items, categories } : PageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
@@ -38,11 +38,11 @@ export default function Index({ items, categories } : PageProps) {
         item.description.toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchesAvailability = 
-        availabilityFilter === 'all'
+        availabilityFilter === 'all' || item.date_out === (availabilityFilter === 'unavailable' ? item.date_out : null);
 
       const matchesCategory = 
-        categoryFilter === 'All' || 
-        item.category === categoryFilter;
+        categoryFilter === 'all' || 
+        item.category.slug === categoryFilter;
 
       return matchesSearch && matchesAvailability && matchesCategory;
     });
@@ -68,7 +68,7 @@ export default function Index({ items, categories } : PageProps) {
   const clearFilters = () => {
     setSearchQuery('');
     setAvailabilityFilter('all');
-    setCategoryFilter('All');
+    setCategoryFilter('all');
   };
 
   return (
@@ -131,6 +131,7 @@ export default function Index({ items, categories } : PageProps) {
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value='all'>All Categories</SelectItem>
                       {categories.map(category => (
                         <SelectItem key={category.slug} value={category.slug}>
                           {category.name}
