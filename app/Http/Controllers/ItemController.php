@@ -56,7 +56,6 @@ class ItemController extends Controller
             'srp' => 'required|numeric|min:1',
             'unit_cost' => 'required|numeric|min:1',
             'date_of_purchase' => 'required|date',
-
             'remarks' => 'nullable|string|max:1000',
         ]);
 
@@ -70,6 +69,45 @@ class ItemController extends Controller
     }
 
     public function edit($id){
-        return Inertia::render('Item/Edit', ['id' => $id]);
+        $item = Item::with(['category', 'location'])->findOrFail($id);
+        $categories = Category::all()->map(function($category){
+            return [
+                'slug' => $category->slug,
+                'name' => $category->name,
+            ];
+        });
+        $locations = Location::all()->map(function($location){
+            return [
+                'id' => $location->id,
+                'name' => $location->name,
+            ];
+        });
+        return Inertia::render('Item/Edit', [
+            'item' => $item,
+            'categories' => $categories,
+            'locations' => $locations,
+        ]);
+    }
+
+    public function update(Request $request, $id){
+        $item = Item::findOrFail($id);
+        $validated = $request->validate([
+            'category' => 'required|exists:categories,slug',
+            'location_id' => 'required|exists:locations,id',
+            'dr_no' => 'nullable|string|max:255',
+            'supplier' => 'nullable|string|max:255',
+            'description' => 'required|string|max:255',
+            'model' => 'nullable|string|max:255',
+            'serial' => 'nullable|string|max:255',
+            'quantity' => 'required|integer|min:1',
+            'srp' => 'required|numeric|min:1',
+            'unit_cost' => 'required|numeric|min:1',
+            'date_of_purchase' => 'required|date',
+            'date_out' => 'nullable|date',
+            'remarks' => 'nullable|string|max:1000',
+        ]);
+
+        $item->update($validated);
+        return redirect()->route('items.index');
     }
 }

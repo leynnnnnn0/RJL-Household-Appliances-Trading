@@ -22,45 +22,34 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
 
-// Sample data - replace with your actual data from props
-const sampleCategories = [
-  { id: 1, name: 'Electronics' },
-  { id: 2, name: 'Furniture' },
-  { id: 3, name: 'Accessories' },
-  { id: 4, name: 'Office Supplies' },
-];
+import {ItemWithRelations, Category, Location} from '@/types';
 
-const sampleItem = {
-  id: 1,
-  category_id: 1,
-  dr_no: 'DR-2024-001',
-  supplier: 'Tech Solutions Inc.',
-  model_brand: 'Dell XPS 15',
-  serial: 'SN123456789',
-  qty: 5,
-  srp: 75000,
-  unit_cost: 70000,
-  date_of_purchase: '2024-01-15',
-  date_out: '2024-02-01',
-  location: 'Warehouse A - Shelf 3',
-  remarks: 'High-performance laptops for the development team.',
-};
 
-export default function Edit({ item = sampleItem, categories = sampleCategories }) {
+interface PageProps {
+  item: ItemWithRelations;
+  categories: Category[];
+  locations: Location[];
+}
+
+export default function Edit({ item, categories, locations }: PageProps) {
   const { data, setData, put, processing, errors, isDirty } = useForm({
-    category_id: item.category_id?.toString() || '',
+    category: item.category?.slug || '',
     dr_no: item.dr_no || '',
     supplier: item.supplier || '',
-    model_brand: item.model_brand || '',
+    description: item.description || '',
+    model: item.model || '',
     serial: item.serial || '',
-    qty: item.qty || '',
+    quantity: item.quantity || '',
     srp: item.srp || '',
     unit_cost: item.unit_cost || '',
+    size: item.size || '',
     date_of_purchase: item.date_of_purchase || '',
     date_out: item.date_out || '',
-    location: item.location || '',
+    location_id: item.location_id || '',
     remarks: item.remarks || '',
   });
+
+  console.log(errors);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -79,7 +68,7 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
 
   return (
     <AppLayout>
-      <Head title={`Edit Item - ${item.model_brand}`} />
+      <Head title={`Edit Item - ${item.description}`} />
 
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -91,7 +80,7 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
               )}
             </div>
             <p className="text-muted-foreground mt-1">
-              Update the details for {item.model_brand}
+              Update the details for {item.description}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -129,32 +118,32 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
                 {/* Category */}
                 <div className="space-y-2">
                   <Label htmlFor="category_id">
-                    Category <span className="text-destructive">*</span>
+                    Category
                   </Label>
                   <Select
-                    value={data.category_id}
-                    onValueChange={(value) => setData('category_id', value)}
+                    value={data.category}
+                    onValueChange={(value) => setData('category', value)}
                   >
                     <SelectTrigger id="category_id">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
+                        <SelectItem key={category.slug} value={category.slug}>
                           {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.category_id && (
-                    <p className="text-sm text-destructive">{errors.category_id}</p>
+                  {errors.category && (
+                    <p className="text-sm text-destructive">{errors.category}</p>
                   )}
                 </div>
 
                 {/* DR No */}
                 <div className="space-y-2">
                   <Label htmlFor="dr_no">
-                    DR Number <span className="text-destructive">*</span>
+                    DR Number
                   </Label>
                   <Input
                     id="dr_no"
@@ -170,7 +159,7 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
                 {/* Supplier */}
                 <div className="space-y-2">
                   <Label htmlFor="supplier">
-                    Supplier <span className="text-destructive">*</span>
+                    Supplier
                   </Label>
                   <Input
                     id="supplier"
@@ -185,17 +174,17 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
 
                 {/* Model/Brand */}
                 <div className="space-y-2">
-                  <Label htmlFor="model_brand">
-                    Model/Brand <span className="text-destructive">*</span>
+                  <Label htmlFor="description">
+                    Description <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="model_brand"
-                    value={data.model_brand}
-                    onChange={(e) => setData('model_brand', e.target.value)}
+                    value={data.description}
+                    onChange={(e) => setData('description', e.target.value)}
                     placeholder="Enter model or brand"
                   />
-                  {errors.model_brand && (
-                    <p className="text-sm text-destructive">{errors.model_brand}</p>
+                  {errors.description && (
+                    <p className="text-sm text-destructive">{errors.description}</p>
                   )}
                 </div>
 
@@ -215,19 +204,19 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
 
                 {/* Quantity */}
                 <div className="space-y-2">
-                  <Label htmlFor="qty">
+                  <Label htmlFor="quantity">
                     Quantity <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="qty"
+                    id="quantity"
                     type="number"
                     min="0"
-                    value={data.qty}
-                    onChange={(e) => setData('qty', e.target.value)}
+                    value={data.quantity}
+                    onChange={(e) => setData('quantity', parseInt(e.target.value))}
                     placeholder="Enter quantity"
                   />
-                  {errors.qty && (
-                    <p className="text-sm text-destructive">{errors.qty}</p>
+                  {errors.quantity && (
+                    <p className="text-sm text-destructive">{errors.quantity}</p>
                   )}
                 </div>
 
@@ -246,7 +235,7 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
                     placeholder="0.00"
                   />
                   {errors.srp && (
-                    <p className="text-sm text-destructive">{errors.srp}</p>
+                    <p className="text-sm text-destructive">{parseFloat(errors.srp)}</p>
                   )}
                 </div>
 
@@ -261,7 +250,7 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
                     step="0.01"
                     min="0"
                     value={data.unit_cost}
-                    onChange={(e) => setData('unit_cost', e.target.value)}
+                    onChange={(e) => setData('unit_cost', parseFloat(e.target.value))}
                     placeholder="0.00"
                   />
                   {errors.unit_cost && (
@@ -299,17 +288,42 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
                   )}
                 </div>
 
-                {/* Location */}
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="location">Location</Label>
+                 <div className="space-y-2">
+                  <Label htmlFor="size">
+                    Size
+                  </Label>
                   <Input
-                    id="location"
-                    value={data.location}
-                    onChange={(e) => setData('location', e.target.value)}
-                    placeholder="Enter storage location"
+                  autoFocus
+                    id="size"
+                    value={data.size}
+                    onChange={(e) => setData('size', e.target.value)}
+                    placeholder="Enter Size"
                   />
-                  {errors.location && (
-                    <p className="text-sm text-destructive">{errors.location}</p>
+                  {errors.size && (
+                    <p className="text-sm text-destructive">{errors.size}</p>
+                  )}
+                </div>
+
+                {/* Location */}
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                    <Select
+                    value={data.location_id.toString()}
+                    onValueChange={(value) => setData('location_id', value.toString())}
+                  >
+                    <SelectTrigger id="location_id">
+                      <SelectValue placeholder="Select a loaction" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map((location) => (
+                        <SelectItem key={location.id} value={location.id.toString()}>
+                          {location.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.location_id && (
+                    <p className="text-sm text-destructive">{errors.location_id}</p>
                   )}
                 </div>
 
@@ -348,7 +362,7 @@ export default function Edit({ item = sampleItem, categories = sampleCategories 
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={processing || !isDirty}>
+                  <Button className='cursor-pointer' type="submit" disabled={processing || !isDirty}>
                     <Save className="h-4 w-4 mr-2" />
                     {processing ? 'Saving...' : 'Save Changes'}
                   </Button>

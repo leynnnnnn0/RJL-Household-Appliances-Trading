@@ -63,7 +63,7 @@ export default function View({ item } : PageProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">{item.model}</h1>
+              <h1 className="text-3xl font-bold max-w-96">{item.description}</h1>
               <Badge variant={isAvailable ? 'default' : 'destructive'}>
                 {isAvailable ? 'Available' : 'Out of Stock'}
               </Badge>
@@ -145,6 +145,16 @@ export default function View({ item } : PageProps) {
                   <p className="text-sm text-muted-foreground">
                     {item.category?.name || 'N/A'}
                   </p>
+                </div>
+              </div>
+
+              <Separator />
+
+               <div className="flex items-start gap-3">
+                <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div className="space-y-1 flex-1">
+                  <p className="text-sm font-medium">Model</p>
+                  <p className="text-sm text-muted-foreground">{item.model ?? 'Not Available'}</p>
                 </div>
               </div>
 
