@@ -29,6 +29,6 @@ export type Item = {
 };
 
 export type ItemWithRelations = Item & {
-  category_name?: string;
+  category?: Category;
   location?: Location;
 };

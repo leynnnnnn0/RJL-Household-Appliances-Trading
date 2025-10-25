@@ -65,7 +65,8 @@ class ItemController extends Controller
     }
 
     public function show($id){
-        return Inertia::render('Item/Show', ['id' => $id]);
+        $item = Item::with(['category', 'location'])->findOrFail($id);
+        return Inertia::render('Item/Show', ['item' => $item]);
     }
 
     public function edit($id){

@@ -23,27 +23,12 @@ import {
   Truck,
   Tag,
 } from 'lucide-react';
+import {ItemWithRelations} from '@/types';
 
-// Sample item data - replace with your actual data from props
-const sampleItem = {
-  id: 1,
-  category: { id: 1, name: 'Electronics' },
-  dr_no: 'DR-2024-001',
-  supplier: 'Tech Solutions Inc.',
-  model_brand: 'Dell XPS 15',
-  serial: 'SN123456789',
-  qty: 5,
-  srp: 75000,
-  unit_cost: 70000,
-  date_of_purchase: '2024-01-15',
-  date_out: '2024-02-01',
-  location: 'Warehouse A - Shelf 3',
-  remarks: 'High-performance laptops for the development team. Includes warranty until 2027.',
-  created_at: '2024-01-15T10:30:00',
-  updated_at: '2024-01-20T14:45:00',
-};
-
-export default function View({ item = sampleItem }) {
+interface PageProps {
+  item: ItemWithRelations;
+}
+export default function View({ item } : PageProps) {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
@@ -62,24 +47,23 @@ export default function View({ item = sampleItem }) {
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this item?')) {
-      // Implement delete logic
-      // router.delete(route('items.destroy', item.id));
+      // Perform deletion logic here
     }
   };
 
-  const isAvailable = item.qty > 0;
-  const totalValue = item.qty * item.unit_cost;
+  const isAvailable = !item.date_out;
+  const totalValue = item.quantity * item.unit_cost;
 
   return (
     <AppLayout>
-      <Head title={`View Item - ${item.model_brand}`} />
+      <Head title={`View Item - ${item.description}`} />
 
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">{item.model_brand}</h1>
+              <h1 className="text-3xl font-bold">{item.model}</h1>
               <Badge variant={isAvailable ? 'default' : 'destructive'}>
                 {isAvailable ? 'Available' : 'Out of Stock'}
               </Badge>
@@ -115,7 +99,7 @@ export default function View({ item = sampleItem }) {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{item.qty}</div>
+              <div className="text-2xl font-bold">{item.quantity}</div>
               <p className="text-xs text-muted-foreground">units in stock</p>
             </CardContent>
           </Card>
@@ -170,7 +154,7 @@ export default function View({ item = sampleItem }) {
                 <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="space-y-1 flex-1">
                   <p className="text-sm font-medium">DR Number</p>
-                  <p className="text-sm text-muted-foreground">{item.dr_no}</p>
+                  <p className="text-sm text-muted-foreground">{item.dr_no ?? 'Not Available'}</p>
                 </div>
               </div>
 
@@ -180,7 +164,7 @@ export default function View({ item = sampleItem }) {
                 <Truck className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="space-y-1 flex-1">
                   <p className="text-sm font-medium">Supplier</p>
-                  <p className="text-sm text-muted-foreground">{item.supplier}</p>
+                  <p className="text-sm text-muted-foreground">{item.supplier ?? 'Not Available'}</p>
                 </div>
               </div>
 
@@ -246,7 +230,7 @@ export default function View({ item = sampleItem }) {
                 <div className="space-y-1 flex-1">
                   <p className="text-sm font-medium">Location</p>
                   <p className="text-sm text-muted-foreground">
-                    {item.location || 'Not specified'}
+                    {item.location?.name|| 'Not specified'}
                   </p>
                 </div>
               </div>

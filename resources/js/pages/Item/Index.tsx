@@ -168,7 +168,7 @@ export default function Index({ items, categories } : PageProps) {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold">Model & Description</TableHead>
-                    <TableHead className="font-semibold">Model</TableHead>
+                    <TableHead className="font-semibold">Serial</TableHead>
                     <TableHead className="font-semibold">Unit Cost</TableHead>
                     <TableHead className="font-semibold text-center">Quantity</TableHead>
                     <TableHead className="font-semibold">Purchase Date</TableHead>
@@ -196,7 +196,7 @@ export default function Index({ items, categories } : PageProps) {
                             <span className="text-sm text-muted-foreground">{item.description}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">{item.model}</TableCell>
+                        <TableCell className="font-medium">{item.serial}</TableCell>
                         <TableCell className="font-mono text-sm">{formatCurrency(item.unit_cost)}</TableCell>
                         <TableCell className="text-center">
                           <Badge 
