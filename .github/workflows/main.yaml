@@ -26,13 +26,7 @@ jobs:
         shell: powershell
         run: |
           if (Test-Path "package.json") { npm run build }
-
-      - name: Clear Laravel Cache
-        run: |
-          php artisan config:clear
-          php artisan cache:clear
-          php artisan view:clear
-
+          
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
