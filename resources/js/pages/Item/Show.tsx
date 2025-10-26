@@ -83,10 +83,10 @@ export default function View({ item } : PageProps) {
                 Edit
               </Link>
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
+            {/* <Button variant="destructive" onClick={handleDelete}>
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
-            </Button>
+            </Button> */}
           </div>
         </div>
 

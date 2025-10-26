@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('supplier')->nullable();
             $table->string('description');
             $table->string('model')->nullable();
-            $table->string('serial')->nullable();
+            $table->string('serial')->unique();
             $table->integer('quantity');
             $table->decimal('srp', 10, 2);
             $table->decimal('unit_cost', 10, 2);

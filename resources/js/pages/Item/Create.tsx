@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Toaster } from "@/components/ui/sonner"
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Save } from 'lucide-react';
+import { toast } from 'sonner';
 
 type Category = {
   slug: string;
@@ -55,7 +57,18 @@ export default function Create({ categories, locations } : PageProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    post('/items');
+    post('/items', {
+      onProgress: () => {
+        toast.loading('Creating item...');
+      },
+      onSuccess: () => {
+        toast.success('Item created successfully!');
+      },
+      onError: () => {
+        toast.error('Failed to create item. Please check the form for errors.');
+      },
+    });
+
   };
 
   const handleCancel = () => {

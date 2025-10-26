@@ -19,10 +19,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface ImportProps {
     items?: any[];
@@ -30,6 +41,12 @@ interface ImportProps {
 
 export default function Import({items} : ImportProps) {
     const [open, setOpen] = useState(false);
+    const [errorDialog, setErrorDialog] = useState({
+        open: false,
+        title: '',
+        message: ''
+    });
+
     const { data, setData, post, processing, reset } = useForm({
         file: null as File | null,
     });
@@ -46,15 +63,36 @@ export default function Import({items} : ImportProps) {
             onSuccess: () => {
                 setOpen(false);
                 reset();
+                toast.success('File imported successfully! Review the data below.');
             },
             onError: (errors) => {
                 console.error(errors);
+                const errorMessage = errors.file || errors.error || 'Failed to import file. Please check the file format and try again.';
+                
+                setErrorDialog({
+                    open: true,
+                    title: 'Import Failed',
+                    message: Array.isArray(errorMessage) ? errorMessage[0] : errorMessage
+                });
             }
         });
     };
 
     const handleSave = () => {
-        router.post(route('items.import.save'));
+        router.post(route('items.import.save'), {}, {
+            onSuccess: () => {
+                toast.success('Items saved to database successfully!');
+            },
+            onError: (errors) => {
+                const errorMessage = errors.error || 'Failed to save items to database.';
+                
+                setErrorDialog({
+                    open: true,
+                    title: 'Save Failed',
+                    message: Array.isArray(errorMessage) ? errorMessage[0] : errorMessage
+                });
+            }
+        });
     };
 
     const handleCancel = () => {
@@ -83,6 +121,11 @@ export default function Import({items} : ImportProps) {
                             </Button>
                         </>
                     )}
+
+                    <Button className="cursor-pointer" variant="outline" onClick={() => window.history.back()}>
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back
+                    </Button>
                     
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
@@ -96,6 +139,7 @@ export default function Import({items} : ImportProps) {
                                         Please make sure your excel file follows the correct format.
                                     </DialogDescription>
                                 </DialogHeader>
+                                 
                                 <div className="grid gap-3 py-4">
                                     <Label htmlFor="file">Excel File</Label>
                                     <Input 
@@ -130,6 +174,26 @@ export default function Import({items} : ImportProps) {
                 </div>
          </ModuleHeading>
 
+         {/* Error Dialog */}
+         <AlertDialog open={errorDialog.open} onOpenChange={(open) => setErrorDialog({...errorDialog, open})}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <div className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                        <AlertDialogTitle className="text-red-600">{errorDialog.title}</AlertDialogTitle>
+                    </div>
+                    <AlertDialogDescription className="text-left whitespace-pre-wrap pt-4">
+                        {errorDialog.message}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogAction onClick={() => setErrorDialog({open: false, title: '', message: ''})}>
+                        OK
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+         </AlertDialog>
+
          {items && items.length > 0 && (
              <Alert className="mb-4 bg-blue-50 border-blue-200">
                  <AlertDescription>
@@ -142,7 +206,7 @@ export default function Import({items} : ImportProps) {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                  <TableHead className="font-light text-[10px]">Row</TableHead>
+                    <TableHead className="font-light text-[10px]">Row</TableHead>
                     <TableHead className="font-light text-[10px]">Category</TableHead>
                     <TableHead className="font-light text-[10px]">Location ID</TableHead>
                     <TableHead className="font-light text-[10px]">DR Number</TableHead>
@@ -162,14 +226,14 @@ export default function Import({items} : ImportProps) {
                 <TableBody>
                     {!items || items.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={14} className="text-center py-10 text-gray-500">
+                            <TableCell colSpan={15} className="text-center py-10 text-gray-500">
                                 Import data to see items here.
                             </TableCell>
                         </TableRow>
                     ) : (
                         items.map((item, index) => (
                             <TableRow key={index}>
-                                   <TableCell className="text-[10px]">{item.row_number}</TableCell>
+                                <TableCell className="text-[10px]">{item.row_number}</TableCell>
                                 <TableCell className="text-[10px]">{item.category}</TableCell>
                                 <TableCell className="text-[10px]">{item.location_id}</TableCell>
                                 <TableCell className="text-[10px]">{item.dr_no}</TableCell>

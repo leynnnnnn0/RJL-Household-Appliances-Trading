@@ -21,7 +21,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
-
+import { toast } from 'sonner';
 import {ItemWithRelations, Category, Location} from '@/types';
 
 
@@ -53,7 +53,17 @@ export default function Edit({ item, categories, locations }: PageProps) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    put(route('items.update', item.id));
+    put(route('items.update', item.id),{
+      onProgress: () => {
+        toast.loading('Updating item...');
+      },
+      onSuccess: () => {
+        toast.success('Item updated successfully!');
+      },
+      onError: () => {
+        toast.error('Failed to update item. Please check the form for errors.');
+      },
+    });
   };
 
   const handleCancel = () => {
@@ -178,13 +188,29 @@ export default function Edit({ item, categories, locations }: PageProps) {
                     Description <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="model_brand"
+                    id="description"
                     value={data.description}
                     onChange={(e) => setData('description', e.target.value)}
                     placeholder="Enter model or brand"
                   />
                   {errors.description && (
                     <p className="text-sm text-destructive">{errors.description}</p>
+                  )}
+                </div>
+
+                     {/* Model */}
+                <div className="space-y-2">
+                  <Label htmlFor="model">
+                    Model
+                  </Label>
+                  <Input
+                    id="model"
+                    value={data.model}
+                    onChange={(e) => setData('model', e.target.value)}
+                    placeholder="Enter model"
+                  />
+                  {errors.model && (
+                    <p className="text-sm text-destructive">{errors.model}</p>
                   )}
                 </div>
 

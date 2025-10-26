@@ -180,7 +180,7 @@ class ItemController extends Controller
 
         return redirect()->back()->with('success', count($formattedItems) . ' items imported successfully. Please review before saving.');
     } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'Error importing file: ' . $e->getMessage());
+        return redirect()->back()->withErrors('error', 'Error importing file: ' . $e->getMessage());
     }
 }
 
@@ -219,12 +219,11 @@ private function convertExcelDate($value)
     $items = session('imported_items', []);
     
     if (empty($items)) {
-        return redirect()->back()->with('error', 'No items to save.');
+        return back()->withErrors(['error' => 'No items to save.']);
     }
     
     try {
         DB::beginTransaction();
-        
         $savedCount = 0;
         
         foreach ($items as $item) {
@@ -249,7 +248,6 @@ private function convertExcelDate($value)
                 'unit_cost' => $item['unit_cost'],
                 'date_of_purchase' => $item['date_of_purchase'],
                 'date_out' => $item['date_out'],
-                // 'size' => $item['size'],
                 'remarks' => $item['remarks'],
             ]);
             
@@ -257,7 +255,6 @@ private function convertExcelDate($value)
         }
         
         DB::commit();
-        
         session()->forget('imported_items');
         
         return redirect()->route('items.index')
@@ -266,8 +263,9 @@ private function convertExcelDate($value)
     } catch (\Exception $e) {
         DB::rollBack();
         
-        return redirect()->back()
-            ->with('error', 'Import failed: ' . $e->getMessage() . ' No items were saved.');
+        return back()->withErrors([
+            'error' => 'Import failed: ' . $e->getMessage() . "\n\nNo items were saved."
+        ]);
     }
 }
 
