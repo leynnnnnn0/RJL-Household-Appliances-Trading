@@ -30,7 +30,7 @@ jobs:
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: NS2.SITE4NOW.NET
+          server: win1020.site4now.net
           username: saldyyyyyy-001
           password: Saldyyyyyy0
           protocol: ftps
