@@ -49,6 +49,7 @@ class ItemController extends Controller
 
     public function store(Request $request){
         $validated = $request->validate([
+            'item_type' => 'required|in:appliances,gadgets,furniture',
             'category' => 'required|exists:categories,slug',
             'location_id' => 'required|exists:locations,id',
             'dr_no' => 'nullable|string|max:255',
@@ -96,6 +97,7 @@ class ItemController extends Controller
     public function update(Request $request, $id){
         $item = Item::findOrFail($id);
         $validated = $request->validate([
+            'item_type' => 'required|in:appliances,gadgets,furniture',
             'category' => 'required|exists:categories,slug',
             'location_id' => 'required|exists:locations,id',
             'dr_no' => 'nullable|string|max:255',
@@ -126,63 +128,131 @@ class ItemController extends Controller
         ]);
     }
 
-    public function import(Request $request){
+    public function saveImportedItems(){
+    $items = session('imported_items', []);
+    if (empty($items)) {
+        return back()->withErrors(['error' => 'No items to save.']);
+    }
+    
+    try {
+        DB::beginTransaction();
+        $savedCount = 0;
+        
+        foreach ($items as $item) {
+            if (empty($item['item_type'])) {
+                throw new \Exception("Row {$item['row_number']}: Item Type is required.");
+            }
+            
+            if (empty($item['category']) || empty($item['location_id'])) {
+                throw new \Exception("Row {$item['row_number']}: Category and Location are required.");
+            }
+            
+            if (empty($item['description'])) {
+                throw new \Exception("Row {$item['row_number']}: Description is required.");
+            }
+            
+            Item::create([
+                'item_type' => $item['item_type'],
+                'category' => $item['category'],
+                'location_id' => $item['location_id'],
+                'dr_no' => $item['dr_no'],
+                'supplier' => $item['supplier'],
+                'description' => $item['description'],
+                'model' => $item['model'],
+                'serial' => $item['serial'],
+                'quantity' => $item['quantity'],
+                'srp' => $item['srp'],
+                'unit_cost' => $item['unit_cost'],
+                'date_of_purchase' => $item['date_of_purchase'],
+                'date_out' => $item['date_out'],
+                'remarks' => $item['remarks'],
+            ]);
+            $savedCount++;
+        }
+        
+        DB::commit();
+        session()->forget('imported_items');
+        
+        return redirect()->route('items.index')
+            ->with('success', "$savedCount items saved successfully!");
+            
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->withErrors([
+            'error' => 'Import failed: ' . $e->getMessage() . "\n\nNo items were saved."
+        ]);
+    }
+}
+
+public function import(Request $request){
     $request->validate([
         'file' => 'required|mimes:xlsx,xls,csv|max:10240'
     ]);
-
+    
     try {
         $rows = Excel::toCollection(new ItemsImport, $request->file('file'))->first();
-        
         $categories = Category::all()->keyBy('name');
         $locations = Location::all()->keyBy('name');
         
+        $validItemTypes = ['appliances', 'gadgets', 'furniture'];
+        
         $formattedItems = $rows->skip(1)->filter(function($row) {
-            return !empty($row[0]) || !empty($row[4]);
-        })->map(function($row, $index) use ($categories, $locations) {
-            $categoryName = $row[0] ?? null;
+            return !empty($row[0]) || !empty($row[5]);
+        })->map(function($row, $index) use ($categories, $locations, $validItemTypes) {
+            $itemType = strtolower(trim($row[0] ?? ''));
+            
+            // Validate item type
+            if (!in_array($itemType, $validItemTypes)) {
+                $itemType = null;
+            }
+            
+            $categoryName = $row[1] ?? null;
             $categorySlug = null;
             if ($categoryName && isset($categories[$categoryName])) {
                 $categorySlug = $categories[$categoryName]->slug;
             }
             
-            $locationName = $row[1] ?? null;
+            $locationName = $row[2] ?? null;
             $locationId = null;
             if ($locationName && isset($locations[$locationName])) {
                 $locationId = $locations[$locationName]->id;
             }
             
-            $dateOfPurchase = $this->convertExcelDate($row[10] ?? null);
-            $dateOut = $this->convertExcelDate($row[11] ?? null);
+            $dateOfPurchase = $this->convertExcelDate($row[11] ?? null);
+            $dateOut = $this->convertExcelDate($row[12] ?? null);
             
             return [
                 'row_number' => $index,
+                'item_type' => $itemType,
                 'category' => $categorySlug,
                 'category_display' => $categoryName,
                 'location_id' => $locationId,
                 'location_display' => $locationName,
-                'dr_no' => $row[2] ?? null,
-                'supplier' => $row[3] ?? null,
-                'description' => $row[4] ?? null,
-                'model' => $row[5] ?? null,
-                'serial' => $row[6] ?? null,
-                'quantity' => $row[7] ?? null,
-                'srp' => $row[8] ?? null,
-                'unit_cost' => $row[9] ?? null,
+                'dr_no' => $row[3] ?? null,
+                'supplier' => $row[4] ?? null,
+                'description' => $row[5] ?? null,
+                'model' => $row[6] ?? null,
+                'serial' => $row[7] ?? null,
+                'quantity' => $row[8] ?? null,
+                'srp' => $row[9] ?? null,
+                'unit_cost' => $row[10] ?? null,
                 'date_of_purchase' => $dateOfPurchase,
                 'date_out' => $dateOut,
-                'size' => $row[12] ?? null,
-                'remarks' => $row[13] ?? null,
+                'size' => $row[13] ?? null,
+                'remarks' => $row[14] ?? null,
             ];
         })->values()->toArray();
-
+        
         session(['imported_items' => $formattedItems]);
-
+        
         return redirect()->back()->with('success', count($formattedItems) . ' items imported successfully. Please review before saving.');
+        
     } catch (\Exception $e) {
         return redirect()->back()->withErrors('error', 'Error importing file: ' . $e->getMessage());
     }
 }
+
+
 
 private function convertExcelDate($value)
 {
@@ -215,58 +285,5 @@ private function convertExcelDate($value)
         return redirect()->back()->with('info', 'Import cancelled.');
     }
 
-    public function saveImportedItems(){
-    $items = session('imported_items', []);
-    
-    if (empty($items)) {
-        return back()->withErrors(['error' => 'No items to save.']);
-    }
-    
-    try {
-        DB::beginTransaction();
-        $savedCount = 0;
-        
-        foreach ($items as $item) {
-            if (empty($item['category']) || empty($item['location_id'])) {
-                throw new \Exception("Row {$item['row_number']}: Category and Location are required.");
-            }
-            
-            if (empty($item['description'])) {
-                throw new \Exception("Row {$item['row_number']}: Description is required.");
-            }
-            
-            Item::create([
-                'category' => $item['category'],
-                'location_id' => $item['location_id'],
-                'dr_no' => $item['dr_no'],
-                'supplier' => $item['supplier'],
-                'description' => $item['description'],
-                'model' => $item['model'],
-                'serial' => $item['serial'],
-                'quantity' => $item['quantity'],
-                'srp' => $item['srp'],
-                'unit_cost' => $item['unit_cost'],
-                'date_of_purchase' => $item['date_of_purchase'],
-                'date_out' => $item['date_out'],
-                'remarks' => $item['remarks'],
-            ]);
-            
-            $savedCount++;
-        }
-        
-        DB::commit();
-        session()->forget('imported_items');
-        
-        return redirect()->route('items.index')
-        ->with('success', "$savedCount items saved successfully!");
-            
-    } catch (\Exception $e) {
-        DB::rollBack();
-        
-        return back()->withErrors([
-            'error' => 'Import failed: ' . $e->getMessage() . "\n\nNo items were saved."
-        ]);
-    }
-}
 
 }

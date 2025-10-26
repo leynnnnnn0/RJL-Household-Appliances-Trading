@@ -12,6 +12,7 @@ export type Item = {
   id: number;
   category: string;
   location_id: number | null;
+  item_type: string;
   dr_no: string | null;
   supplier: string | null;
   description: string;

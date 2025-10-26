@@ -40,6 +40,7 @@ interface PageProps {
 
 export default function Create({ categories, locations } : PageProps) {
   const { data, setData, post, processing, errors } = useForm({
+    item_type: '',
     category: '',
     dr_no: '',
     supplier: '',
@@ -54,6 +55,21 @@ export default function Create({ categories, locations } : PageProps) {
     size: '',
     remarks: '',
   });
+
+  const itemTypes = [
+    {
+      id: 'appliances',
+      name: 'Appliances',
+    },
+    {
+      id: 'gadgets',
+      name: 'Gadgets',
+    },
+    {
+      id: 'furniture',
+      name: 'Furniture',
+    }
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +127,31 @@ export default function Create({ categories, locations } : PageProps) {
             <form>
                 <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {/* Item type */}
+                <div className="space-y-2">
+                  <Label htmlFor="item_type">
+                    Item type <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={data.item_type}
+                    onValueChange={(value) => setData('item_type', value)}
+                  >
+                    <SelectTrigger id="item_type">
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {itemTypes.map((item_type) => (
+                        <SelectItem key={item_type.id} value={item_type.id.toString()}>
+                          {item_type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.category && (
+                    <p className="text-sm text-destructive">{errors.item_type}</p>
+                  )}
+                </div>
+
                 {/* Category */}
                 <div className="space-y-2">
                   <Label htmlFor="category">

@@ -13,6 +13,7 @@ class Item extends Model
     protected $fillable = [
         'category',
         'location_id',
+        'item_type',
         'dr_no',
         'supplier',
         'description',

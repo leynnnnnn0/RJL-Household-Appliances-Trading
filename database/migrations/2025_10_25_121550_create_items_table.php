@@ -16,6 +16,7 @@ return new class extends Migration
              $table->string('category');
             $table->foreign('category')->references('slug')->on('categories')->cascadeOnDelete();
             $table->foreignId('location_id')->constrained()->nullable();
+            $table->string('item_type');
             $table->string('dr_no')->nullable();
             $table->string('supplier')->nullable();
             $table->string('description');

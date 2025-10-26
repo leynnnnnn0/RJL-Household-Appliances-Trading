@@ -27,6 +27,7 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
     public function headings(): array
     {
         return [
+            'Item Type',
             'Category',
             'Location',
             'DR No',
@@ -69,11 +70,11 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
             ],
         ]);
 
-        // Format date columns (K and L) for rows 2-1000
-        $sheet->getStyle('K2:K1000')->getNumberFormat()
+        // Format date columns (L and M) for rows 2-1000
+        $sheet->getStyle('L2:L1000')->getNumberFormat()
             ->setFormatCode(NumberFormat::FORMAT_DATE_DDMMYYYY);
         
-        $sheet->getStyle('L2:L1000')->getNumberFormat()
+        $sheet->getStyle('M2:M1000')->getNumberFormat()
             ->setFormatCode(NumberFormat::FORMAT_DATE_DDMMYYYY);
 
         return [];
@@ -82,20 +83,21 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
     public function columnWidths(): array
     {
         return [
-            'A' => 20, // Category
-            'B' => 20, // Location
-            'C' => 12, // DR No
-            'D' => 20, // Supplier
-            'E' => 30, // Description
-            'F' => 15, // Model
-            'G' => 15, // Serial
-            'H' => 10, // Quantity
-            'I' => 12, // SRP
-            'J' => 12, // Unit Cost
-            'K' => 18, // Date of Purchase
-            'L' => 15, // Date Out
-            'M' => 10, // Size
-            'N' => 25, // Remarks
+            'A' => 15, // Item Type
+            'B' => 20, // Category
+            'C' => 20, // Location
+            'D' => 12, // DR No
+            'E' => 20, // Supplier
+            'F' => 30, // Description
+            'G' => 15, // Model
+            'H' => 15, // Serial
+            'I' => 10, // Quantity
+            'J' => 12, // SRP
+            'K' => 12, // Unit Cost
+            'L' => 18, // Date of Purchase
+            'M' => 15, // Date Out
+            'N' => 10, // Size
+            'O' => 25, // Remarks
         ];
     }
 
@@ -105,6 +107,10 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 
+                // Item Type dropdown options
+                $itemTypes = ['appliances', 'gadgets', 'furniture'];
+                $itemTypeList = '"' . implode(',', $itemTypes) . '"';
+                
                 // Get categories
                 $categories = Category::all()->pluck('name')->toArray();
                 $categoryList = '"' . implode(',', $categories) . '"';
@@ -113,9 +119,28 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
                 $locations = Location::all()->pluck('name')->toArray();
                 $locationList = '"' . implode(',', $locations) . '"';
                 
-                // Add dropdown validation for Category column (A2:A1000)
+                // Add dropdown validation for Item Type column (A2:A1000)
+                $validation = $sheet->getCell('A2')->getDataValidation();
+                $validation->setType(DataValidation::TYPE_LIST);
+                $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
+                $validation->setAllowBlank(false);
+                $validation->setShowInputMessage(true);
+                $validation->setShowErrorMessage(true);
+                $validation->setShowDropDown(true);
+                $validation->setErrorTitle('Invalid Item Type');
+                $validation->setError('Please select an item type from the dropdown.');
+                $validation->setPromptTitle('Select Item Type');
+                $validation->setPrompt('Choose: appliances, gadgets, or furniture.');
+                $validation->setFormula1($itemTypeList);
+                
+                // Apply to range
+                for ($i = 2; $i <= 1000; $i++) {
+                    $sheet->getCell('A' . $i)->setDataValidation(clone $validation);
+                }
+                
+                // Add dropdown validation for Category column (B2:B1000)
                 if (!empty($categories)) {
-                    $validation = $sheet->getCell('A2')->getDataValidation();
+                    $validation = $sheet->getCell('B2')->getDataValidation();
                     $validation->setType(DataValidation::TYPE_LIST);
                     $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
                     $validation->setAllowBlank(false);
@@ -130,13 +155,13 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
                     
                     // Apply to range
                     for ($i = 2; $i <= 1000; $i++) {
-                        $sheet->getCell('A' . $i)->setDataValidation(clone $validation);
+                        $sheet->getCell('B' . $i)->setDataValidation(clone $validation);
                     }
                 }
                 
-                // Add dropdown validation for Location column (B2:B1000)
+                // Add dropdown validation for Location column (C2:C1000)
                 if (!empty($locations)) {
-                    $validation = $sheet->getCell('B2')->getDataValidation();
+                    $validation = $sheet->getCell('C2')->getDataValidation();
                     $validation->setType(DataValidation::TYPE_LIST);
                     $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
                     $validation->setAllowBlank(false);
@@ -151,7 +176,7 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
                     
                     // Apply to range
                     for ($i = 2; $i <= 1000; $i++) {
-                        $sheet->getCell('B' . $i)->setDataValidation(clone $validation);
+                        $sheet->getCell('C' . $i)->setDataValidation(clone $validation);
                     }
                 }
             },

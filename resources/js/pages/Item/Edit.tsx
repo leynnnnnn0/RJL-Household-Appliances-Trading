@@ -34,6 +34,7 @@ interface PageProps {
 export default function Edit({ item, categories, locations }: PageProps) {
   const { data, setData, put, processing, errors, isDirty } = useForm({
     category: item.category?.slug || '',
+    item_type: item.item_type || '',
     dr_no: item.dr_no || '',
     supplier: item.supplier || '',
     description: item.description || '',
@@ -48,6 +49,21 @@ export default function Edit({ item, categories, locations }: PageProps) {
     location_id: item.location_id || '',
     remarks: item.remarks || '',
   });
+
+   const itemTypes = [
+    {
+      id: 'appliances',
+      name: 'Appliances',
+    },
+    {
+      id: 'gadgets',
+      name: 'Gadgets',
+    },
+    {
+      id: 'furniture',
+      name: 'Furniture',
+    }
+  ];
 
 
   const handleSubmit = (e) => {
@@ -78,6 +94,7 @@ export default function Edit({ item, categories, locations }: PageProps) {
   return (
     <AppLayout>
       <Head title={`Edit Item - ${item.description}`} />
+      
 
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -123,7 +140,35 @@ export default function Edit({ item, categories, locations }: PageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+
+            
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   {/* Item type */}
+                <div className="space-y-2">
+                  <Label htmlFor="item_type">
+                    Item type <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={data.item_type}
+                    onValueChange={(value) => setData('item_type', value)}
+                  >
+                    <SelectTrigger id="item_type">
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {itemTypes.map((item_type) => (
+                        <SelectItem key={item_type.id} value={item_type.id.toString()}>
+                          {item_type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.category && (
+                    <p className="text-sm text-destructive">{errors.item_type}</p>
+                  )}
+                </div>
+
+
                 {/* Category */}
                 <div className="space-y-2">
                   <Label htmlFor="category_id">
