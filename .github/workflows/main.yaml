@@ -33,7 +33,7 @@ jobs:
           server: win1020.site4now.net
           username: saldyyyyyy-001
           password: Saldyyyyyy0
-          protocol: ftps
+          protocol: ftp
           server-dir: /site001/
           port: 21
           timeout: 120000
