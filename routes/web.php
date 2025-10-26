@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\POSCashController;
+use App\Http\Controllers\POSCreditController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -9,7 +11,8 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-
+Route::resource('pos-cash', POSCashController::class);
+Route::resource('pos-credit', POSCreditController::class);
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {

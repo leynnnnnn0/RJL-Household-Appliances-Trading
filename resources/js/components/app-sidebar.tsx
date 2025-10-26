@@ -33,12 +33,12 @@ const mainNavItems: NavItem[] = [
 const footerNavItems: NavItem[] = [
     {
         title: 'POS System (CASH)',
-        href: '#',
+        href: '/pos-cash',
         icon: DollarSign,
     },
     {
         title: 'POS System (CREDIT)',
-        href: '#',
+        href: '/pos-credit',
         icon: CreditCard,
     },
 ];

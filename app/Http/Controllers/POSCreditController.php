@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class POSCashController extends Controller
+class POSCreditController extends Controller
 {
     public function index()
     {
-        return Inertia::render('POSCash/Index');
+        return Inertia::render('POSCredit/Index');
     }
 }
