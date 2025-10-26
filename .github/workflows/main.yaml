@@ -26,14 +26,15 @@ jobs:
         shell: powershell
         run: |
           if (Test-Path "package.json") { npm run build }
-          
+
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: NS2.SITE4NOW.NET
           username: saldyyyyyy-001
           password: Saldyyyyyy0
-          protocol: ftp
+          protocol: ftps
+          directory: site001
           port: 21
           timeout: 120000
           exclude: |
