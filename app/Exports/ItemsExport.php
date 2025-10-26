@@ -19,9 +19,40 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, WithEvents
 {
+    protected $items;
+
+    public function __construct($items = null)
+    {
+        $this->items = $items;
+    }
+
     public function collection()
     {
-        return collect([]);
+        // If no items provided, return empty collection (for template)
+        if ($this->items === null) {
+            return collect([]);
+        }
+
+        // Map items to export format
+        return $this->items->map(function($item) {
+            return [
+                'item_type' => $item->item_type,
+                'category' => $item->category,
+                'location' => $item->location->name ?? '',
+                'dr_no' => $item->dr_no,
+                'supplier' => $item->supplier,
+                'description' => $item->description,
+                'model' => $item->model,
+                'serial' => $item->serial,
+                'quantity' => $item->quantity,
+                'srp' => $item->srp,
+                'unit_cost' => $item->unit_cost,
+                'date_of_purchase' => $item->date_of_purchase,
+                'date_out' => $item->date_out,
+                'size' => $item->size ?? '',
+                'remarks' => $item->remarks,
+            ];
+        });
     }
 
     public function headings(): array
@@ -107,76 +138,79 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 
-                // Item Type dropdown options
-                $itemTypes = ['appliances', 'gadgets', 'furniture'];
-                $itemTypeList = '"' . implode(',', $itemTypes) . '"';
-                
-                // Get categories
-                $categories = Category::all()->pluck('name')->toArray();
-                $categoryList = '"' . implode(',', $categories) . '"';
-                
-                // Get locations
-                $locations = Location::all()->pluck('name')->toArray();
-                $locationList = '"' . implode(',', $locations) . '"';
-                
-                // Add dropdown validation for Item Type column (A2:A1000)
-                $validation = $sheet->getCell('A2')->getDataValidation();
-                $validation->setType(DataValidation::TYPE_LIST);
-                $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
-                $validation->setAllowBlank(false);
-                $validation->setShowInputMessage(true);
-                $validation->setShowErrorMessage(true);
-                $validation->setShowDropDown(true);
-                $validation->setErrorTitle('Invalid Item Type');
-                $validation->setError('Please select an item type from the dropdown.');
-                $validation->setPromptTitle('Select Item Type');
-                $validation->setPrompt('Choose: appliances, gadgets, or furniture.');
-                $validation->setFormula1($itemTypeList);
-                
-                // Apply to range
-                for ($i = 2; $i <= 1000; $i++) {
-                    $sheet->getCell('A' . $i)->setDataValidation(clone $validation);
-                }
-                
-                // Add dropdown validation for Category column (B2:B1000)
-                if (!empty($categories)) {
-                    $validation = $sheet->getCell('B2')->getDataValidation();
+                // Only add dropdowns if this is a template (no items)
+                if ($this->items === null) {
+                    // Item Type dropdown options
+                    $itemTypes = ['appliances', 'gadgets', 'furniture'];
+                    $itemTypeList = '"' . implode(',', $itemTypes) . '"';
+                    
+                    // Get categories
+                    $categories = Category::all()->pluck('name')->toArray();
+                    $categoryList = '"' . implode(',', $categories) . '"';
+                    
+                    // Get locations
+                    $locations = Location::all()->pluck('name')->toArray();
+                    $locationList = '"' . implode(',', $locations) . '"';
+                    
+                    // Add dropdown validation for Item Type column (A2:A1000)
+                    $validation = $sheet->getCell('A2')->getDataValidation();
                     $validation->setType(DataValidation::TYPE_LIST);
                     $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
                     $validation->setAllowBlank(false);
                     $validation->setShowInputMessage(true);
                     $validation->setShowErrorMessage(true);
                     $validation->setShowDropDown(true);
-                    $validation->setErrorTitle('Invalid Category');
-                    $validation->setError('Please select a category from the dropdown.');
-                    $validation->setPromptTitle('Select Category');
-                    $validation->setPrompt('Choose a category from the list.');
-                    $validation->setFormula1($categoryList);
+                    $validation->setErrorTitle('Invalid Item Type');
+                    $validation->setError('Please select an item type from the dropdown.');
+                    $validation->setPromptTitle('Select Item Type');
+                    $validation->setPrompt('Choose: appliances, gadgets, or furniture.');
+                    $validation->setFormula1($itemTypeList);
                     
                     // Apply to range
                     for ($i = 2; $i <= 1000; $i++) {
-                        $sheet->getCell('B' . $i)->setDataValidation(clone $validation);
+                        $sheet->getCell('A' . $i)->setDataValidation(clone $validation);
                     }
-                }
-                
-                // Add dropdown validation for Location column (C2:C1000)
-                if (!empty($locations)) {
-                    $validation = $sheet->getCell('C2')->getDataValidation();
-                    $validation->setType(DataValidation::TYPE_LIST);
-                    $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
-                    $validation->setAllowBlank(false);
-                    $validation->setShowInputMessage(true);
-                    $validation->setShowErrorMessage(true);
-                    $validation->setShowDropDown(true);
-                    $validation->setErrorTitle('Invalid Location');
-                    $validation->setError('Please select a location from the dropdown.');
-                    $validation->setPromptTitle('Select Location');
-                    $validation->setPrompt('Choose a location from the list.');
-                    $validation->setFormula1($locationList);
                     
-                    // Apply to range
-                    for ($i = 2; $i <= 1000; $i++) {
-                        $sheet->getCell('C' . $i)->setDataValidation(clone $validation);
+                    // Add dropdown validation for Category column (B2:B1000)
+                    if (!empty($categories)) {
+                        $validation = $sheet->getCell('B2')->getDataValidation();
+                        $validation->setType(DataValidation::TYPE_LIST);
+                        $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
+                        $validation->setAllowBlank(false);
+                        $validation->setShowInputMessage(true);
+                        $validation->setShowErrorMessage(true);
+                        $validation->setShowDropDown(true);
+                        $validation->setErrorTitle('Invalid Category');
+                        $validation->setError('Please select a category from the dropdown.');
+                        $validation->setPromptTitle('Select Category');
+                        $validation->setPrompt('Choose a category from the list.');
+                        $validation->setFormula1($categoryList);
+                        
+                        // Apply to range
+                        for ($i = 2; $i <= 1000; $i++) {
+                            $sheet->getCell('B' . $i)->setDataValidation(clone $validation);
+                        }
+                    }
+                    
+                    // Add dropdown validation for Location column (C2:C1000)
+                    if (!empty($locations)) {
+                        $validation = $sheet->getCell('C2')->getDataValidation();
+                        $validation->setType(DataValidation::TYPE_LIST);
+                        $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
+                        $validation->setAllowBlank(false);
+                        $validation->setShowInputMessage(true);
+                        $validation->setShowErrorMessage(true);
+                        $validation->setShowDropDown(true);
+                        $validation->setErrorTitle('Invalid Location');
+                        $validation->setError('Please select a location from the dropdown.');
+                        $validation->setPromptTitle('Select Location');
+                        $validation->setPrompt('Choose a location from the list.');
+                        $validation->setFormula1($locationList);
+                        
+                        // Apply to range
+                        for ($i = 2; $i <= 1000; $i++) {
+                            $sheet->getCell('C' . $i)->setDataValidation(clone $validation);
+                        }
                     }
                 }
             },

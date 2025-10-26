@@ -22,9 +22,16 @@ class ItemController extends Controller
                 'name' => $category->name,
             ];
         });
+           $locations = Location::all()->map(function($location){
+            return [
+                'id' => $location->id,
+                'name' => $location->name,
+            ];
+        });
         return Inertia::render('Item/Index',[
             'items' => $items,
             'categories' => $categories,
+            'locations' => $locations,
         ]);
     }
 
@@ -120,6 +127,44 @@ class ItemController extends Controller
     public function exportTemplate()
     {
         return Excel::download(new ItemsExport, 'items-template.xlsx');
+    }
+
+    public function export(Request $request)
+    {
+        $query = Item::with(['category', 'location']);
+
+        // Apply filters based on request parameters
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('description', 'like', "%{$search}%");
+        }
+
+        if ($request->filled('availability') && $request->availability !== 'all') {
+            if ($request->availability === 'available') {
+                $query->whereNull('date_out');
+            } else {
+                $query->whereNotNull('date_out');
+            }
+        }
+
+
+        if ($request->filled('category') && $request->category !== 'all') {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->filled('item_type') && $request->item_type !== 'all') {
+            $query->where('item_type', $request->item_type);
+        }
+
+        if ($request->filled('location') && $request->location !== 'all') {
+            $query->where('location_id', $request->location);
+        }
+
+        $items = $query->get();
+
+        $filename = 'items-' . now()->format('Y-m-d-His') . '.xlsx';
+        
+        return Excel::download(new ItemsExport($items), $filename);
     }
 
     public function createFromImport(){

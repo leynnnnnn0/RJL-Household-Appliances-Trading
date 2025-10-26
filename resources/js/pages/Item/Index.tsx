@@ -30,32 +30,44 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Eye, Pencil, Plus, Filter, X } from 'lucide-react';
-import { Category, ItemWithRelations } from '@/types';
+import { Search, Eye, Pencil, Plus, Filter, X, Download } from 'lucide-react';
+import { Category, ItemWithRelations, Location } from '@/types';
 interface PageProps {
   categories: Category[];
   items: ItemWithRelations[];
+  locations: Location[];
 }
-export default function Index({ items, categories } : PageProps) {
+export default function Index({ items, categories, locations } : PageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [itemTypeFilter, setitemTypeFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
 
   const filteredItems = useMemo(() => {
-    return items.filter(item => {
-      const matchesSearch = 
-        item.description.toLowerCase().includes(searchQuery.toLowerCase())
+  return items.filter(item => {
+    const matchesSearch = 
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesAvailability = 
-        availabilityFilter === 'all' || item.date_out === (availabilityFilter === 'unavailable' ? item.date_out : null);
+    const matchesAvailability = 
+      availabilityFilter === 'all' || 
+      (availabilityFilter === 'unavailable' ? item.date_out !== null : item.date_out === null);
 
-      const matchesCategory = 
-        categoryFilter === 'all' || 
-        item.category.slug === categoryFilter;
+    const matchesCategory = 
+      categoryFilter === 'all' || 
+      item.category.slug === categoryFilter;
 
-      return matchesSearch && matchesAvailability && matchesCategory;
-    });
-  }, [items, searchQuery, availabilityFilter, categoryFilter]);
+    const matchesType = 
+      itemTypeFilter === 'all' || 
+      item.item_type === itemTypeFilter;
+
+    const matchesLocation = 
+      locationFilter === 'all' ||
+      item.location?.id.toString() === locationFilter;
+
+    return matchesSearch && matchesAvailability && matchesCategory && matchesType && matchesLocation;
+  });
+}, [items, searchQuery, availabilityFilter, categoryFilter, itemTypeFilter, locationFilter]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-PH', {
@@ -72,13 +84,28 @@ export default function Index({ items, categories } : PageProps) {
     });
   };
 
-  const hasActiveFilters = searchQuery || availabilityFilter !== 'all' || categoryFilter !== 'All';
+  const hasActiveFilters = searchQuery || availabilityFilter !== 'all' || categoryFilter !== 'all' || itemTypeFilter !== 'all' || locationFilter !== 'all';
 
   const clearFilters = () => {
     setSearchQuery('');
     setAvailabilityFilter('all');
     setCategoryFilter('all');
+    setitemTypeFilter('all');
+    setLocationFilter('all');
   };
+
+  const handleExport = () => {
+    const params = new URLSearchParams();
+    
+    if (searchQuery) params.append('search', searchQuery);
+    if (availabilityFilter !== 'all') params.append('availability', availabilityFilter);
+    if (categoryFilter !== 'all') params.append('category', categoryFilter);
+    if (itemTypeFilter !== 'all') params.append('item_type', itemTypeFilter);
+    if (locationFilter !== 'all') params.append('location', locationFilter);
+    
+    window.location.href = `/items/export?${params.toString()}`;
+  };
+
 
   return (
     <AppLayout>
@@ -86,7 +113,9 @@ export default function Index({ items, categories } : PageProps) {
       
       <div className="p-6 space-y-6">
         <ModuleHeading title="Items" description="Manage your inventory items">
-             <DropdownMenu>
+            <div className="flex items-center gap-3">
+              <Button className='cursor-pointer' onClick={() => handleExport()}><Download/> Export</Button>
+               <DropdownMenu>
   <DropdownMenuTrigger className='cursor-pointer flex gap-2 items-center bg-primary text-white text-sm px-4 py-2 rounded-lg'>
             <Plus className="h-4 w-4 mr-2" />
             Add Item
@@ -104,6 +133,7 @@ export default function Index({ items, categories } : PageProps) {
     </DropdownMenuItem>
   </DropdownMenuContent>
 </DropdownMenu>
+            </div>
           </ModuleHeading>
 
 
@@ -131,6 +161,20 @@ export default function Index({ items, categories } : PageProps) {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2 flex-1">
+                    {/* Item Type */}
+                  <Select value={itemTypeFilter} onValueChange={setitemTypeFilter}>
+                    <SelectTrigger className="w-[160px] h-9">
+                      <SelectValue placeholder="Availability" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="appliances">Appliances</SelectItem>
+                      <SelectItem value="gadgets">Gadgets</SelectItem>
+                       <SelectItem value="furniture">Furniture</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+
                   {/* Availability Filter */}
                   <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
                     <SelectTrigger className="w-[160px] h-9">
@@ -140,6 +184,21 @@ export default function Index({ items, categories } : PageProps) {
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="available">Available</SelectItem>
                       <SelectItem value="unavailable">Unavailable</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                      {/* Location Filter */}
+                  <Select value={locationFilter} onValueChange={setLocationFilter}>
+                    <SelectTrigger className="w-[160px] h-9">
+                      <SelectValue placeholder="Location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Location</SelectItem>
+                         {locations.map(category => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
 

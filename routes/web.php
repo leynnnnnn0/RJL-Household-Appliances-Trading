@@ -19,7 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-
+Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
     Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
 Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
 Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])->name('items.export.template');
