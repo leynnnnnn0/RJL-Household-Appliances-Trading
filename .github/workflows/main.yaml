@@ -34,7 +34,6 @@ jobs:
           username: saldyyyyyy-001
           password: Saldyyyyyy0
           protocol: ftps
-          server-dir: /site001/
           port: 21
           timeout: 120000
           exclude: |
