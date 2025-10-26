@@ -33,7 +33,7 @@
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         @routes
-<script src="{{ mix('js/app.js') }}" defer></script>
+<script src="{{ mix('js/app.jsx') }}" defer></script>
 
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">

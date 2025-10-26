@@ -6,22 +6,23 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
+    return redirect()->route('login');
 })->name('home');
 
-Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
-Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
-Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])->name('items.export.template');
-Route::post('/items/import', [ItemController::class, 'import'])->name('items.import.upload');
-Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
-Route::resource('items', ItemController::class);
+
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+
+    Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
+Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
+Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])->name('items.export.template');
+Route::post('/items/import', [ItemController::class, 'import'])->name('items.import.upload');
+Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
+Route::resource('items', ItemController::class);
 });
 
 require __DIR__.'/settings.php';

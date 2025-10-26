@@ -49,7 +49,6 @@ export default function Edit({ item, categories, locations }: PageProps) {
     remarks: item.remarks || '',
   });
 
-  console.log(errors);
 
   const handleSubmit = (e) => {
     e.preventDefault();
