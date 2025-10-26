@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { router } from '@inertiajs/react';
+import ModuleHeading from "@/components/cards/module-heading";
 import { 
   Select, 
   SelectContent, 
@@ -11,6 +12,14 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { 
   Table, 
   TableBody, 
@@ -76,19 +85,28 @@ export default function Index({ items, categories } : PageProps) {
       <Head title="Items" />
       
       <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Items</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your inventory items
-            </p>
-          </div>
-          <Button onClick={() => router.visit("/items/create")} size="default">
+        <ModuleHeading title="Items" description="Manage your inventory items">
+             <DropdownMenu>
+  <DropdownMenuTrigger className='cursor-pointer flex gap-2 items-center bg-primary text-white text-sm px-4 py-2 rounded-lg'>
             <Plus className="h-4 w-4 mr-2" />
             Add Item
-          </Button>
-        </div>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    <DropdownMenuLabel>Select from options</DropdownMenuLabel>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem className='cursor-pointer' onClick={() => router.visit('/items/create')}>
+
+        Create Manually
+
+    </DropdownMenuItem>
+    <DropdownMenuItem className='cursor-pointer' onClick={() => router.visit('/items/create-from-import')}>
+        Create from Excel
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+          </ModuleHeading>
+
+
 
         {/* Modern Filters */}
         <Card className="border-muted">

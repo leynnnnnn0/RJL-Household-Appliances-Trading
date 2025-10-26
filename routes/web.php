@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ItemController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -10,7 +11,12 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::resource('items', App\Http\Controllers\ItemController::class);
+Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
+Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
+Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])->name('items.export.template');
+Route::post('/items/import', [ItemController::class, 'import'])->name('items.import.upload');
+Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
+Route::resource('items', ItemController::class);
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
