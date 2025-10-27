@@ -13,8 +13,7 @@ export type Item = {
   supplier: string;
   location_id: number | null;
   item_type: string;
-  dr_no: string | null;
-  supplier: string | null;
+  dr_no: string | null;r
   description: string;
   model: string | null;
   serial: string | null;

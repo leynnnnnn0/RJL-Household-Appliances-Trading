@@ -28,6 +28,7 @@ return new class extends Migration
             $table->date('date_out')->nullable();
             $table->string('size')->nullable();
             $table->text('remarks')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

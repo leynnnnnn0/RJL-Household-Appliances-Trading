@@ -221,7 +221,7 @@ class ItemController extends Controller
     } catch (\Exception $e) {
         DB::rollBack();
         return back()->withErrors([
-            'error' => 'Import failed: ' . $e->getMessage() . "\n\nNo items were saved."
+            'error' => 'Import failed: ' . $e->getMessage() . "\n\nNo items were saved. Please contact your administrator for more information."
         ]);
     }
 }
@@ -324,6 +324,12 @@ private function convertExcelDate($value)
      public function cancelImport(){
         session()->forget('imported_items');
         return redirect()->back()->with('info', 'Import cancelled.');
+    }
+
+    public function destroy($id){
+        $item = Item::findOrFail($id);
+        $item->delete();
+        return redirect()->route('items.index');
     }
 
 

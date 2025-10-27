@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -9,6 +9,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 import { Separator } from '@/components/ui/separator';
 import {
   ArrowLeft,
@@ -24,6 +36,7 @@ import {
   Tag,
 } from 'lucide-react';
 import {ItemWithRelations} from '@/types';
+import { toast } from 'sonner';
 
 interface PageProps {
   item: ItemWithRelations;
@@ -46,9 +59,14 @@ export default function View({ item } : PageProps) {
   };
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this item?')) {
-      // Perform deletion logic here
-    }
+    router.delete(`/items/${item.id}`, {
+      onSuccess: () => {
+        toast.success("Item Archived Successfully");
+      },
+      onError: () => {
+        toast.error("Failed to Archive Item");
+      }
+    });
   };
 
   const isAvailable = !item.date_out;
@@ -83,10 +101,29 @@ export default function View({ item } : PageProps) {
                 Edit
               </Link>
             </Button>
-            {/* <Button variant="destructive" onClick={handleDelete}>
+
+             <AlertDialog>
+      <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button> */}
+              Archive
+            </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will remove the item from thee inventory list.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete} >Continue</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+            
+
           </div>
         </div>
 
