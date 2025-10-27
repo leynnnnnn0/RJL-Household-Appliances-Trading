@@ -21,4 +21,16 @@ class Supplier extends Model
     {
         return $this->hasMany(Item::class, 'supplier', 'slug');
     }
+
+      protected static function boot()
+    {
+        parent::boot();
+        
+        static::deleting(function ($supplier) {
+            if ($supplier->items()->withTrashed()->exists()) {
+                throw new \Exception('Cannot delete supplier. It has associated items.');
+            }
+        });
+    }
+    
 }

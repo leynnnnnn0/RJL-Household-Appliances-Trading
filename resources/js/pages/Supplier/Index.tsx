@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Eye, Pencil, Trash2, Plus } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,111 +9,105 @@ import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ModuleHeading from "@/components/cards/module-heading";
 import AppLayout from "@/layouts/app-layout";
+import Pagination from "@/components/pagination";
 import { Head, router, useForm } from "@inertiajs/react";
-import { Location, Paginated } from '@/types';
+import { Supplier, Paginated } from '@/types';
 import { toast } from 'sonner';
-import Pagination from '@/components/pagination';
-
-
 
 interface PageProps {
-  locations: Paginated<Location>;
+  suppliers: Paginated<Supplier>;
 }
-export default function Index({locations}: PageProps) {
+
+export default function Index({ suppliers }: PageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(Number);
   const [deleteId, setDeleteId] = useState(null);
-  const { data, setData, post, put, processing, errors } = useForm({
+  const { data, setData, post, put, processing, errors, reset } = useForm({
     name: '',
-    address: '',
     remarks: ''
   });
 
-  const setEditing= () => {
-          setData('address', '');
-          setData('name', '');
-          setData('remarks', '');
-  }
+  const resetForm = () => {
+    reset();
+    setIsEditing(false);
+  };
 
-  // Filter locations based on search
-  const filteredLocations = locations.data.filter(location =>
-    location.name.toLowerCase().includes(searchQuery.toLowerCase()) || location.address.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter suppliers based on search
+  const filteredSuppliers = suppliers.data.filter(supplier =>
+    supplier.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Open dialog for create
   const handleCreate = () => {
-    setEditing();  
+    resetForm();
     setIsDialogOpen(true);
   };
 
   // Open dialog for edit
-  const handleEdit = (location : Location) => {
+  const handleEdit = (supplier: Supplier) => {
     setIsEditing(true);
-    setEditId(location.id);
-    setData('address', location.address);
-    setData('name', location.name);
-    setData('remarks', location.remarks || '');
+    setEditId(supplier.id);
+    setData('name', supplier.name);
+    setData('remarks', supplier.remarks || '');
     setIsDialogOpen(true);
   };
 
-  // Save location (create or update)
+  // Save supplier (create or update)
   const handleSave = () => {
-   
-
     if (isEditing) {
-      put(`/locations/${editId}`, {
+      put(`/suppliers/${editId}`, {
         onSuccess: () => {
-          toast.success("Location Updated Successfully.");
+          toast.success("Supplier Updated Successfully.");
           setIsDialogOpen(false);
+          resetForm();
         },
-        onError: () => {
-          toast.error("An error occured while trying to update the location")
+        onError: (e) => {
+          toast.error(e.error, { duration: 10000 });
         }
-      })
+      });
     } else {
-      post('/locations', {
+      post('/suppliers', {
         onSuccess: () => {
-          toast.success("Location Created Successfully.");
+          toast.success("Supplier Created Successfully.");
           setIsDialogOpen(false);
+          resetForm();
         },
-        onError: () => {
-          toast.error("An error occured while trying to create the location")
+        onError: (e) => {
+          toast.error(e.error);
         }
-      })
+      });
     }
-
   };
 
   // Open delete confirmation
-  const handleDeleteClick = (id : any) => {
+  const handleDeleteClick = (id: any) => {
     setDeleteId(id);
     setIsDeleteDialogOpen(true);
   };
 
   // Confirm delete
   const handleDeleteConfirm = () => {
-    router.delete(`/locations/${deleteId}`, {
+    router.delete(`/suppliers/${deleteId}`, {
       onSuccess: () => {
-          toast.success("Location Deleted Successfully.");
-          setIsDialogOpen(false);
-        },
-        onError: (e:any) => {
-          toast.error(e.error);
-        }
-    })
-    setIsDeleteDialogOpen(false);
+        toast.success("Supplier Deleted Successfully.");
+        setIsDeleteDialogOpen(false);
+      },
+      onError: (e: any) => {
+        toast.error(e.error);
+      }
+    });
     setDeleteId(null);
   };
 
   return (
     <AppLayout>
-      <Head title="Locations" />
+      <Head title="Suppliers" />
       <ModuleHeading 
-        title="Locations" 
-        description="Manage the locations"
+        title="Suppliers" 
+        description="Manage the suppliers"
       >
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
@@ -127,7 +121,7 @@ export default function Index({locations}: PageProps) {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search locations..."
+              placeholder="Search suppliers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -141,35 +135,35 @@ export default function Index({locations}: PageProps) {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="font-semibold">Name</TableHead>
-                <TableHead className="font-semibold">Address</TableHead>
+                <TableHead className="font-semibold">Slug</TableHead>
                 <TableHead className="font-semibold">Remarks</TableHead>
                 <TableHead className="font-semibold text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLocations.length === 0 ? (
+              {filteredSuppliers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Search className="h-8 w-8 mb-2" />
-                      <p className="font-medium">No locations found</p>
-                      <p className="text-sm">Try adjusting your search or create a new location</p>
+                      <p className="font-medium">No suppliers found</p>
+                      <p className="text-sm">Try adjusting your search or create a new supplier</p>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLocations.map((location) => (
-                  <TableRow key={location.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium">{location.name}</TableCell>
-                    <TableCell>{location.address}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{location.remarks ?? 'None'}</TableCell>
+                filteredSuppliers.map((supplier) => (
+                  <TableRow key={supplier.slug} className="hover:bg-muted/50 transition-colors">
+                    <TableCell className="font-medium">{supplier.name}</TableCell>
+                    <TableCell>{supplier.slug}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{supplier.remarks ?? 'None'}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => handleEdit(location)}
+                          onClick={() => handleEdit(supplier)}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -177,7 +171,7 @@ export default function Index({locations}: PageProps) {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteClick(location.id)}
+                          onClick={() => handleDeleteClick(supplier.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -190,16 +184,22 @@ export default function Index({locations}: PageProps) {
           </Table>
         </div>
 
-        <Pagination data={locations}/>
+        {/* Pagination */}
+        <Pagination
+          data={suppliers}
+        />
       </div>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open);
+        if (!open) resetForm();
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEditing ? 'Edit Location' : 'Create New Location'}</DialogTitle>
+            <DialogTitle>{isEditing ? 'Edit Supplier' : 'Create New Supplier'}</DialogTitle>
             <DialogDescription>
-              {isEditing ? 'Update the location details below.' : 'Enter the details for the new location.'}
+              {isEditing ? 'Update the supplier details below.' : 'Enter the details for the new supplier.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -207,22 +207,13 @@ export default function Index({locations}: PageProps) {
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
-                placeholder="Enter location name"
+                placeholder="Enter supplier name"
                 value={data.name}
-                onChange={(e) => setData('name', e.target.value)}
+                onChange={(e) => setData('name', e.target.value.toUpperCase())}
               />
               {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name}</p>
-                  )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                placeholder="Enter address"
-                value={data.address}
-                onChange={(e) => setData('address', e.target.value)}
-              />
+                <p className="text-sm text-destructive">{errors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="remarks">Remarks</Label>
@@ -230,7 +221,7 @@ export default function Index({locations}: PageProps) {
                 id="remarks"
                 placeholder="Enter remarks (optional)"
                 value={data.remarks}
-                onChange={(e) => setData('remarks', e.target.value )}
+                onChange={(e) => setData('remarks', e.target.value)}
                 rows={3}
               />
             </div>
@@ -239,7 +230,7 @@ export default function Index({locations}: PageProps) {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} disabled={processing}>
               {isEditing ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -252,7 +243,7 @@ export default function Index({locations}: PageProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the location.
+              This action cannot be undone. This will permanently delete the supplier.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -265,5 +256,4 @@ export default function Index({locations}: PageProps) {
       </AlertDialog>
     </AppLayout>
   );
-} 
-
+}

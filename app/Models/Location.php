@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Location extends Model
 {
     /** @use HasFactory<\Database\Factories\LocationFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'name',
@@ -21,4 +21,18 @@ class Location extends Model
     {
         return $this->hasMany(Item::class);
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::deleting(function ($location) {
+            if ($location->items()->withTrashed()->exists()) {
+                throw new \Exception('Cannot delete location. It has associated items.');
+            }
+        });
+    }
+    
+
+
 }

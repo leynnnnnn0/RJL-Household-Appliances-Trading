@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('items', function (Blueprint $table) {
             $table->id();
              $table->string('supplier');
-            $table->foreign('supplier')->references('slug')->on('suppliers')->cascadeOnDelete();
-            $table->foreignId('location_id')->constrained()->nullable();
+            $table->foreign('supplier')->references('slug')->on('suppliers');
+            $table->foreignId('location_id')
+              ->constrained()
+              ->restrictOnDelete();
             $table->string('item_type');
             $table->string('dr_no')->nullable();
             $table->string('description');

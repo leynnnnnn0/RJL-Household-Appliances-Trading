@@ -31,10 +31,11 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Eye, Pencil, Plus, Filter, X, Download } from 'lucide-react';
-import { Supplier, ItemWithRelations, Location } from '@/types';
+import { Supplier, ItemWithRelations, Location, Paginated } from '@/types';
+import Pagination from '@/components/pagination';
 interface PageProps {
   suppliers: Supplier[];
-  items: ItemWithRelations[];
+  items: Paginated<ItemWithRelations>;
   locations: Location[];
 }
 export default function Index({ items, suppliers, locations } : PageProps) {
@@ -45,7 +46,7 @@ export default function Index({ items, suppliers, locations } : PageProps) {
   const [locationFilter, setLocationFilter] = useState('all');
 
   const filteredItems = useMemo(() => {
-  return items.filter(item => {
+  return items.data.filter(item => {
     const matchesSearch = 
       item.description.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -319,6 +320,8 @@ export default function Index({ items, suppliers, locations } : PageProps) {
                 </TableBody>
               </Table>
             </div>
+
+            <Pagination data={items}/>
       </div>
     </AppLayout>
   );

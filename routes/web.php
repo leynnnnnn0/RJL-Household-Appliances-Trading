@@ -4,6 +4,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\POSCashController;
 use App\Http\Controllers\POSCreditController;
+use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -32,6 +33,7 @@ Route::resource('items', ItemController::class);
 });
 
 Route::resource('locations', LocationController::class);
+Route::resource('suppliers', SupplierController::class);
 
 
 require __DIR__.'/settings.php';

@@ -15,7 +15,7 @@ use Maatwebsite\Excel\Facades\Excel;
 class ItemController extends Controller
 {
     public function index(){
-        $items = Item::with(['supplier', 'location'])->get();
+        $items = Item::with(['supplier', 'location'])->latest()->paginate(8);
            $suppliers = Supplier::all()->map(function($supplier){
             return [
                 'slug' => $supplier->slug,
