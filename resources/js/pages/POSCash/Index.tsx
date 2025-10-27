@@ -61,9 +61,13 @@ export default function Index() {
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
 
   const peformSearch = async (value: string) => {
+        if(value.trim().length === 0) {
+          setFilteredProducts([]);
+          setShowDropdown(false);
+          return;
+    };
     axios.get('/api/items', { params: { search: value } })
         .then(response => {
-           console.log(response.data.data);
            const items = response.data?.data || [];
             if(items.length > 0){
               setFilteredProducts(items);
@@ -81,11 +85,6 @@ export default function Index() {
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    if(value.trim().length === 0) {
-          setFilteredProducts([]);
-          setShowDropdown(false);
-          return;
-    };
     debouncedSearch(value);   
   };
 

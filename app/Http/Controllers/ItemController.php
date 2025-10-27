@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\ItemsExport;
 use App\Imports\ItemsImport;
-use App\Models\Category;
+use App\Models\Supplier;
 use App\Models\Item;
 use App\Models\Location;
 use Illuminate\Http\Request;
@@ -15,11 +15,11 @@ use Maatwebsite\Excel\Facades\Excel;
 class ItemController extends Controller
 {
     public function index(){
-        $items = Item::with(['category', 'location'])->get();
-           $categories = Category::all()->map(function($category){
+        $items = Item::with(['supplier', 'location'])->get();
+           $suppliers = Supplier::all()->map(function($supplier){
             return [
-                'slug' => $category->slug,
-                'name' => $category->name,
+                'slug' => $supplier->slug,
+                'name' => $supplier->name,
             ];
         });
            $locations = Location::all()->map(function($location){
@@ -30,16 +30,16 @@ class ItemController extends Controller
         });
         return Inertia::render('Item/Index',[
             'items' => $items,
-            'categories' => $categories,
+            'suppliers' => $suppliers,
             'locations' => $locations,
         ]);
     }
 
     public function create(){
-        $categories = Category::all()->map(function($category){
+        $suppliers = Supplier::all()->map(function($supplier){
             return [
-                'slug' => $category->slug,
-                'name' => $category->name,
+                'slug' => $supplier->slug,
+                'name' => $supplier->name,
             ];
         });
         $locations = Location::all()->map(function($location){
@@ -49,7 +49,7 @@ class ItemController extends Controller
             ];
         });
         return Inertia::render('Item/Create', [
-            'categories' => $categories,
+            'suppliers' => $suppliers,
             'locations' => $locations,
         ]);
     }
@@ -57,10 +57,9 @@ class ItemController extends Controller
     public function store(Request $request){
         $validated = $request->validate([
             'item_type' => 'required|in:appliances,gadgets,furniture',
-            'category' => 'required|exists:categories,slug',
+            'supplier' => 'required|exists:suppliers,slug',
             'location_id' => 'required|exists:locations,id',
             'dr_no' => 'nullable|string|max:255',
-            'supplier' => 'nullable|string|max:255',
             'description' => 'required|string|max:255',
             'model' => 'nullable|string|max:255',
             'serial' => 'nullable|string|max:255',
@@ -76,16 +75,16 @@ class ItemController extends Controller
     }
 
     public function show($id){
-        $item = Item::with(['category', 'location'])->findOrFail($id);
+        $item = Item::with(['supplier', 'location'])->findOrFail($id);
         return Inertia::render('Item/Show', ['item' => $item]);
     }
 
     public function edit($id){
-        $item = Item::with(['category', 'location'])->findOrFail($id);
-        $categories = Category::all()->map(function($category){
+        $item = Item::with(['supplier', 'location'])->findOrFail($id);
+        $suppliers = Supplier::all()->map(function($supplier){
             return [
-                'slug' => $category->slug,
-                'name' => $category->name,
+                'slug' => $supplier->slug,
+                'name' => $supplier->name,
             ];
         });
         $locations = Location::all()->map(function($location){
@@ -96,7 +95,7 @@ class ItemController extends Controller
         });
         return Inertia::render('Item/Edit', [
             'item' => $item,
-            'categories' => $categories,
+            'suppliers' => $suppliers,
             'locations' => $locations,
         ]);
     }
@@ -105,10 +104,9 @@ class ItemController extends Controller
         $item = Item::findOrFail($id);
         $validated = $request->validate([
             'item_type' => 'required|in:appliances,gadgets,furniture',
-            'category' => 'required|exists:categories,slug',
+            'supplier' => 'required|exists:suppliers,slug',
             'location_id' => 'required|exists:locations,id',
             'dr_no' => 'nullable|string|max:255',
-            'supplier' => 'nullable|string|max:255',
             'description' => 'required|string|max:255',
             'model' => 'nullable|string|max:255',
             'serial' => 'nullable|string|max:255',
@@ -131,7 +129,7 @@ class ItemController extends Controller
 
     public function export(Request $request)
     {
-        $query = Item::with(['category', 'location']);
+        $query = Item::with(['supplier', 'location']);
 
         // Apply filters based on request parameters
         if ($request->filled('search')) {
@@ -148,8 +146,8 @@ class ItemController extends Controller
         }
 
 
-        if ($request->filled('category') && $request->category !== 'all') {
-            $query->where('category', $request->category);
+        if ($request->filled('supplier') && $request->supplier !== 'all') {
+            $query->where('supplier', $request->supplier);
         }
 
         if ($request->filled('item_type') && $request->item_type !== 'all') {
@@ -188,8 +186,8 @@ class ItemController extends Controller
                 throw new \Exception("Row {$item['row_number']}: Item Type is required.");
             }
             
-            if (empty($item['category']) || empty($item['location_id'])) {
-                throw new \Exception("Row {$item['row_number']}: Category and Location are required.");
+            if (empty($item['supplier']) || empty($item['location_id'])) {
+                throw new \Exception("Row {$item['row_number']}: Supplier and Location are required.");
             }
             
             if (empty($item['description'])) {
@@ -198,10 +196,9 @@ class ItemController extends Controller
             
             Item::create([
                 'item_type' => $item['item_type'],
-                'category' => $item['category'],
+                'supplier' => $item['supplier'],
                 'location_id' => $item['location_id'],
                 'dr_no' => $item['dr_no'],
-                'supplier' => $item['supplier'],
                 'description' => $item['description'],
                 'model' => $item['model'],
                 'serial' => $item['serial'],
@@ -236,14 +233,14 @@ public function import(Request $request){
     
     try {
         $rows = Excel::toCollection(new ItemsImport, $request->file('file'))->first();
-        $categories = Category::all()->keyBy('name');
+        $suppliers = Supplier::all()->keyBy('name');
         $locations = Location::all()->keyBy('name');
         
         $validItemTypes = ['appliances', 'gadgets', 'furniture'];
         
         $formattedItems = $rows->skip(1)->filter(function($row) {
             return !empty($row[0]) || !empty($row[5]);
-        })->map(function($row, $index) use ($categories, $locations, $validItemTypes) {
+        })->map(function($row, $index) use ($suppliers, $locations, $validItemTypes) {
             $itemType = strtolower(trim($row[0] ?? ''));
             
             // Validate item type
@@ -253,8 +250,8 @@ public function import(Request $request){
             
             $categoryName = $row[1] ?? null;
             $categorySlug = null;
-            if ($categoryName && isset($categories[$categoryName])) {
-                $categorySlug = $categories[$categoryName]->slug;
+            if ($categoryName && isset($suppliers[$categoryName])) {
+                $categorySlug = $suppliers[$categoryName]->slug;
             }
             
             $locationName = $row[2] ?? null;
@@ -269,12 +266,11 @@ public function import(Request $request){
             return [
                 'row_number' => $index,
                 'item_type' => $itemType,
-                'category' => $categorySlug,
+                'supplier' => $categorySlug,
                 'category_display' => $categoryName,
                 'location_id' => $locationId,
                 'location_display' => $locationName,
                 'dr_no' => $row[3] ?? null,
-                'supplier' => $row[4] ?? null,
                 'description' => $row[5] ?? null,
                 'model' => $row[6] ?? null,
                 'serial' => $row[7] ?? null,

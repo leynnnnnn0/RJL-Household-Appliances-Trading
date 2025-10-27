@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Category;
+use App\Models\Supplier;
 use App\Models\Location;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -37,10 +37,9 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
         return $this->items->map(function($item) {
             return [
                 'item_type' => $item->item_type,
-                'category' => $item->category,
+                'supplier' => $item->supplier,
                 'location' => $item->location->name ?? '',
                 'dr_no' => $item->dr_no,
-                'supplier' => $item->supplier,
                 'description' => $item->description,
                 'model' => $item->model,
                 'serial' => $item->serial,
@@ -59,10 +58,9 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
     {
         return [
             'Item Type',
-            'Category',
+            'Supplier',
             'Location',
             'DR No',
-            'Supplier',
             'Description',
             'Model',
             'Serial',
@@ -115,10 +113,9 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
     {
         return [
             'A' => 15, // Item Type
-            'B' => 20, // Category
+            'B' => 20, // Supplier
             'C' => 20, // Location
             'D' => 12, // DR No
-            'E' => 20, // Supplier
             'F' => 30, // Description
             'G' => 15, // Model
             'H' => 15, // Serial
@@ -144,9 +141,9 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
                     $itemTypes = ['appliances', 'gadgets', 'furniture'];
                     $itemTypeList = '"' . implode(',', $itemTypes) . '"';
                     
-                    // Get categories
-                    $categories = Category::all()->pluck('name')->toArray();
-                    $categoryList = '"' . implode(',', $categories) . '"';
+                    // Get suppliers
+                    $suppliers = Supplier::all()->pluck('name')->toArray();
+                    $supplierList = '"' . implode(',', $suppliers) . '"';
                     
                     // Get locations
                     $locations = Location::all()->pluck('name')->toArray();
@@ -171,8 +168,8 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
                         $sheet->getCell('A' . $i)->setDataValidation(clone $validation);
                     }
                     
-                    // Add dropdown validation for Category column (B2:B1000)
-                    if (!empty($categories)) {
+                    // Add dropdown validation for Supplier column (B2:B1000)
+                    if (!empty($suppliers)) {
                         $validation = $sheet->getCell('B2')->getDataValidation();
                         $validation->setType(DataValidation::TYPE_LIST);
                         $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
@@ -180,11 +177,11 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
                         $validation->setShowInputMessage(true);
                         $validation->setShowErrorMessage(true);
                         $validation->setShowDropDown(true);
-                        $validation->setErrorTitle('Invalid Category');
-                        $validation->setError('Please select a category from the dropdown.');
-                        $validation->setPromptTitle('Select Category');
-                        $validation->setPrompt('Choose a category from the list.');
-                        $validation->setFormula1($categoryList);
+                        $validation->setErrorTitle('Invalid Supplier');
+                        $validation->setError('Please select a supplier from the dropdown.');
+                        $validation->setPromptTitle('Select Supplier');
+                        $validation->setPrompt('Choose a supplier from the list.');
+                        $validation->setFormula1($supplierList);
                         
                         // Apply to range
                         for ($i = 2; $i <= 1000; $i++) {

@@ -2,18 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
+use App\Models\Supplier;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class CategorySeeder extends Seeder
+class SupplierSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $categories = [
+        $suppliers = [
             ['name' => 'SAVERS', 'slug' => 'savers'],
             ['name' => 'OUTLET', 'slug' => 'outlet'],
             ['name' => 'RFE', 'slug' => 'rfe'],
@@ -37,10 +37,10 @@ class CategorySeeder extends Seeder
             ['name' => 'B.R & PLUVIAL', 'slug' => 'br-pluvial'],
         ];
 
-        foreach ($categories as $category) {
-            Category::create([
-                'name' => $category['name'],
-                'slug' => $category['slug'],
+        foreach ($suppliers as $supplier) {
+            Supplier::create([
+                'name' => $supplier['name'],
+                'slug' => $supplier['slug'],
             ]);
         }
 

@@ -22,21 +22,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import {ItemWithRelations, Category, Location} from '@/types';
+import {ItemWithRelations, Supplier, Location} from '@/types';
 
 
 interface PageProps {
   item: ItemWithRelations;
-  categories: Category[];
+  suppliers: Supplier[];
   locations: Location[];
 }
 
-export default function Edit({ item, categories, locations }: PageProps) {
+export default function Edit({ item, suppliers, locations }: PageProps) {
   const { data, setData, put, processing, errors, isDirty } = useForm({
-    category: item.category?.slug || '',
+    supplier: item.supplier?.slug || '',
     item_type: item.item_type || '',
     dr_no: item.dr_no || '',
-    supplier: item.supplier || '',
     description: item.description || '',
     model: item.model || '',
     serial: item.serial || '',
@@ -163,34 +162,34 @@ export default function Edit({ item, categories, locations }: PageProps) {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.category && (
+                  {errors.supplier && (
                     <p className="text-sm text-destructive">{errors.item_type}</p>
                   )}
                 </div>
 
 
-                {/* Category */}
+                {/* Supplier */}
                 <div className="space-y-2">
                   <Label htmlFor="category_id">
-                    Category
+                    Supplier
                   </Label>
                   <Select
-                    value={data.category}
-                    onValueChange={(value) => setData('category', value)}
+                    value={data.supplier}
+                    onValueChange={(value) => setData('supplier', value)}
                   >
                     <SelectTrigger id="category_id">
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue placeholder="Select a supplier" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.slug} value={category.slug}>
-                          {category.name}
+                      {suppliers.map((supplier) => (
+                        <SelectItem key={supplier.slug} value={supplier.slug}>
+                          {supplier.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.category && (
-                    <p className="text-sm text-destructive">{errors.category}</p>
+                  {errors.supplier && (
+                    <p className="text-sm text-destructive">{errors.supplier}</p>
                   )}
                 </div>
 
@@ -207,22 +206,6 @@ export default function Edit({ item, categories, locations }: PageProps) {
                   />
                   {errors.dr_no && (
                     <p className="text-sm text-destructive">{errors.dr_no}</p>
-                  )}
-                </div>
-
-                {/* Supplier */}
-                <div className="space-y-2">
-                  <Label htmlFor="supplier">
-                    Supplier
-                  </Label>
-                  <Input
-                    id="supplier"
-                    value={data.supplier}
-                    onChange={(e) => setData('supplier', e.target.value)}
-                    placeholder="Enter supplier name"
-                  />
-                  {errors.supplier && (
-                    <p className="text-sm text-destructive">{errors.supplier}</p>
                   )}
                 </div>
 

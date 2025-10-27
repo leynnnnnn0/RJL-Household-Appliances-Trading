@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
-            CategorySeeder::class,
+            SupplierSeeder::class,
             LocationSeeder::class,
             ItemSeeder::class,
         ]);

@@ -207,7 +207,7 @@ export default function Import({items} : ImportProps) {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-light text-[10px]">Row</TableHead>
-                    <TableHead className="font-light text-[10px]">Category</TableHead>
+                    <TableHead className="font-light text-[10px]">Supplier</TableHead>
                     <TableHead className="font-light text-[10px]">Location ID</TableHead>
                           <TableHead className="font-light text-[10px]">Item Type</TableHead>
                     <TableHead className="font-light text-[10px]">DR Number</TableHead>
@@ -235,7 +235,7 @@ export default function Import({items} : ImportProps) {
                         items.map((item, index) => (
                             <TableRow key={index}>
                                 <TableCell className="text-[10px]">{item.row_number}</TableCell>
-                                <TableCell className="text-[10px]">{item.category}</TableCell>
+                                <TableCell className="text-[10px]">{item.supplier}</TableCell>
                                 <TableCell className="text-[10px]">{item.location_id}</TableCell>
                                    <TableCell className="text-[10px]">{item.item_type}</TableCell>
                                 <TableCell className="text-[10px]">{item.dr_no}</TableCell>

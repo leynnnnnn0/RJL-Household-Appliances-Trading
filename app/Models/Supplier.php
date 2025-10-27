@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Category extends Model
+class Supplier extends Model
 {
-    /** @use HasFactory<\Database\Factories\CategoryFactory> */
+    /** @use HasFactory<\Database\Factories\SupplierFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -18,6 +18,6 @@ class Category extends Model
 
     public function items()
     {
-        return $this->hasMany(Item::class, 'category', 'slug');
+        return $this->hasMany(Item::class, 'supplier', 'slug');
     }
 }

@@ -1,4 +1,4 @@
-export type Category = {
+export type Supplier = {
   slug: string;
   name: string;
 };
@@ -10,7 +10,7 @@ export type Location = {
 
 export type Item = {
   id: number;
-  category: string;
+  supplier: string;
   location_id: number | null;
   item_type: string;
   dr_no: string | null;
@@ -30,6 +30,6 @@ export type Item = {
 };
 
 export type ItemWithRelations = Item & {
-  category?: Category;
+  supplier?: Supplier;
   location?: Location;
 };

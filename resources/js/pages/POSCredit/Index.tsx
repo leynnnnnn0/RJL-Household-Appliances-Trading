@@ -223,10 +223,10 @@ export default function Index() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="category">Item Category *</Label>
+                <Label htmlFor="supplier">Item Supplier *</Label>
                 <Select>
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Select category" />
+                  <SelectTrigger id="supplier">
+                    <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="appliances">Appliances</SelectItem>

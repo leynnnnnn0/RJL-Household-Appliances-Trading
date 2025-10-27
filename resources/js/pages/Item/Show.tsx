@@ -141,12 +141,26 @@ export default function View({ item } : PageProps) {
               <div className="flex items-start gap-3">
                 <Tag className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="space-y-1 flex-1">
-                  <p className="text-sm font-medium">Category</p>
+                  <p className="text-sm font-medium">Supplier</p>
                   <p className="text-sm text-muted-foreground">
-                    {item.category?.name || 'N/A'}
+                    {item.supplier?.name || 'N/A'}
                   </p>
                 </div>
               </div>
+
+                                           <Separator />
+
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div className="space-y-1 flex-1">
+                  <p className="text-sm font-medium">Item Type</p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.item_type}
+                  </p>
+                </div>
+              </div>
+
+     
 
               <Separator />
 
@@ -168,15 +182,7 @@ export default function View({ item } : PageProps) {
                 </div>
               </div>
 
-              <Separator />
-
-              <div className="flex items-start gap-3">
-                <Truck className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="space-y-1 flex-1">
-                  <p className="text-sm font-medium">Supplier</p>
-                  <p className="text-sm text-muted-foreground">{item.supplier ?? 'Not Available'}</p>
-                </div>
-              </div>
+             
 
               <Separator />
 
@@ -220,20 +226,6 @@ export default function View({ item } : PageProps) {
                   </p>
                 </div>
               </div>
-
-                             <Separator />
-
-              <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="space-y-1 flex-1">
-                  <p className="text-sm font-medium">Item Type</p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.item_type}
-                  </p>
-                </div>
-              </div>
-
-     
 
 
               <Separator />

@@ -11,11 +11,10 @@ class Item extends Model
     use HasFactory;
 
     protected $fillable = [
-        'category',
+        'supplier',
         'location_id',
         'item_type',
         'dr_no',
-        'supplier',
         'description',
         'model',
         'serial',
@@ -28,9 +27,9 @@ class Item extends Model
         'remarks'
     ];
 
-    public function category()
+    public function supplier()
     {
-        return $this->belongsTo(Category::class, 'category', 'slug');
+        return $this->belongsTo(Supplier::class, 'supplier', 'slug');
     }
     public function location()
     {

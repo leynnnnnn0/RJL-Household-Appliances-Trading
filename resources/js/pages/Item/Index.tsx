@@ -31,13 +31,13 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Eye, Pencil, Plus, Filter, X, Download } from 'lucide-react';
-import { Category, ItemWithRelations, Location } from '@/types';
+import { Supplier, ItemWithRelations, Location } from '@/types';
 interface PageProps {
-  categories: Category[];
+  suppliers: Supplier[];
   items: ItemWithRelations[];
   locations: Location[];
 }
-export default function Index({ items, categories, locations } : PageProps) {
+export default function Index({ items, suppliers, locations } : PageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -55,7 +55,7 @@ export default function Index({ items, categories, locations } : PageProps) {
 
     const matchesCategory = 
       categoryFilter === 'all' || 
-      item.category.slug === categoryFilter;
+      item.supplier.slug === categoryFilter;
 
     const matchesType = 
       itemTypeFilter === 'all' || 
@@ -99,7 +99,7 @@ export default function Index({ items, categories, locations } : PageProps) {
     
     if (searchQuery) params.append('search', searchQuery);
     if (availabilityFilter !== 'all') params.append('availability', availabilityFilter);
-    if (categoryFilter !== 'all') params.append('category', categoryFilter);
+    if (categoryFilter !== 'all') params.append('supplier', categoryFilter);
     if (itemTypeFilter !== 'all') params.append('item_type', itemTypeFilter);
     if (locationFilter !== 'all') params.append('location', locationFilter);
     
@@ -194,24 +194,24 @@ export default function Index({ items, categories, locations } : PageProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Location</SelectItem>
-                         {locations.map(category => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
-                          {category.name}
+                         {locations.map(supplier => (
+                        <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                          {supplier.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
 
-                  {/* Category Filter */}
+                  {/* Supplier Filter */}
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                     <SelectTrigger className="w-[160px] h-9">
-                      <SelectValue placeholder="Category" />
+                      <SelectValue placeholder="Supplier" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='all'>All Categories</SelectItem>
-                      {categories.map(category => (
-                        <SelectItem key={category.slug} value={category.slug}>
-                          {category.name}
+                      <SelectItem value='all'>All Suppliers</SelectItem>
+                      {suppliers.map(supplier => (
+                        <SelectItem key={supplier.slug} value={supplier.slug}>
+                          {supplier.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
