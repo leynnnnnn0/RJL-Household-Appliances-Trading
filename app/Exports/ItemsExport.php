@@ -99,35 +99,34 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
             ],
         ]);
 
-        // Format date columns (L and M) for rows 2-1000
-        $sheet->getStyle('L2:L1000')->getNumberFormat()
-            ->setFormatCode(NumberFormat::FORMAT_DATE_DDMMYYYY);
-        
-        $sheet->getStyle('M2:M1000')->getNumberFormat()
-            ->setFormatCode(NumberFormat::FORMAT_DATE_DDMMYYYY);
+        $sheet->getStyle('K2:K1000')->getNumberFormat()
+    ->setFormatCode('dd/mm/yyyy');
+
+$sheet->getStyle('L2:L1000')->getNumberFormat()
+    ->setFormatCode('dd/mm/yyyy');
 
         return [];
     }
 
     public function columnWidths(): array
-    {
-        return [
-            'A' => 15, // Item Type
-            'B' => 20, // Supplier
-            'C' => 20, // Location
-            'D' => 12, // DR No
-            'F' => 30, // Description
-            'G' => 15, // Model
-            'H' => 15, // Serial
-            'I' => 10, // Quantity
-            'J' => 12, // SRP
-            'K' => 12, // Unit Cost
-            'L' => 18, // Date of Purchase
-            'M' => 15, // Date Out
-            'N' => 10, // Size
-            'O' => 25, // Remarks
-        ];
-    }
+{
+    return [
+        'A' => 15, // Item Type
+        'B' => 20, // Supplier
+        'C' => 20, // Location
+        'D' => 12, // DR No
+        'E' => 30, // Description (FIXED - was 'F')
+        'F' => 15, // Model
+        'G' => 15, // Serial
+        'H' => 10, // Quantity
+        'I' => 12, // SRP
+        'J' => 12, // Unit Cost
+        'K' => 18, // Date of Purchase
+        'L' => 15, // Date Out
+        'M' => 10, // Size
+        'N' => 25, // Remarks
+    ];
+}
 
     public function registerEvents(): array
     {

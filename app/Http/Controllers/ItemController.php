@@ -260,8 +260,8 @@ public function import(Request $request){
                 $locationId = $locations[$locationName]->id;
             }
             
-            $dateOfPurchase = $this->convertExcelDate($row[11] ?? null);
-            $dateOut = $this->convertExcelDate($row[12] ?? null);
+            $dateOfPurchase = $this->convertExcelDate($row[10] ?? null);
+            $dateOut = $this->convertExcelDate($row[11] ?? null);
             
             return [
                 'row_number' => $index,
@@ -271,16 +271,16 @@ public function import(Request $request){
                 'location_id' => $locationId,
                 'location_display' => $locationName,
                 'dr_no' => $row[3] ?? null,
-                'description' => $row[5] ?? null,
-                'model' => $row[6] ?? null,
-                'serial' => $row[7] ?? null,
-                'quantity' => $row[8] ?? null,
-                'srp' => $row[9] ?? null,
-                'unit_cost' => $row[10] ?? null,
+                'description' => $row[4] ?? null,
+                'model' => $row[5] ?? null,
+                'serial' => $row[6] ?? null,
+                'quantity' => $row[7] ?? null,
+                'srp' => $row[8] ?? null,
+                'unit_cost' => $row[9] ?? null,
                 'date_of_purchase' => $dateOfPurchase,
                 'date_out' => $dateOut,
-                'size' => $row[13] ?? null,
-                'remarks' => $row[14] ?? null,
+                'size' => $row[12] ?? null,
+                'remarks' => $row[13] ?? null,
             ];
         })->values()->toArray();
         

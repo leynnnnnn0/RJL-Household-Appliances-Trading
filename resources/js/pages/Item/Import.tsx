@@ -208,10 +208,10 @@ export default function Import({items} : ImportProps) {
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-light text-[10px]">Row</TableHead>
                     <TableHead className="font-light text-[10px]">Supplier</TableHead>
-                    <TableHead className="font-light text-[10px]">Location ID</TableHead>
+                    <TableHead className="font-light text-[10px]">Location</TableHead>
                           <TableHead className="font-light text-[10px]">Item Type</TableHead>
                     <TableHead className="font-light text-[10px]">DR Number</TableHead>
-                    <TableHead className="font-light text-[10px]">Supplier</TableHead>
+           
                     <TableHead className="font-light text-[10px]">Description</TableHead>
                     <TableHead className="font-light text-[10px]">Model</TableHead>
                     <TableHead className="font-light text-[10px]">Serial</TableHead>
@@ -236,10 +236,9 @@ export default function Import({items} : ImportProps) {
                             <TableRow key={index}>
                                 <TableCell className="text-[10px]">{item.row_number}</TableCell>
                                 <TableCell className="text-[10px]">{item.supplier}</TableCell>
-                                <TableCell className="text-[10px]">{item.location_id}</TableCell>
+                                <TableCell className="text-[10px]">{item.location_display}</TableCell>
                                    <TableCell className="text-[10px]">{item.item_type}</TableCell>
                                 <TableCell className="text-[10px]">{item.dr_no}</TableCell>
-                                <TableCell className="text-[10px]">{item.supplier}</TableCell>
                                 <TableCell className="text-[10px]">{item.description}</TableCell>
                                 <TableCell className="text-[10px]">{item.model}</TableCell>
                                 <TableCell className="text-[10px]">{item.serial}</TableCell>
