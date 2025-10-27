@@ -11,8 +11,10 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-Route::resource('pos-cash', POSCashController::class);
-Route::resource('pos-credit', POSCreditController::class);
+
+Route::resource('pos-cash', POSCashController::class)->only('index');
+Route::resource('pos-credit', POSCreditController::class)->only('index');
+Route::get('/pos-cash/search', [POSCashController::class, 'search'])->name('pos-cash.search');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {

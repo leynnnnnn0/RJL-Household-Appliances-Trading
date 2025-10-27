@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Search, ShoppingCart, Trash2, Plus, Menu, History, TrendingUp, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { debounce } from 'lodash';
 import {
   Sheet,
   SheetContent,
@@ -14,17 +15,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { router } from '@inertiajs/react';
+import axios from 'axios';
 
 interface Product {
-  id: number;
+  supplier: string;
   description: string;
   serial: string;
   model: string;
-  serp: string;
   srp: number;
-  dateOfPurchase: string;
-  size: string;
-  remarks: string;
+  unit_cost: string;
 }
 
 interface Employee {
@@ -40,42 +40,6 @@ interface Order {
   timestamp: string;
   date: string;
 }
-
-const products: Product[] = [
-  {
-    id: 1,
-    description: "Dell Latitude 5420 Laptop",
-    serial: "DL5420-2024-001",
-    model: "Latitude 5420",
-    serp: "LAT5420",
-    srp: 45000,
-    dateOfPurchase: "2024-01-15",
-    size: "14 inch",
-    remarks: "i5 11th Gen, 16GB RAM"
-  },
-  {
-    id: 2,
-    description: "HP EliteBook 840 G8",
-    serial: "HP840-2024-002",
-    model: "EliteBook 840 G8",
-    serp: "EB840G8",
-    srp: 52000,
-    dateOfPurchase: "2024-02-20",
-    size: "14 inch",
-    remarks: "i7 11th Gen, 32GB RAM"
-  },
-  {
-    id: 3,
-    description: "Lenovo ThinkPad X1 Carbon",
-    serial: "LN-X1C-2024-003",
-    model: "ThinkPad X1 Carbon Gen 9",
-    serp: "X1CG9",
-    srp: 65000,
-    dateOfPurchase: "2024-03-10",
-    size: "14 inch",
-    remarks: "i7 11th Gen, 16GB RAM, 512GB SSD"
-  }
-];
 
 const employees: Employee[] = [
   { id: 1, name: "John Doe" },
@@ -96,19 +60,33 @@ export default function Index() {
   const [dateFilter, setDateFilter] = useState<string>("today");
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
 
+  const peformSearch = async (value: string) => {
+    axios.get('/api/items', { params: { search: value } })
+        .then(response => {
+           console.log(response.data.data);
+           const items = response.data?.data || [];
+            if(items.length > 0){
+              setFilteredProducts(items);
+              setShowDropdown(true);
+            }
+        })
+        .catch(error => {
+          console.error("Error fetching products:", error);
+        });
+  }
+
+  const debouncedSearch = useCallback(debounce((value: string) => {
+    peformSearch(value);
+  }, 500), []);
+
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    if (value.trim()) {
-      const filtered = products.filter(p => 
-        p.description.toLowerCase().includes(value.toLowerCase()) ||
-        p.serial.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-      setShowDropdown(true);
-    } else {
-      setFilteredProducts([]);
-      setShowDropdown(false);
-    }
+    if(value.trim().length === 0) {
+          setFilteredProducts([]);
+          setShowDropdown(false);
+          return;
+    };
+    debouncedSearch(value);   
   };
 
   const handleProductSelect = (product: Product) => {
@@ -308,7 +286,7 @@ export default function Index() {
                   <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">
                     {filteredProducts.map(product => (
                       <div
-                        key={product.id}
+                        key={product.serial}
                         onClick={() => handleProductSelect(product)}
                         className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0"
                       >
@@ -324,32 +302,28 @@ export default function Index() {
                 <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Model</Label>
-                      <p className="font-medium">{selectedProduct.model}</p>
+                      <Label className="text-xs text-muted-foreground">Supplier</Label>
+                      <p className="font-medium">{selectedProduct.supplier}</p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Serial Number</Label>
                       <p className="font-medium">{selectedProduct.serial}</p>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">SERP</Label>
-                      <p className="font-medium">{selectedProduct.serp}</p>
+                      <Label className="text-xs text-muted-foreground">Description</Label>
+                      <p className="font-medium">{selectedProduct.description}</p>
                     </div>
                     <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Model</Label>
+                      <p className="font-medium">{selectedProduct.model}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Unit Cost</Label>
+                      <p className="font-semibold">₱{selectedProduct.unit_cost.toLocaleString()}</p>
+                    </div>
+                      <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">SRP</Label>
                       <p className="font-semibold">₱{selectedProduct.srp.toLocaleString()}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Date of Purchase</Label>
-                      <p className="font-medium">{selectedProduct.dateOfPurchase}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Size</Label>
-                      <p className="font-medium">{selectedProduct.size}</p>
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                      <Label className="text-xs text-muted-foreground">Remarks</Label>
-                      <p className="font-medium">{selectedProduct.remarks}</p>
                     </div>
                   </div>
                 </div>

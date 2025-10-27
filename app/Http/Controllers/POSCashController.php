@@ -11,4 +11,9 @@ class POSCashController extends Controller
     {
         return Inertia::render('POSCash/Index');
     }
+
+    public function search()
+    {
+        dd($_GET);
+    }
 }
