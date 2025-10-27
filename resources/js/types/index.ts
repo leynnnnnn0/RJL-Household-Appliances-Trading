@@ -6,6 +6,8 @@ export type Supplier = {
 export type Location = {
   id: number;
   name: string;
+  adderess: string;
+  remarks: string | null;
 };
 
 export type Item = {
