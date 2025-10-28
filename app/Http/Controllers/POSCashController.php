@@ -21,7 +21,7 @@ class POSCashController extends Controller
         return Inertia::render('POSCash/Index',[
             'locations' => Location::dropdown(),
             'employees' => User::dropdown(),
-            'transactions' => Order::with('order_items.item')->whereDate('transaction_date', today())->get()
+            'transactions' => Order::with('order_items.item', 'location')->whereDate('transaction_date', today())->get()
         ]);
     } 
 
@@ -33,6 +33,7 @@ class POSCashController extends Controller
             'orders' => 'required',
             'total_price' => 'required|numeric',
         ]);
+
         $validated['order_number'] = $this->generateOrderNumber();
 
         try {

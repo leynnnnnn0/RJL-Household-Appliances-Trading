@@ -134,7 +134,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
   };
 
     const totalSales = transactions.reduce((sum, order) => sum + Number(order.total_price), 0);
-console.log(totalSales);
+
+     const orderTotal = orders.reduce((sum, order) => sum + Number(order.saleAmount), 0);
+
 
   const placeOrder = () => {
     router.post('/pos-cash', {
@@ -147,7 +149,7 @@ console.log(totalSales);
           sale_amount: item.saleAmount
         };
       }),
-      total_price: totalSales
+      total_price: orderTotal
     }, {
       onSuccess: () => {
         toast.success("Order Created");
@@ -241,7 +243,7 @@ console.log(totalSales);
                 <Card>
                   <CardHeader className="pb-3">
                     <CardDescription>Total Sales</CardDescription>
-                    <CardTitle className="text-3xl">₱{Number(filteredTotal).toLocaleString()}</CardTitle>
+                    <CardTitle className="text-3xl">₱{Number(totalSales).toLocaleString()}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -290,6 +292,10 @@ console.log(totalSales);
                 <div>
                   <span className="text-gray-600">Total Price:</span>
                   <p className="font-medium text-gray-900">₱{item.total_price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Location:</span>
+                  <p className="font-medium text-gray-900">{item.location.name}</p>
                 </div>
               </div>
             </div>
@@ -357,7 +363,7 @@ console.log(totalSales);
                             <div className="grid grid-cols-2 gap-5">
                  <div className="space-y-2">
                 <Label htmlFor="employee">Employee</Label>
-                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <Select disabled value={selectedEmployee} onValueChange={setSelectedEmployee}>
                   <SelectTrigger id="employee">
                     <SelectValue placeholder="Select employee" />
                   </SelectTrigger>
@@ -443,10 +449,10 @@ console.log(totalSales);
                       <Label className="text-xs text-muted-foreground">Unit Cost</Label>
                       <p className="font-semibold">₱{selectedProduct.unit_cost.toLocaleString()}</p>
                     </div>
-                      <div className="space-y-1">
+                      {/* <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">SRP</Label>
                       <p className="font-semibold">₱{selectedProduct.srp.toLocaleString()}</p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}
@@ -494,7 +500,7 @@ console.log(totalSales);
                 </span>
               </CardTitle>
               <CardDescription>
-                Total: ₱{totalSales.toLocaleString()}
+                Total: ₱{orderTotal.toLocaleString()}
               </CardDescription>
             </CardHeader>
             <CardContent>
