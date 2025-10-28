@@ -1,3 +1,5 @@
+import { AvatarFallbackProps } from "@radix-ui/react-avatar";
+
 export interface Paginated<T> {
   data: T[];
   links: PaginationLink[];
@@ -49,10 +51,42 @@ export type Item = {
   updated_at: string;
 };
 
+export type User = {
+  id: number;
+  avatar: string | undefined;
+  full_name : string | null;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 export type ItemWithRelations = Item & {
   supplier?: Supplier;
   location?: Location;
 };
+
+export type Order = {
+  location_id: number;
+  employee_id: number;
+  order_number: string;
+  total_price: number;
+  transaction_date: string
+}
+
+export type Orderitem = {
+  order_id: number;
+  item_id: number;
+  serial: string;
+  sale_amount: number
+}
+
+export type OrderWithrelations = Order & {
+  order_items: OrderItemWithRelations[],
+}
+
+export type OrderItemWithRelations = Orderitem & {
+  item: Item
+}
 
 // Usage examples:
 // suppliers: Paginated<Supplier>

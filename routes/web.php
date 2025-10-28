@@ -14,7 +14,7 @@ Route::get('/', function () {
 })->name('home');
 
 
-Route::resource('pos-cash', POSCashController::class)->only('index');
+Route::resource('pos-cash', POSCashController::class)->only(['index', 'store']);
 Route::resource('pos-credit', POSCreditController::class)->only('index');
 Route::get('/pos-cash/search', [POSCashController::class, 'search'])->name('pos-cash.search');
 

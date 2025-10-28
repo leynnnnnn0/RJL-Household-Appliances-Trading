@@ -36,4 +36,10 @@ class Item extends Model
     {
         return $this->belongsTo(Location::class);
     }
+
+    public function order_item()
+    {
+        $this->has(OrderItem::class);
+    }
+    
 }

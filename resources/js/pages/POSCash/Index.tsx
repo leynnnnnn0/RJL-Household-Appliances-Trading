@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Search, ShoppingCart, Trash2, Plus, Menu, History, TrendingUp, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,10 +15,19 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { router } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import axios from 'axios';
+import { Location, User, OrderWithrelations } from '@/types';
+import { toast } from 'sonner';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface Product {
+  id: string;
   supplier: string;
   description: string;
   serial: string;
@@ -27,31 +36,27 @@ interface Product {
   unit_cost: string;
 }
 
-interface Employee {
-  id: number;
-  name: string;
-}
 
 interface Order {
-  id: number;
+  id: string;
   product: Product;
-  employee: Employee;
+  employee: User;
   saleAmount: number;
   timestamp: string;
   date: string;
 }
 
-const employees: Employee[] = [
-  { id: 1, name: "John Doe" },
-  { id: 2, name: "Jane Smith" },
-  { id: 3, name: "Mike Johnson" },
-  { id: 4, name: "Sarah Williams" }
-];
+interface PageProps {
+  employees: User[];
+  locations: Location[];
+  transactions: OrderWithrelations[]
+}
 
-export default function Index() {
+export default function Index({locations, employees, transactions} : PageProps) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [selectedEmployee, setSelectedEmployee] = useState<string>(employees[0].id.toString());
+  const [selectedLocation, setSelectedLocation] = useState<string>(locations[0].id.toString());
   const [saleAmount, setSaleAmount] = useState<string>("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [allTransactions, setAllTransactions] = useState<Order[]>([]);
@@ -60,33 +65,42 @@ export default function Index() {
   const [dateFilter, setDateFilter] = useState<string>("today");
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
 
-  const peformSearch = async (value: string) => {
-        if(value.trim().length === 0) {
-          setFilteredProducts([]);
-          setShowDropdown(false);
-          return;
-    };
-    axios.get('/api/items', { params: { search: value } })
-        .then(response => {
-           const items = response.data?.data || [];
-            if(items.length > 0){
-              setFilteredProducts(items);
-              setShowDropdown(true);
-            }
-        })
-        .catch(error => {
-          console.error("Error fetching products:", error);
-        });
-  }
 
-  const debouncedSearch = useCallback(debounce((value: string) => {
-    peformSearch(value);
+  const peformSearch = async (value: string, locationId: string) => {
+  if(value.trim().length === 0) {
+    setFilteredProducts([]);
+    setShowDropdown(false);
+    return;
+  };
+  axios.get('/api/items', { params: { search: value, location: locationId } })
+    .then(response => {
+      console.log(response);
+      const items = response.data?.data || [];
+      setFilteredProducts(items);
+      setShowDropdown(true); 
+    })
+    .catch(error => {
+      console.error("Error fetching products:", error);
+      setFilteredProducts([]);
+      setShowDropdown(false);
+    });
+}
+
+  const debouncedSearch = useCallback(debounce((value: string, locationId: string) => {
+    peformSearch(value, locationId);
   }, 500), []);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    debouncedSearch(value);   
+    debouncedSearch(value, selectedLocation);   
   };
+
+  useEffect(() => {
+      setSearchTerm("");
+      setSelectedProduct(null);
+      setOrders([]);
+      setShowDropdown(false);
+  },[selectedLocation])
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
@@ -96,10 +110,10 @@ export default function Index() {
   };
 
   const handleAddOrder = () => {
-    if (selectedProduct && selectedEmployee && saleAmount) {
+    if (saleAmount && selectedProduct) {
       const now = new Date();
       const newOrder: Order = {
-        id: Date.now(),
+        id: selectedProduct.serial,
         product: selectedProduct,
         employee: employees.find(e => e.id === parseInt(selectedEmployee))!,
         saleAmount: parseFloat(saleAmount),
@@ -107,20 +121,46 @@ export default function Index() {
         date: now.toISOString().split('T')[0]
       };
       setOrders([newOrder, ...orders]);
-      setAllTransactions([newOrder, ...allTransactions]);
+      // setAllTransactions([newOrder, ...allTransactions]);
       
       setSelectedProduct(null);
       setSearchTerm("");
-      setSelectedEmployee("");
       setSaleAmount("");
     }
   };
 
-  const handleRemoveOrder = (orderId: number) => {
-    setOrders(orders.filter(order => order.id !== orderId));
+  const handleRemoveOrder = (orderId: string) => {
+    setOrders(orders.filter(order => order.id != orderId));
   };
 
-  const totalSales = orders.reduce((sum, order) => sum + order.saleAmount, 0);
+    const totalSales = transactions.reduce((sum, order) => sum + Number(order.total_price), 0);
+console.log(totalSales);
+
+  const placeOrder = () => {
+    router.post('/pos-cash', {
+      location_id: selectedLocation,
+      employee_id: selectedEmployee,
+      orders: orders.map(function(item){
+        return {
+          id: item.product.id,
+          serial: item.product.serial,
+          sale_amount: item.saleAmount
+        };
+      }),
+      total_price: totalSales
+    }, {
+      onSuccess: () => {
+        toast.success("Order Created");
+        setOrders([]);
+      },
+      onError: (e) => {
+        toast.error("An error occurred.");
+        console.log(e);
+      }
+    });
+}
+
+
 
   const getFilteredTransactions = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -142,7 +182,7 @@ export default function Index() {
   };
 
   const filteredTransactions = getFilteredTransactions();
-  const filteredTotal = filteredTransactions.reduce((sum, t) => sum + t.saleAmount, 0);
+  const filteredTotal = transactions.reduce((sum, t) => sum + t.total_price, 0);
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -179,9 +219,6 @@ export default function Index() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="yesterday">Yesterday</SelectItem>
-                    <SelectItem value="week">Last 7 Days</SelectItem>
-                    <SelectItem value="all">All Time</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -191,7 +228,7 @@ export default function Index() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardDescription>Total Transactions</CardDescription>
-                    <CardTitle className="text-3xl">{filteredTransactions.length}</CardTitle>
+                    <CardTitle className="text-3xl">{transactions.length}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -204,7 +241,7 @@ export default function Index() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardDescription>Total Sales</CardDescription>
-                    <CardTitle className="text-3xl">₱{filteredTotal.toLocaleString()}</CardTitle>
+                    <CardTitle className="text-3xl">₱{Number(filteredTotal).toLocaleString()}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -220,43 +257,87 @@ export default function Index() {
               {/* Transaction List */}
               <div className="space-y-3">
                 <h3 className="font-semibold">Recent Transactions</h3>
-                {filteredTransactions.length === 0 ? (
+                {transactions.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <History className="h-12 w-12 text-muted-foreground/50 mb-3" />
                     <p className="text-sm text-muted-foreground">No transactions found</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {filteredTransactions.map(transaction => (
-                      <Card key={transaction.id}>
-                        <CardContent className="pt-6">
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">{transaction.product.description}</p>
-                                <p className="text-sm text-muted-foreground truncate">{transaction.product.serial}</p>
-                              </div>
-                              <p className="font-semibold ml-2">₱{transaction.saleAmount.toLocaleString()}</p>
-                            </div>
-                            <Separator />
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <p className="text-muted-foreground">Sold by</p>
-                                <p className="font-medium flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {transaction.employee.name}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground">Date & Time</p>
-                                <p className="font-medium text-xs">{transaction.timestamp}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                <div className="space-y-4">
+  {transactions.map((item) => (
+    <Accordion key={item.order_number} type="single" collapsible>
+      <AccordionItem value={item.order_number} className="border rounded-lg overflow-hidden">
+        <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
+          <div className="flex justify-between items-center w-full pr-4">
+            <span className="font-semibold text-gray-900">{item.order_number}</span>
+            <span className="text-sm text-gray-600">{item.transaction_date}</span>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="px-4 py-4 bg-gray-50">
+          <div className="space-y-4">
+            {/* Order Summary */}
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <h3 className="font-semibold text-gray-900 mb-3">Order Details</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-gray-600">Order Number:</span>
+                  <p className="font-medium text-gray-900">{item.order_number}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Transaction Date:</span>
+                  <p className="font-medium text-gray-900">{item.transaction_date}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Total Price:</span>
+                  <p className="font-medium text-gray-900">₱{item.total_price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+                </div>
+              </div>
+            </div>
+
+              {/* Order Items */}
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <h3 className="font-semibold text-gray-900 mb-3">Order Items</h3>
+              <div className="space-y-3">
+                {item.order_items.map((orderItem, index) => (
+                  <div key={index} className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-600">Description:</span>
+                        <p className="font-medium text-gray-900">{orderItem.item.description}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Model:</span>
+                        <p className="font-medium text-gray-900">{orderItem.item.model || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Serial:</span>
+                        <p className="font-medium text-gray-900">{orderItem.serial}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Sale Amount:</span>
+                        <p className="font-medium text-green-600">₱{orderItem.sale_amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Item Type:</span>
+                        <p className="font-medium text-gray-900">{orderItem.item.item_type}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Supplier:</span>
+                        <p className="font-medium text-gray-900">{orderItem.item.supplier}</p>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+
+          
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  ))}
+</div>
                 )}
               </div>
             </div>
@@ -273,6 +354,40 @@ export default function Index() {
               <CardDescription>Search by description or serial number</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-5">
+                 <div className="space-y-2">
+                <Label htmlFor="employee">Employee</Label>
+                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                  <SelectTrigger id="employee">
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.id.toString()}>
+                        {emp.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                  <SelectTrigger id="location">
+                    <SelectValue placeholder="Select a location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(location => (
+                      <SelectItem key={location.id} value={location.id.toString()}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              </div>
+
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -281,20 +396,28 @@ export default function Index() {
                   onChange={(e) => handleSearch(e.target.value)}
                   className="pl-9"
                 />
-                {showDropdown && filteredProducts.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">
-                    {filteredProducts.map(product => (
-                      <div
-                        key={product.serial}
-                        onClick={() => handleProductSelect(product)}
-                        className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0"
-                      >
-                        <div className="font-medium">{product.description}</div>
-                        <div className="text-sm text-muted-foreground">{product.serial}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {showDropdown && (
+  <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">
+    {filteredProducts.length > 0 ? (
+      filteredProducts.map(product => (
+        <div
+          key={product.serial}
+          onClick={() => handleProductSelect(product)}
+          className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0"
+        >
+          <div className="font-medium">{product.description}</div>
+          <div className="text-sm text-muted-foreground">{product.serial}</div>
+        </div>
+      ))
+    ) : (
+      <div className="p-6 text-center">
+        <Search className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">No products found</p>
+        <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
+      </div>
+    )}
+  </div>
+)}
               </div>
 
               {selectedProduct && (
@@ -334,25 +457,9 @@ export default function Index() {
           <Card>
             <CardHeader>
               <CardTitle>Sale Details</CardTitle>
-              <CardDescription>Select employee and enter sale amount</CardDescription>
+              <CardDescription>Enter sale amount</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="employee">Employee</Label>
-                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                  <SelectTrigger id="employee">
-                    <SelectValue placeholder="Select employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.id.toString()}>
-                        {emp.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="amount">Sale Amount</Label>
                 <Input
@@ -417,20 +524,17 @@ export default function Index() {
                       <Separator />
                       <div className="space-y-1 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Sold by:</span>
-                          <span className="font-medium">{order.employee.name}</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span className="text-muted-foreground">Amount:</span>
                           <span className="font-semibold">₱{order.saleAmount.toLocaleString()}</span>
                         </div>
-                        <div className="text-muted-foreground">{order.timestamp}</div>
                       </div>
                     </div>
                   ))
                 )}
               </div>
+                    <Button onClick={() => placeOrder()} disabled={orders.length == 0} className='mt-5 w-full'>Place Order</Button>
             </CardContent>
+      
           </Card>
         </div>
       </div>

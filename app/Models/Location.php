@@ -22,6 +22,16 @@ class Location extends Model
         return $this->hasMany(Item::class);
     }
 
+    public function scopeDropdown($query)
+    {
+        return $query->get()->map(function ($location) {
+            return [
+                'id' => $location->id,
+                'name' => $location->name,
+            ];
+        });
+    }
+
     protected static function boot()
     {
         parent::boot();

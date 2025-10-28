@@ -20,10 +20,28 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
     ];
+
+    protected $appends = ['full_name']; 
+
+    public function getFullNameAttribute()
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function scopeDropdown($query)
+    {
+        return $query->get()->map(function($user)  {
+            return [
+                'id' => $user->id,
+                'full_name' => $user->full_name
+            ];
+        });
+    }
 
     /**
      * The attributes that should be hidden for serialization.
