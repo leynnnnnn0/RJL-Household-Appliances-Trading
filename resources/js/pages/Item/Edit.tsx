@@ -243,7 +243,7 @@ export default function Edit({ item, suppliers, locations }: PageProps) {
 
                 {/* Serial */}
                 <div className="space-y-2">
-                  <Label htmlFor="serial">Serial Number</Label>
+                  <Label htmlFor="serial">Serial Number <span className="text-destructive">*</span></Label>
                   <Input
                     id="serial"
                     value={data.serial}

@@ -18,4 +18,14 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function employee()
+    {
+        return $this->belongsTo(User::class, 'employee_id');
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
 }

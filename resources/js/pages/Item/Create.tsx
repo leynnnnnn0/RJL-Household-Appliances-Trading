@@ -47,8 +47,8 @@ export default function Create({ suppliers, locations } : PageProps) {
     model: '',
     serial: '',
     quantity: 1,
-    srp: '',
-    unit_cost: '',
+    srp: 0,
+    unit_cost: 0,
     date_of_purchase: '',
     location_id: '',
     size: '',
@@ -227,7 +227,7 @@ export default function Create({ suppliers, locations } : PageProps) {
 
                 {/* Serial */}
                 <div className="space-y-2">
-                  <Label htmlFor="serial">Serial Number</Label>
+                  <Label htmlFor="serial">Serial Number <span className="text-destructive">*</span></Label>
                   <Input
                     id="serial"
                     value={data.serial}

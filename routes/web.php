@@ -3,6 +3,7 @@
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\POSCashController;
+use App\Http\Controllers\POSCashOrderController;
 use App\Http\Controllers\POSCreditController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,7 @@ Route::resource('items', ItemController::class);
 
 Route::resource('locations', LocationController::class);
 Route::resource('suppliers', SupplierController::class);
+Route::resource('pos-cash-orders', POSCashOrderController::class);
 
 
 require __DIR__.'/settings.php';

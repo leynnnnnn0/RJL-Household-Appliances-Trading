@@ -112,7 +112,7 @@ export default function Index({ items, suppliers, locations } : PageProps) {
     <AppLayout>
       <Head title="Items" />
       
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <ModuleHeading title="Items" description="Manage your inventory items">
             <div className="flex items-center gap-3">
               <Button className='cursor-pointer' onClick={() => handleExport()}><Download/> Export</Button>

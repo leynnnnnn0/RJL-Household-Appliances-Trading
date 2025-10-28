@@ -16,7 +16,7 @@ import { Link } from '@inertiajs/react';
 import { BookOpen, CreditCard, DollarSign, Factory, Folder, LayoutGrid, List, Map } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
-import { IconTools } from '@tabler/icons-react';
+import { IconMoneybag, IconTools } from '@tabler/icons-react';
 
 const mainNavItems: NavItem[] = [
     {
@@ -28,6 +28,11 @@ const mainNavItems: NavItem[] = [
         title: 'Items',
         href: '/items',
         icon: IconTools,
+    },
+      {
+        title: 'POS Cash Orders',
+        href: '/pos-cash-orders',
+        icon: IconMoneybag,
     },
        {
         title: 'Locations',

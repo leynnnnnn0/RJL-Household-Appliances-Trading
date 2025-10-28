@@ -9,6 +9,7 @@ use App\Models\Item;
 use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -22,12 +23,7 @@ class ItemController extends Controller
                 'name' => $supplier->name,
             ];
         });
-           $locations = Location::all()->map(function($location){
-            return [
-                'id' => $location->id,
-                'name' => $location->name,
-            ];
-        });
+         $locations = Location::dropdown();
         return Inertia::render('Item/Index',[
             'items' => $items,
             'suppliers' => $suppliers,
@@ -62,7 +58,7 @@ class ItemController extends Controller
             'dr_no' => 'nullable|string|max:255',
             'description' => 'required|string|max:255',
             'model' => 'nullable|string|max:255',
-            'serial' => 'nullable|string|max:255',
+            'serial' => 'required|string|max:255|unique:items,serial',
             'quantity' => 'required|integer|min:1',
             'srp' => 'required|numeric|min:1',
             'unit_cost' => 'required|numeric|min:1',
@@ -109,7 +105,7 @@ class ItemController extends Controller
             'dr_no' => 'nullable|string|max:255',
             'description' => 'required|string|max:255',
             'model' => 'nullable|string|max:255',
-            'serial' => 'nullable|string|max:255',
+            'serial' => ['required', 'string', Rule::unique('items', 'serial')->ignore($id)],
             'quantity' => 'required|integer|min:1',
             'srp' => 'required|numeric|min:1',
             'unit_cost' => 'required|numeric|min:1',
