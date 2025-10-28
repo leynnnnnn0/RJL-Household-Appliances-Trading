@@ -77,6 +77,9 @@ class ItemController extends Controller
 
     public function edit($id){
         $item = Item::with(['supplier', 'location'])->findOrFail($id);
+        if($item->date_out != null){
+            return response(status: 403);
+        }
         $suppliers = Supplier::all()->map(function($supplier){
             return [
                 'slug' => $supplier->slug,

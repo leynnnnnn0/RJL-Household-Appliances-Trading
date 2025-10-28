@@ -232,10 +232,7 @@ export default function Index({ items, suppliers, locations } : PageProps) {
                   )}
                 </div>
 
-                {/* Results Count */}
-                <div className="text-sm text-muted-foreground whitespace-nowrap">
-                  {filteredItems.length} of {items.length} items
-                </div>
+
               </div>
             </div>
           </CardContent>
@@ -308,6 +305,7 @@ export default function Index({ items, suppliers, locations } : PageProps) {
                               variant="ghost" 
                               size="icon"
                               className="h-8 w-8"
+                              disabled={item.date_out != null}
                               onClick={() => router.visit(`/items/${item.id}/edit`)}
                             >
                               <Pencil className="h-4 w-4" />

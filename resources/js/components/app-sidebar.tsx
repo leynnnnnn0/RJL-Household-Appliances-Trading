@@ -13,7 +13,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, CreditCard, DollarSign, Factory, Folder, LayoutGrid, List, Map } from 'lucide-react';
+import { BookOpen, ChartArea, CreditCard, DollarSign, Factory, Folder, LayoutGrid, List, Map } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 import { IconMoneybag, IconTools } from '@tabler/icons-react';
@@ -33,6 +33,11 @@ const mainNavItems: NavItem[] = [
         title: 'POS Cash Orders',
         href: '/pos-cash-orders',
         icon: IconMoneybag,
+    },
+        {
+        title: 'POS Cash Orders Sales',
+        href: '/pos-cash-order-sales',
+        icon: ChartArea,
     },
        {
         title: 'Locations',
