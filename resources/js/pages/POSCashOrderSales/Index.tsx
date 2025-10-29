@@ -34,7 +34,7 @@ const dailySalesData = [
   { day: 'Sat', sales: 210000, orders: 72 },
   { day: 'Sun', sales: 180000, orders: 60 }
 ];
-
+//
 const topProductsData = [
   { product: 'Samsung Refrigerator', sales: 85000, qty: 12 },
   { product: 'LG Washing Machine', sales: 72000, qty: 15 },
