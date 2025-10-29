@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Eye, Calendar, MapPin, User, Filter, X } from "lucide-react";
+import { Search, Eye, Calendar, MapPin, User, Filter, X, DownloadIcon } from "lucide-react";
 import { Paginated, OrderWithrelations, Location, User as UserType } from "@/types";
 import Pagination from "@/components/pagination";
 import {
@@ -91,10 +91,34 @@ export default function Index({ transactions, locations, employees }: Props) {
 
   const hasActiveFilters = search || dateFrom || dateTo || selectedLocation || selectedEmployee;
 
+  const downloadPDF = () => {
+  const params = new URLSearchParams();
+  
+  if (search) params.append('search', search);
+  if (dateFrom) params.append('date_from', dateFrom);
+  if (dateTo) params.append('date_to', dateTo);
+  if (selectedLocation) params.append('location_id', selectedLocation);
+  if (selectedEmployee) params.append('employee_id', selectedEmployee);
+  
+  // If no date filters, default to today
+  if (!dateFrom && !dateTo) {
+    const today = new Date().toISOString().split('T')[0];
+    params.append('date_from', today);
+    params.append('date_to', today);
+  }
+  
+  // Create download URL
+  const url = `/pos-cash-orders/download-pdf?${params.toString()}`;
+  
+  // Trigger download
+  window.open(url, '_blank');
+  };
   return (
     <AppLayout>
       <Head title="POS Cash Orders" />
-      <ModuleHeading title="POS Cash Orders" description="View and manage all cash order transactions"/>
+      <ModuleHeading title="POS Cash Orders" description="View and manage all cash order transactions">
+        <Button onClick={() => downloadPDF()} className="cursor-pointer"><DownloadIcon/> Export to PDF</Button>
+      </ModuleHeading>
      
         {/* Filters Card */}
         <Card>

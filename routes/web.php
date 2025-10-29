@@ -34,6 +34,7 @@ Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])-
 Route::resource('items', ItemController::class);
 });
 
+Route::get('/pos-cash-orders/download-pdf', [POSCashOrderController::class, 'downloadPDF']);
 Route::resource('locations', LocationController::class);
 Route::resource('suppliers', SupplierController::class);
 Route::resource('pos-cash-orders', POSCashOrderController::class);
