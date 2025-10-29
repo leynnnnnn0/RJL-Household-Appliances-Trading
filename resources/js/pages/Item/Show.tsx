@@ -95,14 +95,16 @@ export default function View({ item } : PageProps) {
                 Back to List
               </Link>
             </Button>
-            <Button variant="outline" asChild>
+
+            {isAvailable &&             <Button variant="outline" asChild>
               <Link href={`/items/${item.id}/edit`}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
               </Link>
-            </Button>
+            </Button>}
 
-             <AlertDialog>
+
+            {isAvailable &&  <AlertDialog>
       <AlertDialogTrigger asChild>
                     <Button variant="destructive">
               <Trash2 className="h-4 w-4 mr-2" />
@@ -121,7 +123,7 @@ export default function View({ item } : PageProps) {
           <AlertDialogAction onClick={handleDelete} >Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-    </AlertDialog>
+    </AlertDialog> }
             
 
           </div>
