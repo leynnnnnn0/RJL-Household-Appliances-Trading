@@ -235,7 +235,7 @@
                         </td>
                         <td>{{ $orderItem->item->model ?? '-' }}</td>
                         <td>{{ $orderItem->serial ?? '-' }}</td>
-                        <td class="text-center">{{ $orderItem->item->size ?? '-' }}</td>
+                        <td class="text-center">{{ $orderItem->item->srp }}</td>
                         <td>{{ $orderItem->item->supplier ?? 'N/A' }}</td>
                         <td class="text-right font-bold currency">{{ number_format($orderItem->sale_amount, 2) }}</td>
                     </tr>

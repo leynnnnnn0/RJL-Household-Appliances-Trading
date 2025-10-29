@@ -74,6 +74,7 @@ class POSCashOrderController extends Controller
         'totalAmount' => $orders->sum('total_price')
     ];
 
+    dd($data);
     $pdf = Pdf::loadView('pdf.orders', $data);
     
     $pdf->setPaper('a4', 'landscape');

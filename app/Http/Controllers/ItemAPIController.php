@@ -15,9 +15,7 @@ class ItemAPIController extends Controller
             $searchTerm = $request->input('search');
             $query = Item::whereAny(['description', 'model', 'serial'], 'LIKE', "%{$searchTerm}%");
             $query->where('date_out', null);
-            if($request->has('location')){
-                $query->where('location_id', $request->input('location'));
-            }
+         
             $items = $query->get();
             return ItemResource::collection($items);
         }

@@ -78,6 +78,8 @@ export default function Index({locations, employees, transactions} : PageProps) 
       const items = response.data?.data || [];
       setFilteredProducts(items);
       setShowDropdown(true); 
+
+      console.log(response);
     })
     .catch(error => {
       console.error("Error fetching products:", error);
