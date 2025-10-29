@@ -37,6 +37,8 @@ Route::resource('items', ItemController::class);
 Route::get('/pos-cash-orders/download-pdf', [POSCashOrderController::class, 'downloadPDF']);
 Route::resource('locations', LocationController::class);
 Route::resource('suppliers', SupplierController::class);
+
+Route::post('/pos-cash-orders/void/{id}', [POSCashOrderController::class, 'voidOrder']);
 Route::resource('pos-cash-orders', POSCashOrderController::class);
 Route::resource('pos-cash-order-sales', POSCashOrderSalesController::class);
 

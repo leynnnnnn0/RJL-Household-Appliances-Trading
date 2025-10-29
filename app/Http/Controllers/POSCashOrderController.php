@@ -7,18 +7,47 @@ use App\Models\Order;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class POSCashOrderController extends Controller
 {
     public function index()
     {
-        $transactions = Order::with('order_items.item', 'employee', 'location')->latest()->paginate(8);
+        $transactions = Order::with('order_items.item', 'employee', 'location')
+        ->latest()
+        ->paginate(8);
+
+
         return Inertia::render('POSCashOrder/Index',[
             'transactions' => $transactions,
             'locations' => Location::dropdown(),
             'employees' => User::dropdown()
         ]);
+    }
+
+    public function voidOrder(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'reason_for_cancellation' => 'required',
+        ]);
+
+        $validated['user_id'] = Auth::id();
+        $validated['void_date'] = now();
+        $validated['is_void'] = true;
+
+        DB::beginTransaction();
+        $order = Order::with('order_items.item')->findOrFail($id);
+        $order->update($validated);
+        foreach($order->order_items as $item){
+            $item->item->date_out = null;
+        }
+        DB::commit();
+
+        return back();
+        
     }
 
     public function downloadPDF(Request $request)

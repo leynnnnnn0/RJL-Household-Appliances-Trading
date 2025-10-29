@@ -11,7 +11,11 @@ class Order extends Model
         'employee_id',
         'order_number',
         'total_price',
-        'transaction_date'
+        'transaction_date',
+        'is_void',
+        'reason_for_cancellation',
+        'void_date',
+        'user_id',
     ];
 
     public function order_items()

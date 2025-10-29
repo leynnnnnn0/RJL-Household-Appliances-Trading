@@ -66,11 +66,16 @@ export type ItemWithRelations = Item & {
 };
 
 export type Order = {
+  id: number;
   location_id: number;
   employee_id: number;
   order_number: string;
   total_price: number;
-  transaction_date: string
+  transaction_date: string;
+  reason_for_cancellation: string;
+  is_void: boolean;
+  void_date: string;
+  user_id: number;
 }
 
 export type Orderitem = {

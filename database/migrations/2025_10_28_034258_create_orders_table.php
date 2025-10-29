@@ -19,6 +19,10 @@ return new class extends Migration
            $table->foreignId('employee_id')->constrained('users');
            $table->decimal('total_price', 10, 2);
            $table->dateTime('transaction_date')->useCurrent();
+           $table->boolean('is_void')->default(false);
+           $table->text('reason_for_cancellation')->nullable();
+           $table->dateTime('void_date')->nullable();
+           $table->foreignId('user_id')->nullable()->constrained();
            $table->timestamps();
         });
     }

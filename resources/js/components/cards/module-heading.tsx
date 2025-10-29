@@ -11,6 +11,8 @@ export default function ModuleHeading({ children, title, description } : ModuleH
               {description}
             </p>
           </div>
-          {children}
+         <div className="flex items-center justify-center gap-3">
+           {children}
+         </div>
     </div>
 }

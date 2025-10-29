@@ -1,5 +1,5 @@
 import AppLayout from "@/layouts/app-layout";
-import { Head, router } from "@inertiajs/react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -18,12 +18,29 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, Package } from "lucide-react";
 import { OrderWithrelations } from "@/types";
+import ModuleHeading from "@/components/cards/module-heading";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface ShowProps {
   transaction: OrderWithrelations;
 }
 
 export default function Show({ transaction }: ShowProps) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-PH", {
       style: "currency",
@@ -41,31 +58,69 @@ export default function Show({ transaction }: ShowProps) {
     });
   };
 
+  const { data, setData, post, processing, errors } = useForm({
+    reason_for_cancellation: ''
+  })
+
+  const voidOrder = () => {
+    post(`/pos-cash-orders/void/${transaction.id}`,{
+      onSuccess: () => {
+        toast.success("Order Void");
+        setIsDialogOpen(false);
+        setData('reason_for_cancellation', '');
+      },
+      onError: () => {
+        toast.success("An error occured");
+      }
+    })
+  }
+  
+  const headingSub = formatDate(transaction.transaction_date) + "• Location:" + transaction.location.name + "• Employee:" + transaction.employee.full_name;
+
   return (
     <AppLayout>
       <Head title={`Order ${transaction.order_number}`} />
-      
-      <div className="space-y-6 p-6">
-        {/* Header with Back Button */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.visit("/pos-cash-orders")}
-            >
-              <ArrowLeft className="h-4 w-4" />
+
+      <ModuleHeading title={"Order #" + transaction.order_number} description={headingSub}>
+         <Button variant="outline" asChild>
+              <Link href="/pos-cash-orders">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to List
+              </Link>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                Order #{transaction.order_number}
-              </h1>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {formatDate(transaction.transaction_date)} • Location: {transaction.location.name} • Employee: {transaction.employee.full_name}
-              </p>
+
+            <Dialog open={isDialogOpen} onOpenChange={open => {
+              setIsDialogOpen(open);
+              if(!open) setData('reason_for_cancellation', '');
+            }}>
+  <DialogTrigger asChild>
+    <Button disabled={transaction.is_void} className="cursor-pointer" variant="destructive">
+      {transaction.is_void ? "Order Voided" : "Void Order"}
+    </Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle className="text-red-500">Are you absolutely sure?</DialogTitle>
+      <DialogDescription>
+        This action cannot be undone. This will permanently void the order.
+      </DialogDescription>
+    </DialogHeader>
+            <div className="grid gap-3">
+              <Label>Reason for cancellation <span className="text-red-500">*</span> </Label>
+              <Textarea  value={data.reason_for_cancellation} onChange={(e) => setData('reason_for_cancellation', e.target.value)}/>
             </div>
-          </div>
-        </div>
+
+            <div className="flex justify-end">
+              <Button onClick={() => voidOrder()} variant="destructive">Void Order</Button>
+            </div>
+    
+  </DialogContent>
+</Dialog>
+
+            
+      </ModuleHeading>
+      
+
 
         {/* Order Items */}
         <Card>
@@ -129,7 +184,7 @@ export default function Show({ transaction }: ShowProps) {
             </div>
           </CardContent>
         </Card>
-      </div>
+
     </AppLayout>
   );
 }
