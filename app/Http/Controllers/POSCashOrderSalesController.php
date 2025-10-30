@@ -16,7 +16,8 @@ class POSCashOrderSalesController extends Controller
         $dateTo = $request->input('date_to', Carbon::now()->format('Y-m-d'));
         $locationId = $request->input('location_id', 'all');
 
-        $query = Order::with(['order_items.item.location', 'order_items.item.supplier']);
+        $query = Order::with(['order_items.item.location', 'order_items.item.supplier'])
+        ->where('is_void', 0);
 
 
         if ($dateFrom) {

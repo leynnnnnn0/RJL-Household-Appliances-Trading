@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +32,7 @@ interface PageProps {
 }
 
 export default function Edit({ item, suppliers, locations }: PageProps) {
+  const {previousUrl} = usePage().props as any;
   const { data, setData, put, processing, errors, isDirty } = useForm({
     supplier: item.supplier?.slug || '',
     item_type: item.item_type || '',
@@ -110,7 +111,7 @@ export default function Edit({ item, suppliers, locations }: PageProps) {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
-              <Link href={`/items/${item.id}`}>
+              <Link href={previousUrl}>
                 <Eye className="h-4 w-4 mr-2" />
                 View
               </Link>

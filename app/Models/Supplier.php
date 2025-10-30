@@ -22,6 +22,16 @@ class Supplier extends Model
         return $this->hasMany(Item::class, 'supplier', 'slug');
     }
 
+    public function scopeDropdown($query)
+    {
+        return $query->get()->map(function ($location) {
+            return [
+                'slug' => $location->slug,
+                'name' => $location->name,
+            ];
+        });
+    }
+
       protected static function boot()
     {
         parent::boot();

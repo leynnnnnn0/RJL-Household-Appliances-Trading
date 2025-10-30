@@ -14,19 +14,45 @@ use Inertia\Inertia;
 
 class POSCashOrderController extends Controller
 {
-    public function index()
-    {
-        $transactions = Order::with('order_items.item', 'employee', 'location')
-        ->latest()
-        ->paginate(8);
+    public function index(Request $request)
+{
+    $query = Order::with('order_items.item', 'employee', 'location')->latest();
 
-
-        return Inertia::render('POSCashOrder/Index',[
-            'transactions' => $transactions,
-            'locations' => Location::dropdown(),
-            'employees' => User::dropdown()
-        ]);
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $query->where('order_number', 'like', "%{$search}%")
+              ->orWhere('employee_id', $search);
     }
+
+    if ($request->filled('date_from')) {
+        $query->whereDate('transaction_date', '>=', $request->input('date_from'));
+    }
+
+    if ($request->filled('date_to')) {
+        $query->whereDate('transaction_date', '<=', $request->input('date_to'));
+    }
+
+    if ($request->filled('location_id') && $request->location_id !== 'all') {
+        $query->where('location_id', $request->location_id);
+    }
+
+    if ($request->filled('employee_id') && $request->employee_id !== 'all') {
+        $query->where('employee_id', $request->employee_id);
+    }
+
+    if ($request->filled('status') && $request->status !== 'all') {
+        $query->when($request->status === '0', fn($q) => $q->where('is_void', false))
+              ->when($request->status === '1', fn($q) => $q->where('is_void', true));
+    }
+
+    $transactions = $query->paginate(8)->withQueryString();
+
+    return Inertia::render('POSCashOrder/Index', [
+        'transactions' => $transactions,
+        'locations' => Location::dropdown(),
+        'employees' => User::dropdown(),
+    ]);
+}
 
     public function voidOrder(Request $request, $id)
     {

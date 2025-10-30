@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -42,6 +42,7 @@ interface PageProps {
   item: ItemWithRelations;
 }
 export default function View({ item } : PageProps) {
+  const {previousUrl} = usePage().props as any;
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
@@ -90,7 +91,7 @@ export default function View({ item } : PageProps) {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
-              <Link href="/items">
+              <Link href={previousUrl}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to List
               </Link>

@@ -15,21 +15,47 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ItemController extends Controller
 {
-    public function index(){
-        $items = Item::with(['supplier', 'location'])->latest()->paginate(8);
-           $suppliers = Supplier::all()->map(function($supplier){
-            return [
-                'slug' => $supplier->slug,
-                'name' => $supplier->name,
-            ];
+    public function index(Request $request)
+{
+    $query = Item::with(['supplier', 'location'])->latest();
+
+    if ($search = $request->input('search')) {
+        $query->where(function ($q) use ($search) {
+            $q->where('description', 'like', "%{$search}%")
+              ->orWhere('model', 'like', "%{$search}%")
+              ->orWhere('serial', 'like', "%{$search}%");
         });
-         $locations = Location::dropdown();
-        return Inertia::render('Item/Index',[
-            'items' => $items,
-            'suppliers' => $suppliers,
-            'locations' => $locations,
-        ]);
     }
+
+    if ($availability = $request->input('availability')) {
+        if ($availability === 'available') {
+            $query->whereNull('date_out');
+        } elseif ($availability === 'unavailable') {
+            $query->whereNotNull('date_out');
+        }
+    }
+
+    if ($supplier = $request->input('supplier')) {
+        $query->whereHas('supplier', fn($q) => $q->where('slug', $supplier));
+    }
+
+    if ($itemType = $request->input('item_type')) {
+        $query->where('item_type', $itemType);
+    }
+
+    if ($location = $request->input('location')) {
+        $query->where('location_id', $location);
+    }
+
+    $items = $query->paginate(8)->withQueryString();
+
+    return Inertia::render('Item/Index', [
+        'items' => $items,
+        'suppliers' => Supplier::dropdown(),
+        'locations' => Location::dropdown(),
+    ]);
+}
+
 
     public function create(){
         $suppliers = Supplier::all()->map(function($supplier){

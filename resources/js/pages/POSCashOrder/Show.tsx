@@ -1,5 +1,5 @@
 import AppLayout from "@/layouts/app-layout";
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -40,6 +40,7 @@ interface ShowProps {
 }
 
 export default function Show({ transaction }: ShowProps) {
+    const {previousUrl} = usePage().props as any;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-PH", {
@@ -83,7 +84,7 @@ export default function Show({ transaction }: ShowProps) {
 
       <ModuleHeading title={"Order #" + transaction.order_number} description={headingSub}>
          <Button variant="outline" asChild>
-              <Link href="/pos-cash-orders">
+              <Link href={previousUrl}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to List
               </Link>
