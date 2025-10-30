@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->foreignId('item_id')->constrained()->cascadeOnDelete();
-            $table->string('serial')->unique();
+            $table->string('serial');
             $table->decimal('sale_amount', 10, 2);
             $table->timestamps();
         });

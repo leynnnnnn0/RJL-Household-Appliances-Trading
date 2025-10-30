@@ -25,6 +25,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Badge } from '@/components/ui/badge';
 
 interface Product {
   id: string;
@@ -64,6 +73,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [dateFilter, setDateFilter] = useState<string>("today");
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
 
   const peformSearch = async (value: string, locationId: string) => {
@@ -135,7 +145,10 @@ export default function Index({locations, employees, transactions} : PageProps) 
     setOrders(orders.filter(order => order.id != orderId));
   };
 
-    const totalSales = transactions.reduce((sum, order) => sum + Number(order.total_price), 0);
+    const totalSales = transactions
+        .filter(order => !order.is_void)
+        .reduce((sum, order) => sum + Number(order.total_price), 0);
+
 
      const orderTotal = orders.reduce((sum, order) => sum + Number(order.saleAmount), 0);
 
@@ -156,6 +169,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
       onSuccess: () => {
         toast.success("Order Created");
         setOrders([]);
+        setIsDialogOpen(false);
       },
       onError: (e) => {
         toast.error("An error occurred.");
@@ -273,7 +287,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
       <AccordionItem value={item.order_number} className="border rounded-lg overflow-hidden">
         <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
           <div className="flex justify-between items-center w-full pr-4">
-            <span className="font-semibold text-gray-900">{item.order_number}</span>
+            <span className="font-semibold text-gray-900">{item.order_number} {item.is_void ? <Badge>Voided</Badge> : ''}</span>
             <span className="text-sm text-gray-600">{item.transaction_date}</span>
           </div>
         </AccordionTrigger>
@@ -540,7 +554,22 @@ export default function Index({locations, employees, transactions} : PageProps) 
                   ))
                 )}
               </div>
-                    <Button onClick={() => placeOrder()} disabled={orders.length == 0} className='mt-5 w-full'>Place Order</Button>
+
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  <DialogTrigger asChild>
+    <Button disabled={orders.length == 0}  className='mt-5 w-full'>Place Order</Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Are you absolutely sure?</DialogTitle>
+      <DialogDescription>
+        Please double check the location, orders and prices of the items before confirming.
+      </DialogDescription>
+    </DialogHeader>
+       <Button onClick={() => placeOrder()} disabled={orders.length == 0} className='mt-5 w-full'>Confirm</Button>
+  </DialogContent>
+</Dialog>
+                 
             </CardContent>
       
           </Card>

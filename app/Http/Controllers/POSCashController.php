@@ -21,7 +21,7 @@ class POSCashController extends Controller
         return Inertia::render('POSCash/Index',[
             'locations' => Location::dropdown(),
             'employees' => User::dropdown(),
-            'transactions' => Order::with('order_items.item', 'location')->whereDate('transaction_date', today())->get()
+            'transactions' => Order::with('order_items.item', 'location')->whereDate('transaction_date', today())->latest()->get()
         ]);
     } 
 
