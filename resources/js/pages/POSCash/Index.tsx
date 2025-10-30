@@ -74,6 +74,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [dateFilter, setDateFilter] = useState<string>("today");
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [salesAmountError, setSalesAmountError] = useState<string>("");
 
 
   const peformSearch = async (value: string, locationId: string) => {
@@ -88,8 +89,6 @@ export default function Index({locations, employees, transactions} : PageProps) 
       const items = response.data?.data || [];
       setFilteredProducts(items);
       setShowDropdown(true); 
-
-      console.log(response);
     })
     .catch(error => {
       console.error("Error fetching products:", error);
@@ -117,11 +116,19 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
     setSearchTerm(product.description);
-    setSaleAmount(product.srp.toString());
+    setSaleAmount(product.unit_cost.toString());
     setShowDropdown(false);
   };
 
   const handleAddOrder = () => {
+    console.log(Number(saleAmount));
+    console.log(Number(selectedProduct?.unit_cost));
+    if(Number(saleAmount) < Number(selectedProduct?.unit_cost)){
+      setSalesAmountError("Amount should be higher than the srp");
+      return;
+    }else {
+      setSalesAmountError("");
+    }
     if (saleAmount && selectedProduct) {
       const now = new Date();
       const newOrder: Order = {
@@ -133,7 +140,8 @@ export default function Index({locations, employees, transactions} : PageProps) 
         date: now.toISOString().split('T')[0]
       };
       setOrders([newOrder, ...orders]);
-      // setAllTransactions([newOrder, ...allTransactions]);
+     
+      
       
       setSelectedProduct(null);
       setSearchTerm("");
@@ -491,6 +499,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
                   value={saleAmount}
                   onChange={(e) => setSaleAmount(e.target.value)}
                 />
+                  {salesAmountError && (
+                    <p className="text-sm text-destructive">{salesAmountError}</p>
+                  )}
               </div>
 
               <Button 
