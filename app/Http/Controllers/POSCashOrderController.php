@@ -18,6 +18,7 @@ class POSCashOrderController extends Controller
 {
     $query = Order::with('order_items.item', 'employee', 'location')->latest();
 
+
     if ($request->filled('search')) {
         $search = $request->input('search');
         $query->where('order_number', 'like', "%{$search}%")
@@ -160,7 +161,7 @@ class POSCashOrderController extends Controller
 }
     public function show($orderNumber)
 {
-    $transaction = Order::with('order_items.item', 'employee', 'location')
+    $transaction = Order::with('order_items.item', 'employee', 'location', 'customer')
         ->where('order_number', $orderNumber)
         ->firstOrFail();
     

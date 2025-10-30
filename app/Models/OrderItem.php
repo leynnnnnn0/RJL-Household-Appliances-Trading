@@ -14,6 +14,7 @@ class OrderItem extends Model
         'order_id',
         'item_id',
         'serial',
+        'discount_amount',
         'sale_amount',
     ];
 

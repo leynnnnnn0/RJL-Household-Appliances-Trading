@@ -60,6 +60,14 @@ export type User = {
   email: string;
 }
 
+export type Customer = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  address: string;
+  phone_number: string
+}
+
 export type ItemWithRelations = Item & {
   supplier?: Supplier;
   location?: Location;
@@ -76,19 +84,23 @@ export type Order = {
   is_void: boolean;
   void_date: string;
   user_id: number;
+  payment_method: string;
+  reference_number: string | null;
 }
 
 export type Orderitem = {
   order_id: number;
   item_id: number;
   serial: string;
-  sale_amount: number
+  sale_amount: number;
+  discount_amount: number;
 }
 
 export type OrderWithrelations = Order & {
   order_items: OrderItemWithRelations[],
   location: Location,
   employee: User
+  customer: Customer
 }
 
 export type OrderItemWithRelations = Orderitem & {

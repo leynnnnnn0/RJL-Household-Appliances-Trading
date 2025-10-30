@@ -75,6 +75,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [salesAmountError, setSalesAmountError] = useState<string>("");
+  const [customerLastName, setCustomerLastName] = useState<string>("");
+  const [customerFirstName, setCustomerFirstName] = useState<string>("");
+  const [customerAddress, setCustomerAddress] = useState<string>("");
+  const [customerPhone, setCustomerPhone] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
+  const [referenceNumber, setReferenceNumber] = useState<string>("");
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
 
   const peformSearch = async (value: string, locationId: string) => {
@@ -107,24 +114,23 @@ export default function Index({locations, employees, transactions} : PageProps) 
   };
 
   useEffect(() => {
-      setSearchTerm("");
-      setSelectedProduct(null);
-      setOrders([]);
       setShowDropdown(false);
   },[selectedLocation])
+
+  useEffect(() => {
+    if(paymentMethod == 'Cash') setReferenceNumber("");
+  }, [paymentMethod])
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
     setSearchTerm(product.description);
-    setSaleAmount(product.unit_cost.toString());
+    setSaleAmount(product.srp.toString());
     setShowDropdown(false);
   };
 
   const handleAddOrder = () => {
-    console.log(Number(saleAmount));
-    console.log(Number(selectedProduct?.unit_cost));
     if(Number(saleAmount) < Number(selectedProduct?.unit_cost)){
-      setSalesAmountError("Amount should be higher than the srp");
+      setSalesAmountError(`Amount should be higher than the unit cost. (${selectedProduct?.unit_cost})`);
       return;
     }else {
       setSalesAmountError("");
@@ -162,9 +168,24 @@ export default function Index({locations, employees, transactions} : PageProps) 
 
 
   const placeOrder = () => {
+    setFormErrors({}); // Clear previous errors
+    
+    // Client-side validation for reference number
+    if (paymentMethod !== 'Cash' && !referenceNumber.trim()) {
+      setFormErrors({ reference_number: 'Reference number is required for non-cash payments' });
+      toast.error("Please provide a reference number for non-cash payments.");
+      return;
+    }
+    
     router.post('/pos-cash', {
       location_id: selectedLocation,
       employee_id: selectedEmployee,
+      first_name: customerFirstName,
+      last_name: customerLastName,
+      address: customerAddress,
+      phone: customerPhone,
+      payment_method: paymentMethod,
+      reference_number: referenceNumber,
       orders: orders.map(function(item){
         return {
           id: item.product.id,
@@ -177,10 +198,20 @@ export default function Index({locations, employees, transactions} : PageProps) 
       onSuccess: () => {
         toast.success("Order Created");
         setOrders([]);
+        setCustomerFirstName("");
+        setCustomerLastName("");
+        setCustomerAddress("");
+        setCustomerPhone("");
+        setPaymentMethod("Cash");
+        setReferenceNumber("");
+        setFormErrors({});
         setIsDialogOpen(false);
       },
       onError: (e) => {
-        toast.error("An error occurred.");
+        if (e && typeof e === 'object') {
+          setFormErrors(e as Record<string, string>);
+        }
+        toast.error("Please fix the errors in the form.");
         console.log(e);
       }
     });
@@ -469,14 +500,14 @@ export default function Index({locations, employees, transactions} : PageProps) 
                       <Label className="text-xs text-muted-foreground">Model</Label>
                       <p className="font-medium">{selectedProduct.model}</p>
                     </div>
-                    <div className="space-y-1">
+                    {/* <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Unit Cost</Label>
                       <p className="font-semibold">₱{selectedProduct.unit_cost.toLocaleString()}</p>
-                    </div>
-                      {/* <div className="space-y-1">
+                    </div> */}
+                      <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">SRP</Label>
                       <p className="font-semibold">₱{selectedProduct.srp.toLocaleString()}</p>
-                    </div> */}
+                    </div>
                   </div>
                 </div>
               )}
@@ -560,6 +591,16 @@ export default function Index({locations, employees, transactions} : PageProps) 
                           <span className="text-muted-foreground">Amount:</span>
                           <span className="font-semibold">₱{order.saleAmount.toLocaleString()}</span>
                         </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">SRP:</span>
+                          <span>₱{order.product.srp.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Discount:</span>
+                          <span className="text-green-600 font-medium">
+                            ₱{(order.product.srp - order.saleAmount).toLocaleString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -570,14 +611,107 @@ export default function Index({locations, employees, transactions} : PageProps) 
   <DialogTrigger asChild>
     <Button disabled={orders.length == 0}  className='mt-5 w-full'>Place Order</Button>
   </DialogTrigger>
-  <DialogContent>
+  <DialogContent className="max-h-[90vh] overflow-y-auto">
     <DialogHeader>
-      <DialogTitle>Are you absolutely sure?</DialogTitle>
+      <DialogTitle>Customer Information</DialogTitle>
       <DialogDescription>
-        Please double check the location, orders and prices of the items before confirming.
+        Please enter customer details and confirm the order.
       </DialogDescription>
     </DialogHeader>
-       <Button onClick={() => placeOrder()} disabled={orders.length == 0} className='mt-5 w-full'>Confirm</Button>
+    <div className="space-y-4 py-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+        <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+        <Input
+          id="firstName"
+          placeholder="Enter first name"
+          value={customerFirstName}
+          onChange={(e) => setCustomerFirstName(e.target.value)}
+          className={formErrors.first_name ? 'border-red-500' : ''}
+        />
+        {formErrors.first_name && (
+          <p className="text-sm text-red-500">{formErrors.first_name}</p>
+        )}
+      </div>
+       <div className="space-y-2">
+        <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+        <Input
+          id="lastName"
+          placeholder="Enter last name"
+          value={customerLastName}
+          onChange={(e) => setCustomerLastName(e.target.value)}
+          className={formErrors.last_name ? 'border-red-500' : ''}
+        />
+        {formErrors.last_name && (
+          <p className="text-sm text-red-500">{formErrors.last_name}</p>
+        )}
+      </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="customerAddress">Address <span className="text-red-500">*</span></Label>
+        <Input
+          id="customerAddress"
+          placeholder="Enter customer address"
+          value={customerAddress}
+          onChange={(e) => setCustomerAddress(e.target.value)}
+          className={formErrors.address ? 'border-red-500' : ''}
+        />
+        {formErrors.address && (
+          <p className="text-sm text-red-500">{formErrors.address}</p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="customerPhone">Phone Number <span className="text-red-500">*</span></Label>
+        <Input
+          id="customerPhone"
+          placeholder="09XXXXXXXXX"
+          value={customerPhone}
+          onChange={(e) => setCustomerPhone(e.target.value)}
+          className={formErrors.phone ? 'border-red-500' : ''}
+        />
+        {formErrors.phone && (
+          <p className="text-sm text-red-500">{formErrors.phone}</p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="paymentMethod">Payment Method <span className="text-red-500">*</span></Label>
+        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+          <SelectTrigger id="paymentMethod">
+            <SelectValue placeholder="Select payment method" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Cash">Cash</SelectItem>
+            <SelectItem value="Gcash">Gcash</SelectItem>
+            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+            <SelectItem value="Debit/Credit Card">Debit/Credit Card</SelectItem>
+            <SelectItem value="Home Credit/Skyro/Billease">Home Credit/Skyro/Billease</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="referenceNumber">
+          Reference Number 
+          {paymentMethod !== 'Cash' && <span className="text-red-500">*</span>}
+        </Label>
+        <Input
+          id="referenceNumber"
+          placeholder={paymentMethod === 'Cash' ? 'Not required for cash' : 'Enter reference number'}
+          value={referenceNumber}
+          onChange={(e) => setReferenceNumber(e.target.value)}
+          className={formErrors.reference_number ? 'border-red-500' : ''}
+          disabled={paymentMethod === 'Cash'}
+        />
+        {formErrors.reference_number && (
+          <p className="text-sm text-red-500">{formErrors.reference_number}</p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {paymentMethod === 'Cash' 
+            ? 'Reference number not needed for cash payments' 
+            : 'Required for non-cash payments (Gcash, Bank Transfer, etc.)'}
+        </p>
+      </div>
+    </div>
+    <Button onClick={() => placeOrder()} disabled={orders.length == 0} className='w-full'>Confirm Order</Button>
   </DialogContent>
 </Dialog>
                  

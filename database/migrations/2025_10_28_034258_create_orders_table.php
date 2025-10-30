@@ -14,6 +14,7 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
            $table->id();
+           $table->foreignId('customer_id')->nullable()->constrained();
            $table->string('order_number')->unique(); 
            $table->foreignId('location_id')->constrained();
            $table->foreignId('employee_id')->constrained('users');
@@ -21,6 +22,8 @@ return new class extends Migration
            $table->dateTime('transaction_date')->useCurrent();
            $table->boolean('is_void')->default(false);
            $table->text('reason_for_cancellation')->nullable();
+           $table->string('payment_method');
+           $table->string('reference_number')->nullable();
            $table->dateTime('void_date')->nullable();
            $table->foreignId('user_id')->nullable()->constrained();
            $table->timestamps();

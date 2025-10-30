@@ -52,8 +52,9 @@ class OrderSeeder extends Seeder
                 // Create the order
                 $order = Order::create([
                     'order_number' => $orderNumber,
-                    'location_id' => rand(1, 2), // Random location (1 or 2)
-                    'employee_id' => 1, // Fixed employee ID
+                    'location_id' => rand(1, 2), 
+                    'employee_id' => 1,
+                    'payment_method' => 'Cash',
                     'total_price' => $totalPrice,
                 ]);
 

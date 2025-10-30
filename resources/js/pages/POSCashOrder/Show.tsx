@@ -76,13 +76,11 @@ export default function Show({ transaction }: ShowProps) {
     })
   }
   
-  const headingSub = formatDate(transaction.transaction_date) + "• Location:" + transaction.location.name + "• Employee:" + transaction.employee.full_name;
-
   return (
     <AppLayout>
       <Head title={`Order ${transaction.order_number}`} />
 
-      <ModuleHeading title={"Order #" + transaction.order_number} description={headingSub}>
+      <ModuleHeading title={"Order #" + transaction.order_number} description="Order Details">
          <Button variant="outline" asChild>
               <Link href={previousUrl}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -123,6 +121,77 @@ export default function Show({ transaction }: ShowProps) {
 
             
       </ModuleHeading>
+
+      {/* Order Information Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Order Information</CardTitle>
+          <CardDescription>Transaction and customer details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Transaction Details */}
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Transaction Date</p>
+                <p className="text-base font-semibold">{formatDate(transaction.transaction_date)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
+                <p className="text-base font-semibold">{transaction.payment_method || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Reference Number</p>
+                <p className="text-base font-mono">{transaction.reference_number || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Location</p>
+                <p className="text-base font-semibold">{transaction.location?.name || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Employee</p>
+                <p className="text-base font-semibold">{transaction.employee?.full_name || "N/A"}</p>
+              </div>
+            </div>
+
+            {/* Customer Details */}
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Customer Name</p>
+                <p className="text-base font-semibold">
+                  {transaction.customer 
+                    ? `${transaction.customer.first_name} ${transaction.customer.last_name}`
+                    : "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
+                <p className="text-base font-mono">{transaction.customer?.phone_number || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Address</p>
+                <p className="text-base">{transaction.customer?.address || "N/A"}</p>
+              </div>
+              {transaction.is_void && (
+                <>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Void Status</p>
+                    <p className="text-base font-semibold text-red-600">VOIDED</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Void Date</p>
+                    <p className="text-base">{transaction.void_date ? formatDate(transaction.void_date) : "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Reason for Cancellation</p>
+                    <p className="text-base">{transaction.reason_for_cancellation || "N/A"}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
 
 
@@ -146,6 +215,7 @@ export default function Show({ transaction }: ShowProps) {
                     <TableHead className="font-semibold">Description</TableHead>
                     <TableHead className="font-semibold">Model</TableHead>
                     <TableHead className="font-semibold">Serial</TableHead>
+                    <TableHead className="font-semibold text-right">Discount</TableHead>
                     <TableHead className="font-semibold text-right">Sale Amount</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -161,6 +231,9 @@ export default function Show({ transaction }: ShowProps) {
                         <TableCell className="font-mono text-sm">
                           {orderItem.serial}
                         </TableCell>
+                        <TableCell className="text-right text-red-600">
+                          {orderItem.discount_amount ? formatCurrency(orderItem.discount_amount) : "-"}
+                        </TableCell>
                         <TableCell className="text-right font-semibold">
                           {formatCurrency(orderItem.sale_amount)}
                         </TableCell>
@@ -168,7 +241,7 @@ export default function Show({ transaction }: ShowProps) {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                         No items in this order
                       </TableCell>
                     </TableRow>

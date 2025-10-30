@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\Item;
 use App\Models\Location;
 use App\Models\Order;
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Str;
 
@@ -28,27 +30,60 @@ class POSCashController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'address' => 'required|string|max:500',
+            'phone' => ['required', 'regex:/^09\d{9}$/'],
+              'payment_method' => 'required|string|in:Cash,Gcash,Bank Transfer,Debit/Credit Card,Home Credit/Skyro/Billease',
+            'reference_number' => [
+        'nullable',
+        'string',
+        'max:255',
+        Rule::requiredIf(function () use ($request) {
+            return $request->payment_method !== 'Cash';
+        })
+    ],
             'location_id' => 'required|exists:locations,id',
             'employee_id' => 'required|exists:users,id',
             'orders' => 'required',
             'total_price' => 'required|numeric',
         ]);
 
+
         $validated['order_number'] = $this->generateOrderNumber();
 
         try {
             DB::beginTransaction();
-            $order = Order::create(Arr::except($validated, 'orders'));
 
+            $customer = Customer::create([
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'address' => $validated['address'],
+                'phone_number' => $validated['phone'] 
+            ]);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'location_id' => $validated['location_id'],
+                'employee_id' => $validated['employee_id'],
+                'order_number' => $validated['order_number'],
+                'total_price' => $validated['total_price'],
+                'payment_method' => $validated['payment_method'],
+                'reference_number' => $validated['reference_number'],
+            ]);
+            
             foreach($validated['orders'] as $item){
+
+                 $iventoryItem = Item::where('date_out', null)->findOrFail($item['id']);
+                 $iventoryItem->update(['date_out' => Carbon::parse(Carbon::parse($order->transaction_date)->toDateString())]);
+
                 $order->order_items()->create([
                     'order_number' => $order->order_number,
                     'serial' => $item['serial'],
                     'item_id' => $item['id'],
-                    'sale_amount' => $item['sale_amount']
-                ]);
-
-                 $item = Item::where('date_out', null)->findOrFail($item['id'])->update(['date_out' => Carbon::parse(Carbon::parse($order->transaction_date)->toDateString())]);
+                    'sale_amount' => $item['sale_amount'],
+                    'discount_amount' => $iventoryItem->srp - $item['sale_amount']
+                ]);     
             }
 
             DB::commit(); 
