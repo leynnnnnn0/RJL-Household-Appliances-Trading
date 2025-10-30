@@ -4,53 +4,90 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, TrendingUp, TrendingDown, DollarSign, ShoppingCart, MapPin, Package, ArrowUpRight } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { Location } from '@/types';
 
-// Static data
-const locations = [
-  { id: 1, name: 'Quezon City Branch' },
-  { id: 2, name: 'Makati Branch' },
-  { id: 3, name: 'BGC Branch' },
-  { id: 4, name: 'Ortigas Branch' }
-];
+type CategoryType = {
+  name: string;
+  sales: number;
+  percentage: number;
+  color: string;
+};
 
-const categoryData = [
-  { name: 'Appliances', value: 45, sales: 450000, color: 'hsl(var(--chart-1))' },
-  { name: 'Furniture', value: 30, sales: 320000, color: 'hsl(var(--chart-2))' },
-  { name: 'Gadgets', value: 25, sales: 280000, color: 'hsl(var(--chart-3))' }
-];
+type LocationType = {
+  id: number
+  name: string;
+  revenue: number;
+};
 
-const locationRevenueData = [
-  { location: 'Quezon City', revenue: 385000, orders: 145 },
-  { location: 'Makati', revenue: 325000, orders: 128 },
-];
+interface PageProps {
+  total_sales: number;
+  total_expense: number;
+  total_profit: number;
+  sales_per_category: Record<string, CategoryType>;
+  sales_by_location: Record<string, LocationType>;
+  locations: Location[];
+  filters: {
+    date_from: string;
+    date_to: string;
+    location_id: string;
+  };
+}
 
-const dailySalesData = [
-  { day: 'Mon', sales: 145000, orders: 45 },
-  { day: 'Tue', sales: 165000, orders: 52 },
-  { day: 'Wed', sales: 152000, orders: 48 },
-  { day: 'Thu', sales: 178000, orders: 58 },
-  { day: 'Fri', sales: 195000, orders: 65 },
-  { day: 'Sat', sales: 210000, orders: 72 },
-  { day: 'Sun', sales: 180000, orders: 60 }
-];
-//
-const topProductsData = [
-  { product: 'Samsung Refrigerator', sales: 85000, qty: 12 },
-  { product: 'LG Washing Machine', sales: 72000, qty: 15 },
-  { product: 'Sony Smart TV', sales: 68000, qty: 18 },
-  { product: 'Office Desk Set', sales: 45000, qty: 25 },
-  { product: 'iPhone 15 Pro', sales: 42000, qty: 8 }
-];
+export default function POSSalesDashboard({
+  total_expense, 
+  total_sales,  
+  total_profit, 
+  sales_per_category, 
+  sales_by_location, 
+  locations,
+  filters
+} : PageProps) {
+  const [dateFrom, setDateFrom] = useState(filters.date_from || '2025-10-01');
+  const [dateTo, setDateTo] = useState(filters.date_to || '2025-10-28');
+  const [selectedLocation, setSelectedLocation] = useState(filters.location_id || 'all');
 
-export default function POSSalesDashboard() {
-  const [dateFrom, setDateFrom] = useState('2025-10-01');
-  const [dateTo, setDateTo] = useState('2025-10-28');
-  const [selectedLocation, setSelectedLocation] = useState('all');
+  // Function to apply filters
+  const applyFilters = (newDateFrom?: string, newDateTo?: string, newLocation?: string) => {
+    router.get('/pos-cash-order-sales', {
+      date_from: newDateFrom || dateFrom,
+      date_to: newDateTo || dateTo,
+      location_id: newLocation || selectedLocation,
+    }, {
+      preserveState: true,
+      preserveScroll: true,
+    });
+  };
 
-  const totalSales = 1050000;
-  const totalExpenses = 735000;
-  const totalProfit = totalSales - totalExpenses;
+  const handleDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setDateFrom(newDate);
+    applyFilters(newDate, dateTo, selectedLocation);
+  };
+
+  const handleDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setDateTo(newDate);
+    applyFilters(dateFrom, newDate, selectedLocation);
+  };
+
+  const handleLocationChange = (value: string) => {
+    setSelectedLocation(value);
+    applyFilters(dateFrom, dateTo, value);
+  };
+
+  const categoryData = Object.values(sales_per_category).map(c => ({
+    name: c.name,
+    value: c.percentage, 
+    color: c.color,
+    sales: c.sales
+  }));
+
+  const locationData = Object.values(sales_by_location).map(loc => ({
+    id: loc.id,
+    location: loc.name,
+    revenue: loc.revenue
+  }));
 
   return (
     <AppLayout>
@@ -74,7 +111,7 @@ export default function POSSalesDashboard() {
                 <input
                   type="date"
                   value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  onChange={handleDateFromChange}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
               </div>
@@ -83,13 +120,13 @@ export default function POSSalesDashboard() {
                 <input
                   type="date"
                   value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  onChange={handleDateToChange}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Location</label>
-                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                <Select value={selectedLocation} onValueChange={handleLocationChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
@@ -115,7 +152,7 @@ export default function POSSalesDashboard() {
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₱{totalSales.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₱{total_sales.toLocaleString()}</div>
             </CardContent>
           </Card>
 
@@ -125,7 +162,7 @@ export default function POSSalesDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₱{totalExpenses.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₱{total_expense.toLocaleString()}</div>
             </CardContent>
           </Card>
 
@@ -135,7 +172,7 @@ export default function POSSalesDashboard() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-emerald-600">₱{totalProfit.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-emerald-600">₱{total_profit.toLocaleString()}</div>
             </CardContent>
           </Card>
         </div>
@@ -176,7 +213,6 @@ export default function POSSalesDashboard() {
                   />
                 </PieChart>
               </ResponsiveContainer>
-
             </CardContent>
           </Card>
 
@@ -191,7 +227,7 @@ export default function POSSalesDashboard() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={locationRevenueData}>
+                <BarChart data={locationData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis 
                     dataKey="location" 
@@ -220,8 +256,6 @@ export default function POSSalesDashboard() {
             </CardContent>
           </Card>
         </div>
-
-     
       </div>
     </AppLayout>
   );
