@@ -192,6 +192,18 @@
             text-decoration: line-through;
             color: #999;
         }
+        
+        /* Make repeated order info less prominent */
+        .order-info-cell {
+            color: #666;
+            font-size: 6.5px;
+        }
+        
+        .first-item-row .order-info-cell {
+            color: #000000;
+            font-size: 8px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -260,22 +272,23 @@
         <tbody>
             @foreach($orders as $order)
                 @foreach($order->order_items as $index => $orderItem)
-                    @if($index === 0)
-                    <tr class="order-header-row {{ $order->is_void ? 'voided-row' : '' }}">
-                        <td rowspan="{{ $order->order_items->count() }}">
+                    <tr class="{{ $index === 0 ? 'order-header-row first-item-row' : '' }} {{ $order->is_void ? 'voided-row' : '' }}">
+                        <td class="order-info-cell">
                             <strong>{{ $order->order_number }}</strong>
-                            @if($order->is_void)
+                            @if($order->is_void && $index === 0)
                                 <span class="status-badge status-voided">VOIDED</span>
                             @endif
                         </td>
-                        <td rowspan="{{ $order->order_items->count() }}">
+                        <td class="order-info-cell">
                             {{ \Carbon\Carbon::parse($order->transaction_date)->format('M d, Y') }}
-                            <span class="text-muted">{{ \Carbon\Carbon::parse($order->transaction_date)->format('h:i A') }}</span>
+                            @if($index === 0)
+                                <span class="text-muted">{{ \Carbon\Carbon::parse($order->transaction_date)->format('h:i A') }}</span>
+                            @endif
                         </td>
-                        <td rowspan="{{ $order->order_items->count() }}">
+                        <td class="order-info-cell">
                             {{ $order->employee->full_name ?? ($order->employee->first_name . ' ' . $order->employee->last_name) ?? 'N/A' }}
                         </td>
-                        <td rowspan="{{ $order->order_items->count() }}">
+                        <td class="order-info-cell">
                             {{ $order->location->name ?? 'N/A' }}
                         </td>
                         <td>
@@ -290,21 +303,6 @@
                             {{ number_format($orderItem->sale_amount, 2) }}
                         </td>
                     </tr>
-                    @else
-                    <tr class="{{ $order->is_void ? 'voided-row' : '' }}">
-                        <td>
-                            <span class="font-bold">{{ $orderItem->item->description ?? 'N/A' }}</span>
-                            <span class="text-muted">{{ $orderItem->item->item_type ?? '' }}</span>
-                        </td>
-                        <td>{{ $orderItem->item->model ?? '-' }}</td>
-                        <td>{{ $orderItem->serial ?? '-' }}</td>
-                        <td class="text-center">{{ $orderItem->item->srp }}</td>
-                        <td>{{ $orderItem->item->supplier ?? 'N/A' }}</td>
-                        <td class="text-right font-bold currency {{ $order->is_void ? 'amount-strikethrough' : '' }}">
-                            {{ number_format($orderItem->sale_amount, 2) }}
-                        </td>
-                    </tr>
-                    @endif
                 @endforeach
                 <tr style="background: white;" class="{{ $order->is_void ? 'voided-row' : '' }}">
                     <td colspan="9" class="text-right font-bold" style="border-top: 2px solid #cccccc;">
