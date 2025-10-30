@@ -218,43 +218,38 @@ export default function POSSalesDashboard({
 
           {/* Location Revenue */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Revenue by Location
-              </CardTitle>
-              <CardDescription>Compare performance across branches</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={locationData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis 
-                    dataKey="location" 
-                    tick={{ fontSize: 12 }}
-                    className="text-muted-foreground"
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12 }}
-                    className="text-muted-foreground"
-                  />
-                  <Tooltip 
-                    formatter={(value) => `₱${value.toLocaleString()}`}
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="revenue" 
-                    fill="hsl(var(--primary))" 
-                    radius={[8, 8, 0, 0]} 
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Revenue by Location
+          </CardTitle>
+          <CardDescription>Compare performance across branches</CardDescription>
+        </CardHeader>
+        <CardContent className="relative" style={{ overflow: 'visible' }}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={locationData} style={{ overflow: 'visible' }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis 
+                dataKey="location" 
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <YAxis 
+                tick={{ fontSize: 12 }}
+                className="text-muted-foreground"
+              />
+              <Tooltip 
+                formatter={(value) => `₱${value.toLocaleString()}`}
+              />
+              <Bar 
+                dataKey="revenue" 
+                fill="hsl(var(--primary))" 
+                radius={[8, 8, 0, 0]} 
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
         </div>
       </div>
     </AppLayout>
