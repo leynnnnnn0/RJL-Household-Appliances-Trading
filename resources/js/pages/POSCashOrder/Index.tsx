@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/card";
 import ModuleHeading from "@/components/cards/module-heading";
 import { IconQuestionMark } from "@tabler/icons-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Props {
   transactions: Paginated<OrderWithrelations>;
@@ -47,14 +48,13 @@ export default function Index({ transactions, locations, employees }: Props) {
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedEmployee, setSelectedEmployee] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState("0");
+  const [selectedStatus, setSelectedStatus] = useState("all");
 
   const filteredTransactions = transactions.data.filter((transaction) => {
   const matchesSearch =
     transaction.order_number.toLowerCase().includes(search.toLowerCase()) ||
     transaction.employee_id.toString().includes(search);
   
-  // Fix date comparison - need to compare just the date part, not time
   const transactionDate = new Date(transaction.transaction_date).setHours(0, 0, 0, 0);
   const fromDate = dateFrom ? new Date(dateFrom).setHours(0, 0, 0, 0) : null;
   const toDate = dateTo ? new Date(dateTo).setHours(23, 59, 59, 999) : null;
@@ -66,12 +66,15 @@ export default function Index({ transactions, locations, employees }: Props) {
   const matchesLocation = selectedLocation === "all" || transaction.location_id.toString() === selectedLocation;
   const matchesEmployee = selectedEmployee === "all" || transaction.employee_id.toString() === selectedEmployee;
   
+  // Updated status filtering
   const isVoided = transaction.is_void || false;
-  const matchesStatus = selectedStatus === "0" ? !isVoided : isVoided;
+  const matchesStatus = 
+    selectedStatus === "all" ? true : 
+    selectedStatus === "0" ? !isVoided : 
+    isVoided;
 
   return matchesSearch && matchesDateRange && matchesLocation && matchesEmployee && matchesStatus;
 });
-
   const handleViewDetails = (orderId: number) => {
     router.visit(`/pos-cash-orders/${orderId}`);
   };
@@ -92,13 +95,13 @@ export default function Index({ transactions, locations, employees }: Props) {
   };
 
   const clearFilters = () => {
-    setSearch("");
-    setDateFrom(getTodayDate());
-    setDateTo(getTodayDate());
-    setSelectedLocation("all");
-    setSelectedEmployee("all");
-    setSelectedStatus("0");
-  };
+  setSearch("");
+  setDateFrom(getTodayDate());
+  setDateTo(getTodayDate());
+  setSelectedLocation("all");
+  setSelectedEmployee("all");
+  setSelectedStatus("all");
+};
 
   const hasActiveFilters = search || dateFrom || dateTo || selectedLocation !== "all" || selectedEmployee !== "all";
 
@@ -209,20 +212,21 @@ export default function Index({ transactions, locations, employees }: Props) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <IconQuestionMark className="h-4 w-4" />
-                Status
-              </label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Not Voided</SelectItem>
-                  <SelectItem value="1">Voided</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+  <label className="text-sm font-medium flex items-center gap-1.5">
+    <IconQuestionMark className="h-4 w-4" />
+    Status
+  </label>
+  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+    <SelectTrigger>
+      <SelectValue placeholder="Status" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All Status</SelectItem>
+      <SelectItem value="0">Not Voided</SelectItem>
+      <SelectItem value="1">Voided</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
           </div>
         </CardContent>
       </Card>
@@ -236,6 +240,7 @@ export default function Index({ transactions, locations, employees }: Props) {
               <TableHead className="font-semibold">Location</TableHead>
               <TableHead className="font-semibold">Employee</TableHead>
               <TableHead className="font-semibold">Items</TableHead>
+                 <TableHead className="font-semibold">Status</TableHead>
               <TableHead className="font-semibold text-right">Total Price</TableHead>
               <TableHead className="font-semibold text-center">Actions</TableHead>
             </TableRow>
@@ -268,6 +273,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                       {transaction.order_items?.length || 0} items
                     </span>
                   </TableCell>
+                  <TableCell><Badge className={`${transaction.is_void && 'bg-destructive'}`}>{transaction.is_void ? "Voided" : "Active" }</Badge></TableCell>
                   <TableCell className="text-right font-semibold">
                     {formatCurrency(transaction.total_price)}
                   </TableCell>

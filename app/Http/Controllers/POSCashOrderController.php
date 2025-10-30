@@ -43,7 +43,9 @@ class POSCashOrderController extends Controller
         $order->update($validated);
         foreach($order->order_items as $item){
             $item->item->date_out = null;
+            $item->item->save();
         }
+
         DB::commit();
 
         return back();
@@ -58,7 +60,8 @@ class POSCashOrderController extends Controller
     $dateTo = $request->input('date_to', now()->endOfDay());
     $locationId = $request->input('location_id', '');
     $employeeId = $request->input('employee_id', '');
-
+    $status = $request->input('status', 'all'); // Added status parameter
+    
     // Build query with filters
     $query = Order::with([
         'order_items.item.supplier',
@@ -66,7 +69,7 @@ class POSCashOrderController extends Controller
         'location',
         'employee'
     ]);
-
+    
     // Apply filters
     if ($search) {
         $query->where(function($q) use ($search) {
@@ -74,44 +77,61 @@ class POSCashOrderController extends Controller
               ->orWhere('employee_id', $search);
         });
     }
-
+    
     if ($dateFrom) {
         $query->whereDate('transaction_date', '>=', $dateFrom);
     }
-
+    
     if ($dateTo) {
         $query->whereDate('transaction_date', '<=', $dateTo);
     }
-
+    
     if ($locationId) {
         $query->where('location_id', $locationId);
     }
-
+    
     if ($employeeId) {
         $query->where('employee_id', $employeeId);
     }
-
+    
+    // Apply status filter
+    if ($status !== 'all') {
+        $isVoided = $status === '1';
+        $query->where('is_void', $isVoided);
+    }
+    
     $orders = $query->orderBy('transaction_date', 'desc')->get();
-
+    
+    // Calculate totals properly
+    $totalOrders = $orders->count();
+    $totalVoided = $orders->where('is_void', true)->count();
+    $totalActive = $orders->where('is_void', false)->count();
+    
+    // Only sum non-voided orders for total amount (voided = refunded money)
+    $totalAmount = $orders->where('is_void', false)->sum('total_price');
+    $voidedAmount = $orders->where('is_void', true)->sum('total_price');
+    
     // Prepare data for PDF
     $data = [
         'orders' => $orders,
         'dateFrom' => $dateFrom,
         'dateTo' => $dateTo,
+        'status' => $status,
         'generatedAt' => now()->format('F d, Y h:i A'),
-        'totalOrders' => $orders->count(),
-        'totalAmount' => $orders->sum('total_price')
+        'totalOrders' => $totalOrders,
+        'totalActive' => $totalActive,
+        'totalVoided' => $totalVoided,
+        'totalAmount' => $totalAmount,
+        'voidedAmount' => $voidedAmount
     ];
-
-
-    $pdf = Pdf::loadView('pdf.orders', $data);
     
+    $pdf = Pdf::loadView('pdf.orders', $data);
     $pdf->setPaper('a4', 'landscape');
     
     $filename = 'orders_report_' . now()->format('Y-m-d_His') . '.pdf';
+    
     return $pdf->download($filename);
 }
-
     public function show($orderNumber)
 {
     $transaction = Order::with('order_items.item', 'employee', 'location')

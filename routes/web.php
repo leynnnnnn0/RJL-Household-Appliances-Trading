@@ -16,15 +16,10 @@ Route::get('/', function () {
 })->name('home');
 
 
-Route::resource('pos-cash', POSCashController::class)->only(['index', 'store']);
+Route::middleware('auth')->group(function() {
+    Route::resource('pos-cash', POSCashController::class)->only(['index', 'store']);
 Route::resource('pos-credit', POSCreditController::class)->only('index');
 Route::get('/pos-cash/search', [POSCashController::class, 'search'])->name('pos-cash.search');
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
-
 Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
     Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
 Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
@@ -32,8 +27,6 @@ Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])-
 Route::post('/items/import', [ItemController::class, 'import'])->name('items.import.upload');
 Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
 Route::resource('items', ItemController::class);
-});
-
 Route::get('/pos-cash-orders/download-pdf', [POSCashOrderController::class, 'downloadPDF']);
 Route::resource('locations', LocationController::class);
 Route::resource('suppliers', SupplierController::class);
@@ -41,5 +34,14 @@ Route::resource('suppliers', SupplierController::class);
 Route::post('/pos-cash-orders/void/{id}', [POSCashOrderController::class, 'voidOrder']);
 Route::resource('pos-cash-orders', POSCashOrderController::class);
 Route::resource('pos-cash-order-sales', POSCashOrderSalesController::class);
+
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('dashboard', function () {
+        return Inertia::render('dashboard');
+    })->name('dashboard');
+});
+
 
 require __DIR__.'/settings.php';

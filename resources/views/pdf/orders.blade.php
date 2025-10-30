@@ -57,8 +57,9 @@
         
         .summary-item {
             display: inline-block;
-            width: 48%;
+            width: 32%;
             vertical-align: top;
+            margin-bottom: 8px;
         }
         
         .summary-label {
@@ -73,6 +74,30 @@
             font-weight: bold;
             color: #000000;
             margin-top: 2px;
+        }
+        
+        .summary-value.positive {
+            color: #059669;
+        }
+        
+        .summary-value.negative {
+            color: #dc2626;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 5px;
+        }
+        
+        .status-voided {
+            background: #fee;
+            color: #c00;
+            border: 1px solid #fcc;
         }
         
         table {
@@ -119,6 +144,10 @@
             font-size: 8px;
         }
         
+        .voided-row {
+            background: #ffe6e6 !important;
+        }
+        
         .text-right {
             text-align: right;
         }
@@ -158,6 +187,11 @@
         .currency {
             font-family: 'DejaVu Sans', sans-serif;
         }
+        
+        .amount-strikethrough {
+            text-decoration: line-through;
+            color: #999;
+        }
     </style>
 </head>
 <body>
@@ -170,17 +204,41 @@
         <strong>Report Period:</strong> 
         {{ \Carbon\Carbon::parse($dateFrom)->format('M d, Y') }} - 
         {{ \Carbon\Carbon::parse($dateTo)->format('M d, Y') }}
+        @if(isset($status))
+            <br>
+            <strong>Status:</strong> 
+            @if($status === 'all')
+                All Status
+            @elseif($status === '0')
+                Not Voided
+            @else
+                Voided Only
+            @endif
+        @endif
     </div>
 
     <div class="summary">
         <div class="summary-item">
             <div class="summary-label">Total Orders</div>
             <div class="summary-value">{{ $totalOrders }}</div>
+            @if(isset($status) && $status === 'all')
+                <div class="text-muted" style="margin-top: 3px;">
+                    Active: {{ $totalActive }} | Voided: {{ $totalVoided }}
+                </div>
+            @endif
         </div>
-        <div class="summary-item" style="text-align: right;">
-            <div class="summary-label">Total Amount</div>
-            <div class="summary-value currency">₱{{ number_format($totalAmount, 2) }}</div>
+        <div class="summary-item">
+            <div class="summary-label">Active Amount</div>
+            <div class="summary-value positive currency">{{ number_format($totalAmount, 2) }}</div>
+            <div class="text-muted" style="margin-top: 3px;">Net Revenue</div>
         </div>
+        @if(isset($status) && $status === 'all' && $voidedAmount > 0)
+        <div class="summary-item">
+            <div class="summary-label">Voided Amount</div>
+            <div class="summary-value negative currency">{{ number_format($voidedAmount, 2) }}</div>
+            <div class="text-muted" style="margin-top: 3px;">Refunded</div>
+        </div>
+        @endif
     </div>
 
     @if($orders->count() > 0)
@@ -203,9 +261,12 @@
             @foreach($orders as $order)
                 @foreach($order->order_items as $index => $orderItem)
                     @if($index === 0)
-                    <tr class="order-header-row">
+                    <tr class="order-header-row {{ $order->is_void ? 'voided-row' : '' }}">
                         <td rowspan="{{ $order->order_items->count() }}">
                             <strong>{{ $order->order_number }}</strong>
+                            @if($order->is_void)
+                                <span class="status-badge status-voided">VOIDED</span>
+                            @endif
                         </td>
                         <td rowspan="{{ $order->order_items->count() }}">
                             {{ \Carbon\Carbon::parse($order->transaction_date)->format('M d, Y') }}
@@ -225,10 +286,12 @@
                         <td>{{ $orderItem->serial ?? '-' }}</td>
                         <td class="text-center">{{ $orderItem->item->srp }}</td>
                         <td>{{ $orderItem->item->supplier ?? 'N/A' }}</td>
-                        <td class="text-right font-bold currency">{{ number_format($orderItem->sale_amount, 2) }}</td>
+                        <td class="text-right font-bold currency {{ $order->is_void ? 'amount-strikethrough' : '' }}">
+                            {{ number_format($orderItem->sale_amount, 2) }}
+                        </td>
                     </tr>
                     @else
-                    <tr>
+                    <tr class="{{ $order->is_void ? 'voided-row' : '' }}">
                         <td>
                             <span class="font-bold">{{ $orderItem->item->description ?? 'N/A' }}</span>
                             <span class="text-muted">{{ $orderItem->item->item_type ?? '' }}</span>
@@ -237,17 +300,35 @@
                         <td>{{ $orderItem->serial ?? '-' }}</td>
                         <td class="text-center">{{ $orderItem->item->srp }}</td>
                         <td>{{ $orderItem->item->supplier ?? 'N/A' }}</td>
-                        <td class="text-right font-bold currency">{{ number_format($orderItem->sale_amount, 2) }}</td>
+                        <td class="text-right font-bold currency {{ $order->is_void ? 'amount-strikethrough' : '' }}">
+                            {{ number_format($orderItem->sale_amount, 2) }}
+                        </td>
                     </tr>
                     @endif
                 @endforeach
-                <tr style="background: white;">
-                    <td colspan="9" class="text-right font-bold" style="background: #ffffff; border-top: 2px solid #cccccc;">Order Total:</td>
-                    <td class="text-right font-bold currency" style="background: #ffffff; border-top: 2px solid #cccccc; font-size: 8px;">{{ number_format($order->total_price, 2) }}</td>
+                <tr style="background: white;" class="{{ $order->is_void ? 'voided-row' : '' }}">
+                    <td colspan="9" class="text-right font-bold" style="border-top: 2px solid #cccccc;">
+                        Order Total:
+                        @if($order->is_void)
+                            <span style="color: #dc2626; font-size: 7px;"> (REFUNDED)</span>
+                        @endif
+                    </td>
+                    <td class="text-right font-bold currency {{ $order->is_void ? 'amount-strikethrough' : '' }}" style="border-top: 2px solid #cccccc; font-size: 8px;">
+                        {{ number_format($order->total_price, 2) }}
+                    </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+    
+    @if(isset($status) && $status === 'all')
+    <div style="background: #f9fafb; padding: 10px; border: 1px solid #e5e7eb; border-radius: 4px; margin-bottom: 10px;">
+        <div style="font-size: 7px; color: #6b7280; margin-bottom: 5px;">
+            <strong style="color: #1a1a1a;">IMPORTANT NOTE:</strong> Voided transactions (marked with strikethrough amounts) represent refunded money and are NOT included in the "Active Amount" total. The "Active Amount" shows only the actual revenue from non-voided orders.
+        </div>
+    </div>
+    @endif
+    
     @else
     <div class="no-orders">
         <p>No orders found for the selected filters.</p>

@@ -94,7 +94,7 @@ export default function Show({ transaction }: ShowProps) {
               if(!open) setData('reason_for_cancellation', '');
             }}>
   <DialogTrigger asChild>
-    <Button disabled={transaction.is_void} className="cursor-pointer" variant="destructive">
+    <Button disabled={transaction.is_void} variant="destructive">
       {transaction.is_void ? "Order Voided" : "Void Order"}
     </Button>
   </DialogTrigger>
@@ -108,6 +108,9 @@ export default function Show({ transaction }: ShowProps) {
             <div className="grid gap-3">
               <Label>Reason for cancellation <span className="text-red-500">*</span> </Label>
               <Textarea  value={data.reason_for_cancellation} onChange={(e) => setData('reason_for_cancellation', e.target.value)}/>
+                 {errors.reason_for_cancellation && (
+                    <p className="text-sm text-destructive">{errors.reason_for_cancellation}</p>
+                  )}
             </div>
 
             <div className="flex justify-end">
