@@ -29,7 +29,7 @@ class InstallmentOrder extends Model
         'is_void',
         'reason_for_cancellation',
         'void_date',
-        'user_id',
+        'voider_id',
         'is_completed',
         'is_defaulted',
         'default_reason'
@@ -55,9 +55,9 @@ class InstallmentOrder extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function order_item()
+    public function installment_order_item()
     {
-        return $this->has(InstallmentOrderItem::class);
+        return $this->hasOne(InstallmentOrderItem::class);
     }
 
     public function installment_order_payments()

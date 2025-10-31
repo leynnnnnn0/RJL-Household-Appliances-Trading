@@ -40,6 +40,11 @@ const mainNavItems: NavItem[] = [
         icon: ChartArea,
     },
        {
+        title: 'POS Installment Orders',
+        href: '/pos-installment-orders',
+        icon: IconMoneybag,
+    },
+       {
         title: 'Locations',
         href: '/locations',
         icon: Map,

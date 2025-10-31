@@ -142,6 +142,7 @@ export default function Index({locations, employees} : PageProps) {
   const [referenceNumber, setReferenceNumber] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string>('');
+
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -443,11 +444,56 @@ export default function Index({locations, employees} : PageProps) {
     const dialogError = validateDialogForm();
     if (dialogError) {
       setValidationError(dialogError);
+      toast.success("Please make sure all the information needed is filled.")
       return;
     }
 
     setIsSubmitting(true);
     setValidationError('');
+
+    const clearAllFields = () => {
+  // Customer info
+  setSelectedCustomer(null);
+  setIsExistingCustomer(false);
+  setFirstName('');
+  setLastName('');
+  setContact('');
+  setAddress('');
+  setEmployment('');
+  setIncome('');
+  setSearchQuery('');
+  setSearchResults([]);
+  setShowResults(false);
+
+  // Reference info
+  setRef1Name('');
+  setRef1Contact('');
+
+  // Investigation info
+  setVisitDate('');
+  setInvestigatorId('');
+  setEmploymentVerified(false);
+  setInvestigationNotes('');
+
+  // Product and payment info
+  setSelectedProduct(null);
+  setDownPayment(0);
+  setSelectedTerm(3);
+  setNoDownPayment(false);
+  setSearchTerm('');
+  setFilteredProducts([]);
+  setShowDropdown(false);
+
+  // Uploaded files
+  setUploadedFiles([]);
+
+  // Dialog info
+  setSelectedLocation('');
+  setModeOfPayment('');
+  setReferenceNumber('');
+  setValidationError('');
+};
+
 
     const breakdown = calculatePaymentBreakdown();
     if (!breakdown || !selectedProduct) {
@@ -498,6 +544,8 @@ export default function Index({locations, employees} : PageProps) {
     },{
       onSuccess: () => {
         toast.success("Installment Data Created.")
+        setDialogOpen(false);
+        clearAllFields();
       },
       onError: (e) => {
         setValidationError('An error occurred while creating the account');
