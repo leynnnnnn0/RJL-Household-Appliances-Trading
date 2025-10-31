@@ -1,4 +1,39 @@
-import { useCallback, useEffect, useState } from 'react';
+## RULES 
+- PROVIDE ME THE FULL CODE
+
+when seraching for existing customer and selected references and investigation details should also be populated too if data exits
+
+Investigator name should be a dropdown from employees data
+
+when create account is clicked i wanta dialog to show 
+it should include dropdown of locations (required)
+payment method (required if down paymnet is not 0)
+reference number (required if down pyament is not 0 and cash is selected as mop)  create a post(‘/pos-credit’) formData to be passed on backnd $validated = $request->validate([
+            'customer_id' => 'nullable|exists:customers,id',
+            'customer_first_name' => 'required|string',
+            'customer_last_name' => 'required',
+            'customer_address' => 'required|string',
+            'customer_reference_full_name' => 'required|string',
+            'customer_reference_phone_number' => 'required|string',
+            'investigator_id' => 'required|exists:employees,id',
+            'home_visit_date' => 'required',
+            'is_employment_verified' => 'required',
+            'investigation_notes' => 'required|string',
+            'location_id' => 'required|exists:locations,id',
+            'item_id' => 'required|exists:items,id',
+            'serial' => 'required',
+            'loan_contract_price' => 'required',
+            'lcp_markup_rate' => 'required',
+            'lcp_additional_charge' => 'required',
+            'down_payment' => 'required',
+            'payment_method' => 'required',
+            'reference_number' => 'nullable',
+            'promisory_note_value' => 'required',
+            'number_of_terms' => 'required',
+            'promisory_note_value_interest' => 'required',
+            'promisory_note_value_interest_additional_charge' => 'required',
+        ]);
+ import { useCallback, useEffect, useState } from 'react';
 import { Search, ShoppingCart, Trash2, Plus, Menu, History, TrendingUp, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

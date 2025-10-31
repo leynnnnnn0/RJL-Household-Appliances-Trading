@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Employee;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -29,7 +30,8 @@ class DatabaseSeeder extends Seeder
             SupplierSeeder::class,
             LocationSeeder::class,
             ItemSeeder::class,
-            OrderSeeder::class
+            OrderSeeder::class,
+            EmployeeSeeder::class
         ]);
     }
 }

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Menu, Plus, X, Upload, FileText, Users, Briefcase, Home, CreditCard, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Menu, Plus, X, Upload, FileText, Users, Briefcase, Home, CreditCard, Search, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,14 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -16,7 +24,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import axios from 'axios';
+import { router } from '@inertiajs/react';
+import { toast } from 'sonner';
+import { CustomerReference, InvenstigationDetail } from '@/types';
 
 interface Customer {
   id: string;
@@ -24,7 +36,12 @@ interface Customer {
   last_name: string;
   address: string;
   phone_number: string;
+  source_of_income?: string;
+  monthly_income?: string;
+  reference?: CustomerReference;
+  investigation_detail?: InvenstigationDetail;
 }
+
 
 interface UploadedFile {
   id: string;
@@ -54,8 +71,28 @@ interface SelectedProduct extends Product {
   noDownPayment?: boolean;
 }
 
-export default function Index() {
+interface Employee {
+  id: number;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+}
+
+interface Location  {
+  id: number;
+  name: string;
+  address: string;
+  remarks: string | null;
+}
+
+interface PageProps {
+  locations: Location[];
+  employees: Employee[];
+}
+
+export default function Index({locations, employees} : PageProps) {
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [customPlans] = useState<PaymentPlan[]>([
     { months: 3, interestRate: 0 },
@@ -84,30 +121,41 @@ export default function Index() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   
+  // Reference states
+  const [ref1Name, setRef1Name] = useState<string>('');
+  const [ref1Contact, setRef1Contact] = useState<string>('');
+  
+  // Investigation states
+  const [visitDate, setVisitDate] = useState<string>('');
+  const [investigatorId, setInvestigatorId] = useState<string>('');
+  const [investigationNotes, setInvestigationNotes] = useState<string>('');
+  
   // Product and payment states
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct | null>(null);
   const [downPayment, setDownPayment] = useState<number>(0);
   const [selectedTerm, setSelectedTerm] = useState<number>(3);
   const [noDownPayment, setNoDownPayment] = useState<boolean>(false);
   
-  // Mock database - replace with actual API call
-  const mockCustomers: Customer[] = [
-    { id: '1', first_name: 'Juan', last_name: 'Dela Cruz', address: '123 Main St, Quezon City', phone_number: '0912 345 6789'},
-    { id: '2', first_name: 'Maria', last_name: 'Santos', address: '456 Oak Ave, Manila', phone_number: '0923 456 7890'},
-    { id: '3', first_name: 'Jose', last_name: 'Reyes', address: '789 Pine Rd, Makati', phone_number: '0934 567 8901'},
-  ];
+  // Dialog states for final confirmation
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
+  const [modeOfPayment, setModeOfPayment] = useState<string>('');
+  const [referenceNumber, setReferenceNumber] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [validationError, setValidationError] = useState<string>('');
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (query.length > 1) {
-      axios.get('/api/customers', {params: {search: searchQuery}})
+      axios.get('/api/customers', {params: {search: query}})
       .then(response => {
-        console.log(response);
         const customers = response.data?.data || [];
-          setSearchResults(customers);
-          setShowResults(true);
-        });
-      
+        setSearchResults(customers);
+        setShowResults(true);
+      })
+      .catch(error => {
+        console.error("Error fetching customers:", error);
+        setSearchResults([]);
+      });
     } else {
       setSearchResults([]);
       setShowResults(false);
@@ -115,14 +163,31 @@ export default function Index() {
   };
   
   const selectCustomer = (customer: Customer) => {
+    console.log(customer);
     setSelectedCustomer(customer);
     setIsExistingCustomer(true);
     setFirstName(customer.first_name);
     setLastName(customer.last_name);
     setContact(customer.phone_number);
     setAddress(customer.address);
+    setEmployment(customer.source_of_income || '');
+    setIncome(customer.monthly_income || '');
     setSearchQuery(`${customer.first_name} ${customer.last_name}`);
     setShowResults(false);
+
+ 
+    if (customer.reference?.id) {
+      setRef1Name(customer.reference?.full_name);
+      setRef1Contact(customer.reference?.phone_number);
+    }
+
+    if (customer.investigation_detail?.id) {
+      setVisitDate(customer.investigation_detail?.home_visit_date);
+      setEmploymentVerified(customer.investigation_detail?.is_employment_verified);
+      setInvestigationNotes(customer.investigation_detail?.investigation_notes);
+      setInvestigatorId(customer.investigation_detail?.employee_id?.toString());
+
+    }
   };
   
   const clearCustomer = () => {
@@ -135,6 +200,12 @@ export default function Index() {
     setEmployment('');
     setIncome('');
     setSearchQuery('');
+    setRef1Name('');
+    setRef1Contact('');
+    setVisitDate('');
+    setInvestigatorId('');
+    setEmploymentVerified(false);
+    setInvestigationNotes('');
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,23 +230,19 @@ export default function Index() {
     return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
-  // Calculate LCP (Loan Contract Pricing)
   const calculateLCP = (srp: number) => {
     return srp * 1.1 + 300;
   };
 
-  // Get default down payment percentage based on item type
   const getDefaultDownPaymentPercent = (itemType?: string) => {
     if (itemType === 'furniture' || itemType === 'appliances') {
-      return 0.15; // 15%
+      return 0.15;
     }
-    return 0.20; // 20% for cellphone and gadgets
+    return 0.20;
   };
 
-  // Calculate interest multiplier and fixed charges based on item type and term
   const getInterestConfig = (itemType: string | undefined, months: number) => {
     const type = itemType || 'furniture';
-    console.log(itemType);
     const configs: Record<string, Record<number, { multiplier: number; fixedCharge: number }>> = {
       furniture: {
         3: { multiplier: 1.12, fixedCharge: 0 },
@@ -200,29 +267,21 @@ export default function Index() {
     return configs[type]?.[months] || { multiplier: 1.12, fixedCharge: 0 };
   };
 
-  // Calculate PNV (Promissory Note Value) and Final PNV
   const calculatePaymentBreakdown = () => {
     if (!selectedProduct) return null;
 
     const lcp = calculateLCP(selectedProduct.srp);
     const downPaymentAmount = noDownPayment ? 0 : downPayment;
     const pnv = lcp - downPaymentAmount;
-
-    console.log(selectedProduct.item_type);
     
     const { multiplier, fixedCharge } = getInterestConfig(selectedProduct.item_type, selectedTerm);
     
     let finalPNV: number;
     if (noDownPayment) {
-      // When no down payment, use LCP instead of PNV
       finalPNV = lcp * 1.33 + 600;
     } else {
       finalPNV = pnv * multiplier + fixedCharge;
     }
-    console.log(pnv);
-    console.log(multiplier);
-    console.log(fixedCharge);
-    console.log(finalPNV);
 
     const monthlyPayment = finalPNV / selectedTerm;
     const totalAmount = downPaymentAmount + finalPNV;
@@ -235,7 +294,9 @@ export default function Index() {
       monthlyPayment,
       totalAmount,
       totalInterest,
-      downPaymentAmount
+      downPaymentAmount,
+      multiplier,
+      fixedCharge
     };
   };
 
@@ -303,26 +364,151 @@ export default function Index() {
     }
   };
 
-  const calculateMonthlyAmount = () => {
-    const breakdown = calculatePaymentBreakdown();
-    return breakdown ? breakdown.monthlyPayment : 0;
-  };
-
   const handleProductSearch = (value: string) => {
     setSearchTerm(value);
-      axios.get('/api/items', { params: { search: value } })
-    .then(response => {
-      console.log(response);
-      const items = response.data?.data || [];
-      setFilteredProducts(items);
-      setShowDropdown(true); 
+    axios.get('/api/items', { params: { search: value } })
+      .then(response => {
+        const items = response.data?.data || [];
+        setFilteredProducts(items);
+        setShowDropdown(true); 
+      })
+      .catch(error => {
+        console.error("Error fetching products:", error);
+        setFilteredProducts([]);
+        setShowDropdown(false);
+      });
+  };
+
+  const validateForm = () => {
+    if (!selectedProduct) {
+      return "Please select a product";
+    }
+    if (!firstName || !lastName) {
+      return "Customer name is required";
+    }
+    if (!contact) {
+      return "Contact number is required";
+    }
+    if (!address) {
+      return "Address is required";
+    }
+    if (!employment) {
+      return "Employment/Source of income is required";
+    }
+    if (!income) {
+      return "Monthly income is required";
+    }
+    if (!ref1Name || !ref1Contact) {
+      return "Reference information is required";
+    }
+    if (!visitDate) {
+      return "Home visit date is required";
+    }
+    if (!investigatorId) {
+      return "Investigator must be selected";
+    }
+    return null;
+  };
+
+  const openDialog = () => {
+    const error = validateForm();
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+    setValidationError('');
+    setDialogOpen(true);
+  };
+
+  const validateDialogForm = () => {
+    if (!selectedLocation) {
+      return "Location is required";
+    }
+    
+    const hasDownPayment = downPayment > 0;
+    
+    if (hasDownPayment) {
+      if (!modeOfPayment) {
+        return "Mode of payment is required when there is a down payment";
+      }
+      if (modeOfPayment !== 'Cash' && !referenceNumber) {
+        return "Reference number is required for non-cash payments";
+      }
+    }
+    
+    return null;
+  };
+
+  const handleSubmit = async () => {
+    const dialogError = validateDialogForm();
+    if (dialogError) {
+      setValidationError(dialogError);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setValidationError('');
+
+    const breakdown = calculatePaymentBreakdown();
+    if (!breakdown || !selectedProduct) {
+      setValidationError("Unable to calculate payment breakdown");
+      setIsSubmitting(false);
+      return;
+    }
+
+    
+    router.post('/pos-credit', {
+      // Customer information
+      customer_id: isExistingCustomer ? selectedCustomer?.id : null,
+      customer_first_name: firstName,
+      customer_last_name: lastName,
+      customer_phone_number: contact,
+      customer_address: address,
+      customer_source_of_income: employment,
+      customer_monthly_income: income,
+
+      // Reference information
+      customer_reference_full_name: ref1Name,
+      customer_reference_phone_number: ref1Contact,
+
+      // Investigation details
+      home_visit_date: visitDate,
+      investigator_id: investigatorId,
+      is_employment_verified: employmentVerified,
+      investigation_notes: investigationNotes,
+
+      // Loan details
+      loan_contract_price: breakdown.lcp,
+      lcp_markup_rate: 1.1,
+      lcp_additional_charge: 300,
+      down_payment: breakdown.downPaymentAmount,
+      promisory_note_value: breakdown.pnv,
+      number_of_terms: selectedTerm,
+      promisory_note_value_interest: breakdown.multiplier,
+      promisory_note_value_interest_additional_charge: breakdown.fixedCharge,
+
+      // Item information
+      item_id: selectedProduct.id,
+      serial: selectedProduct.serial,
+
+      // Additional information from dialog
+      location_id: selectedLocation,
+      payment_method: modeOfPayment || null,
+      reference_number: referenceNumber || null
+    },{
+      onSuccess: () => {
+        toast.success("Installment Data Created.")
+      },
+      onError: (e) => {
+        setValidationError('An error occurred while creating the account');
+        console.log(e);
+      },
+      onFinish: () => {
+           setIsSubmitting(false);
+      }
     })
-    .catch(error => {
-      console.error("Error fetching products:", error);
-      setFilteredProducts([]);
-      setShowDropdown(false);
-    });
-  }
+
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -351,7 +537,6 @@ export default function Index() {
               </SheetHeader>
 
               <div className="p-5 space-y-4">
-   
                 <Separator  />
                 
                 <div className="space-y-3">
@@ -389,8 +574,14 @@ export default function Index() {
           <p className="text-muted-foreground">Complete the form to process a new installment application</p>
         </div>
 
+        {validationError && !dialogOpen && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{validationError}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-2">
-                 {/* Item & Payment Details */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -399,7 +590,6 @@ export default function Index() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Product Search */}
               <div className="space-y-2">
                 <Label>Search Product *</Label>
                 <div className="relative">
@@ -440,7 +630,6 @@ export default function Index() {
                 </div>
               </div>
 
-              {/* Selected Product Details */}
               {selectedProduct && (
                 <>
                   <Separator />
@@ -499,7 +688,6 @@ export default function Index() {
 
                   <Separator />
 
-                  {/* Payment Terms */}
                   <div className="space-y-4">
                     <div>
                       <Label>Payment Term *</Label>
@@ -521,7 +709,6 @@ export default function Index() {
                       </div>
                     </div>
 
-                    {/* No Down Payment Option */}
                     <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                       <Checkbox 
                         id="noDownPayment" 
@@ -536,7 +723,6 @@ export default function Index() {
                       </Label>
                     </div>
 
-                    {/* Down Payment */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="downPayment">Down Payment *</Label>
@@ -570,7 +756,6 @@ export default function Index() {
                       </div>
                     </div>
 
-                    {/* Monthly Payment Summary */}
                     {(() => {
                       const breakdown = calculatePaymentBreakdown();
                       if (!breakdown) return null;
@@ -637,7 +822,6 @@ export default function Index() {
             </CardContent>
           </Card>
 
-          {/* Customer Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -763,76 +947,101 @@ export default function Index() {
             </CardContent>
           </Card>
 
-         <div className='space-y-4'>
-           {/* References */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                References
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold">Reference 1</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="ref1Name">Name *</Label>
-                  <Input id="ref1Name" placeholder="Full name" />
+          <div className='space-y-4'>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  References
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold">Reference 1</h3>
+                  <div className="space-y-2">
+                    <Label htmlFor="ref1Name">Name *</Label>
+                    <Input 
+                      id="ref1Name" 
+                      placeholder="Full name" 
+                      value={ref1Name}
+                      onChange={(e) => setRef1Name(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ref1Contact">Contact *</Label>
+                    <Input 
+                      id="ref1Contact" 
+                      placeholder="0912 345 6789" 
+                      value={ref1Contact}
+                      onChange={(e) => setRef1Contact(e.target.value)}
+                    />
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Home className="h-5 w-5" />
+                  Investigation Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ref1Contact">Contact *</Label>
-                  <Input id="ref1Contact" placeholder="0912 345 6789" />
+                  <Label htmlFor="visitDate">Home Visit Date *</Label>
+                  <Input 
+                    id="visitDate" 
+                    type="date" 
+                    value={visitDate}
+                    onChange={(e) => setVisitDate(e.target.value)}
+                  />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
 
-            {/* Investigation Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Home className="h-5 w-5" />
-                Investigation Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="visitDate">Home Visit Date *</Label>
-                <Input id="visitDate" type="date" defaultValue="2025-10-25" />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="investigator">Investigator Name *</Label>
+                  <Select value={investigatorId} onValueChange={setInvestigatorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select investigator" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id.toString()}>
+                          {employee.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="investigator">Investigator Name *</Label>
-                <Input id="investigator" placeholder="Field staff name" />
-              </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="verified" 
+                    checked={employmentVerified}
+                    onCheckedChange={(checked) => setEmploymentVerified(checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="verified" 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Employment Verified
+                  </Label>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="verified" 
-                  checked={employmentVerified}
-                  onCheckedChange={(checked) => setEmploymentVerified(checked as boolean)}
-                />
-                <Label 
-                  htmlFor="verified" 
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  Employment Verified
-                </Label>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Investigation Notes</Label>
+                  <Textarea 
+                    id="notes" 
+                    placeholder="Add notes about the customer, home visit, references verification, etc."
+                    rows={4}
+                    value={investigationNotes}
+                    onChange={(e) => setInvestigationNotes(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Investigation Notes</Label>
-                <Textarea 
-                  id="notes" 
-                  placeholder="Add notes about the customer, home visit, references verification, etc."
-                  rows={4}
-                />
-              </div>
-            </CardContent>
-          </Card>
-         </div>
-
-           {/* Additional Documents */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -886,20 +1095,116 @@ export default function Index() {
               )}
             </CardContent>
           </Card>
-
-   
-        
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="outline" size="lg">
             Save as Draft
           </Button>
-          <Button size="lg" className="min-w-40">
+          <Button size="lg" className="min-w-40" onClick={openDialog}>
             Create Account
           </Button>
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Account Creation</DialogTitle>
+            <DialogDescription>
+              Please provide additional details to complete the account setup
+            </DialogDescription>
+          </DialogHeader>
+
+          {validationError && (
+            <Alert variant="destructive" className="mb-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{validationError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="location">Location *</Label>
+              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id.toString()}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {downPayment > 0 && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="modeOfPayment">Mode of Payment *</Label>
+                  <Select value={modeOfPayment} onValueChange={setModeOfPayment}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Gcash">Gcash</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Debit/Credit Card">Debit/Credit Card</SelectItem>
+                      <SelectItem value="Home Credit/Skyro/Billease">Home Credit/Skyro/Billease</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Down payment: ₱{downPayment.toLocaleString()}
+                  </p>
+                </div>
+
+                {modeOfPayment && modeOfPayment !== 'Cash' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="referenceNumber">Reference Number *</Label>
+                    <Input 
+                      id="referenceNumber" 
+                      placeholder="Enter reference/transaction number" 
+                      value={referenceNumber}
+                      onChange={(e) => setReferenceNumber(e.target.value)}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            {downPayment === 0 && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  No down payment - payment details not required
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDialogOpen(false);
+                setValidationError('');
+              }}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating...' : 'Confirm & Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

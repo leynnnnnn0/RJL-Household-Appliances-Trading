@@ -68,6 +68,26 @@ export type Customer = {
   phone_number: string
 }
 
+export type CustomerReference = {
+  id: number | string,
+  full_name: string,
+  phone_number: string
+};
+
+export type InvenstigationDetail = {
+  id: number | string;
+  employee_id: number | string;
+  home_visit_date: string;
+  is_employment_verified: boolean;
+  investigation_notes: string;
+}
+
+export type CustomerWithRelation = Customer & {
+  reference: CustomerReference;
+  investigation_detail: InvenstigationDetail
+
+}
+
 export type ItemWithRelations = Item & {
   supplier?: Supplier;
   location?: Location;

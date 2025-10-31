@@ -19,7 +19,19 @@ class CustomerResource extends JsonResource
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'phone_number' => $this->phone_number,
-            'address' => $this->address
+            'address' => $this->address,
+            'reference' => [
+                'id' => $this->customer_reference?->id,
+                'full_name' => $this->customer_reference?->full_name,
+                'phone_number' => $this->customer_reference?->phone_number
+            ],
+            'investigation_detail' => [
+                'id' => $this->investigation_detail?->id,
+                'employee_id' => $this->investigation_detail?->employee_id,
+                'home_visit_date' => $this->investigation_detail?->home_visit_date,
+                'is_employment_verified' => $this->investigation_detail?->home_visit_date,
+                'investigation_notes' => $this->investigation_detail?->investigation_notes,
+            ]
         ];
     }
 }

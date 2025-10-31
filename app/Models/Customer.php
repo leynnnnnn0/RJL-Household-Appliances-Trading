@@ -19,6 +19,17 @@ class Customer extends Model
 
     public function orders()
     {
-        $this->hasMany(Order::class);
+        return $this->hasMany(Order::class);
     }
+
+    public function customer_reference()
+    {
+        return $this->hasOne(CustomerReference::class);
+    }
+
+    public function investigation_detail()
+    {
+        return $this->hasOne(InvestigationDetail::class);
+    }
+
 }

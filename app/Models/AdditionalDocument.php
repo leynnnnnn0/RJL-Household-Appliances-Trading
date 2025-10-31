@@ -9,4 +9,5 @@ class AdditionalDocument extends Model
 {
     /** @use HasFactory<\Database\Factories\AdditionalDocumentFactory> */
     use HasFactory;
+
 }
