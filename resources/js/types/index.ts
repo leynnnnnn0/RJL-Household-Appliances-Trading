@@ -61,7 +61,7 @@ export type User = {
 }
 
 export type Customer = {
-  id: number;
+  id: number | string;
   first_name: string;
   last_name: string;
   address: string;

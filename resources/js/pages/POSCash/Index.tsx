@@ -34,6 +34,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Product {
   id: string;
@@ -82,6 +83,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
   const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isFree, setIsFree] = useState(false);
 
 
   const peformSearch = async (value: string, locationId: string) => {
@@ -118,10 +120,16 @@ export default function Index({locations, employees, transactions} : PageProps) 
   },[selectedLocation])
 
   useEffect(() => {
+    if(isFree) setSaleAmount("0");
+    else setSaleAmount("");
+  },[isFree])
+
+  useEffect(() => {
     if(paymentMethod == 'Cash') setReferenceNumber("");
   }, [paymentMethod])
 
   const handleProductSelect = (product: Product) => {
+    setIsFree(false);
     setSelectedProduct(product);
     setSearchTerm(product.description);
     setSaleAmount(product.srp.toString());
@@ -129,7 +137,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   };
 
   const handleAddOrder = () => {
-    if(Number(saleAmount) < Number(selectedProduct?.unit_cost)){
+    if(!isFree && Number(saleAmount) < Number(selectedProduct?.unit_cost)){
       setSalesAmountError(`Amount should be higher than the unit cost. (${selectedProduct?.unit_cost})`);
       return;
     }else {
@@ -528,13 +536,17 @@ export default function Index({locations, employees, transactions} : PageProps) 
                   type="number"
                   placeholder="0.00"
                   value={saleAmount}
+                  disabled={isFree}
                   onChange={(e) => setSaleAmount(e.target.value)}
                 />
                   {salesAmountError && (
                     <p className="text-sm text-destructive">{salesAmountError}</p>
                   )}
               </div>
-
+                <div className="flex items-center gap-1">
+                    <Checkbox checked={isFree} onCheckedChange={() => setIsFree(!isFree)}/>
+                    <Label>Is free?</Label>
+                </div>
               <Button 
                 onClick={handleAddOrder}
                 disabled={!selectedProduct || !selectedEmployee || !saleAmount}
