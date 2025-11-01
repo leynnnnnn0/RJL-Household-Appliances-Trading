@@ -128,11 +128,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
         }
     }, [nextPayment?.id]);
 
-    const totalPaid = transaction.installment_order_payments?.reduce((sum, payment) => {
-        return (payment.status === 'completed' || payment.status === 'paid') 
-            ? sum + Number(payment.amount_paid || 0) 
-            : sum;
-    }, 0) || 0;
+    const totalPaid = transaction.total_amount_paid;
 
     const lcp = transaction.loan_contract_price;
     const down = transaction.down_payment;
@@ -140,8 +136,9 @@ export default function Show({transaction, paymentHistory} : PageProps){
     const pnvAdditionalCharge = Number(transaction.promisory_note_value_interest_additional_charge);
     const final_pnv = pnv * transaction.promisory_note_value_interest + pnvAdditionalCharge;
 
+    
     const totalToPay = final_pnv;
-    const remainingBalance = totalToPay - totalPaid;
+    const remainingBalance = transaction.remaining_balance;
     let paymentProgress = 0;
     if(totalPaid > 0 && final_pnv > 0){
         paymentProgress = (totalPaid / final_pnv) * 100
@@ -659,15 +656,15 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                         placeholder="0.00"
                                                         value={data.amount_paid}
                                                         onChange={(e) => setData('amount_paid', e.target.value)}
-                                                        max={nextPaymentRemaining}
+                                                        // max={remainingBalance}
                                                         className={errors.amount_paid ? 'border-red-500' : ''}
                                                     />
                                                     {errors.amount_paid && (
                                                         <p className="text-xs text-red-500">{errors.amount_paid}</p>
                                                     )}
-                                                    {data.amount_paid && Number(data.amount_paid) > nextPaymentRemaining && (
+                                                    {/* {data.amount_paid && Number(data.amount_paid) > nextPaymentRemaining && (
                                                         <p className="text-xs text-red-500">Amount exceeds remaining balance</p>
-                                                    )}
+                                                    )} */}
                                                     {data.amount_paid && Number(data.amount_paid) < nextPaymentRemaining && Number(data.amount_paid) > 0 && (
                                                         <Alert className="mt-2">
                                                             <AlertDescription className="text-xs">
@@ -727,7 +724,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                 <Button 
                                                     type="button" 
                                                     onClick={() => setShowPaymentConfirmation(true)}
-                                                    disabled={processing || !isValidAmount()}
+                                                    disabled={processing}
                                                     className="w-full"
                                                     size="lg"
                                                 >

@@ -58,7 +58,7 @@ class InstallmentOrderSeeder extends Seeder
 
     private function generateOrderNumber()
     {
-        return 'ORD-' . date('Y') . '-' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
+        return 'IORD-' . date('Y') . '-' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
     }
 
     /**

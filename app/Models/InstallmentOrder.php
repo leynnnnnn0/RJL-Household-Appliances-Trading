@@ -47,14 +47,13 @@ class InstallmentOrder extends Model
     ];
 
     public function getTotalAmountPaidAttribute(){
-        $total = $this->installment_order_payments->sum(function($payment){
-            if($payment->status == 'paid' || $payment->status == 'partial'){
-                return $payment->amount_paid;
-            }else {
-                return 0;
-            }
+        $data = $this->installment_order_payments
+        ->flatMap(function ($payment) {
+            return $payment->installment_order_payment_history;
         });
-        return number_format($total, 2, '.', ',');
+
+        $total = $data->count() > 0 ? $data->sum('amount') : 0;
+        return $total;
     }
 
     public function getRemainingBalanceAttribute()
@@ -66,7 +65,7 @@ class InstallmentOrder extends Model
 
     $totalToPay = ($noteValue * $interest) + $additional;
 
-    return number_format(($totalToPay - $paid), 2, '.', ',');
+    return $totalToPay - $paid;
 }
 
     public function customer()

@@ -123,7 +123,7 @@ class POSCreditOrderController extends Controller
         $transction = InstallmentOrder::with(['customer', 'location', 'user', 'voider', 'installment_order_item.item', 'installment_order_payments.installment_order_payment_history.user'])
         ->where('order_number', $order_number)->firstOrFail();
 
-         $paymentHistory = $transction->installment_order_payments
+        $paymentHistory = $transction->installment_order_payments
         ->flatMap(function ($payment) {
             return $payment->installment_order_payment_history;
         });
@@ -147,63 +147,91 @@ class POSCreditOrderController extends Controller
         'paid_date' => ['required', 'date']
     ]);
 
-    $payment = InstallmentOrderPayment::findOrFail($validated['installment_order_payment_id']);
-    
     DB::beginTransaction();
 
-    // Get current amount paid
-    $currentAmountPaid = $payment->amount_paid ?? 0;
-    
-    // Calculate new total amount paid
-    $newAmountPaid = $currentAmountPaid + $validated['amount_paid'];
-    
-    // Validate that new amount doesn't exceed amount due
-    if ($newAmountPaid > $payment->amount_due) {
-        return back()->withErrors([
-            'amount_paid' => 'Payment amount exceeds remaining balance.'
-        ])->withInput();
-    }
-    
-    // Determine payment status
-    $status = 'partial';
-    if ($newAmountPaid >= $payment->amount_due) {
-        $status = 'paid';
-    }
-    
-    // Update payment record
-    $payment->update([
-        'amount_paid' => $newAmountPaid,
-        'payment_method' => $validated['payment_method'],
-        'reference_number' => $validated['reference_number'],
-        'paid_date' => $validated['paid_date'],
-        'status' => $status
-    ]);
-    
-    // Optional: Create a payment history/log entry
-    InstallmentOrderPaymentHistory::create([
-        'payment_id' => $payment->id,
-        'amount' => $validated['amount_paid'],
-        'payment_method' => $validated['payment_method'],
-        'reference_number' => $validated['reference_number'],
-        'paid_date' => $validated['paid_date'],
-        'user_id' => Auth::id()
-    ]);
-    
-    // Check if all payments are completed to mark order as completed
-    $installmentOrder = InstallmentOrder::find($validated['installment_order_id']);
-    $allPaymentsPaid = $installmentOrder->installment_order_payments()
-        ->where('status', '!=', 'paid')
-        ->where('status', '!=', 'completed')
-        ->count() === 0;
-    
-    if ($allPaymentsPaid) {
-        $installmentOrder->update(['is_completed' => true]);
-    }
+    try {
+        $installmentOrder = InstallmentOrder::findOrFail($validated['installment_order_id']);
+        $remainingPayment = $validated['amount_paid'];
+        $currentPayment = InstallmentOrderPayment::findOrFail($validated['installment_order_payment_id']);
 
-    DB::commit();
+        // Start from the current installment and move forward
+        $payments = $installmentOrder->installment_order_payments()
+            ->whereIn('status', ['pending', 'partial'])
+            ->orderBy('installment_number')
+            ->get();
 
-    return back()->with('success', 'Payment recorded successfully!');
+        foreach ($payments as $payment) {
+            // Skip if no remaining payment
+            if ($remainingPayment <= 0) break;
+
+            $currentAmountPaid = $payment->amount_paid ?? 0;
+            $remainingDue = $payment->amount_due - $currentAmountPaid;
+
+            if ($remainingPayment >= $remainingDue) {
+                // Fully pay this installment
+                $payment->update([
+                    'amount_paid' => $payment->amount_due,
+                    'status' => 'paid',
+                    'payment_method' => $validated['payment_method'],
+                    'reference_number' => $validated['reference_number'],
+                    'paid_date' => $validated['paid_date'],
+                ]);
+
+                // Create payment history
+                InstallmentOrderPaymentHistory::create([
+                    'payment_id' => $payment->id,
+                    'amount' => $remainingDue,
+                    'payment_method' => $validated['payment_method'],
+                    'reference_number' => $validated['reference_number'],
+                    'paid_date' => $validated['paid_date'],
+                    'user_id' => Auth::id(),
+                ]);
+
+                $remainingPayment -= $remainingDue;
+            } else {
+                // Partial payment for this installment
+                $newTotalPaid = $currentAmountPaid + $remainingPayment;
+                $status = $newTotalPaid >= $payment->amount_due ? 'paid' : 'partial';
+
+                $payment->update([
+                    'amount_paid' => $newTotalPaid,
+                    'status' => $status,
+                    'payment_method' => $validated['payment_method'],
+                    'reference_number' => $validated['reference_number'],
+                    'paid_date' => $validated['paid_date'],
+                ]);
+
+                InstallmentOrderPaymentHistory::create([
+                    'payment_id' => $payment->id,
+                    'amount' => $remainingPayment,
+                    'payment_method' => $validated['payment_method'],
+                    'reference_number' => $validated['reference_number'],
+                    'paid_date' => $validated['paid_date'],
+                    'user_id' => Auth::id(),
+                ]);
+
+                $remainingPayment = 0;
+            }
+        }
+
+        // Mark order as completed if all payments are paid
+        $unpaidCount = $installmentOrder->installment_order_payments()
+            ->where('status', '!=', 'paid')
+            ->count();
+
+        if ($unpaidCount === 0) {
+            $installmentOrder->update(['is_completed' => true]);
+        }
+
+        DB::commit();
+
+        return back()->with('success', 'Payment recorded successfully!');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->withErrors(['error' => 'Payment processing failed: ' . $e->getMessage()]);
+    }
 }
+
 
     public function void(Request $request, $id)
     {
