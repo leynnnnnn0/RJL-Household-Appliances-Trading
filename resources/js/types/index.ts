@@ -129,6 +129,7 @@ export type OrderItemWithRelations = Orderitem & {
 }
 
 export type InstallmentOrder = {
+  id: number | string;
   customer_id: number | null;
   location_id: number | null;
   user_id: number | null;
@@ -166,16 +167,32 @@ export type InstallmentOrderWithRelations = InstallmentOrder & {
   user: User;
   voider: User;
   installment_order_item: InstallmentOrderItem;
-  installment_order_paymets: InstallmentOrderPayment[]
+  installment_order_payments: InstallmentOrderPayment[]
 }
 
 export type InstallmentOrderPayment = {
-  istallment_order_id: number | string;
-  amount: number;
-  payment_method: string;
+  id: number | string;
+  installment_order_id: number | string;
+  installment_number: number;
+  amount_due: number;
+  amount_paid: number;
+  due_date: string;
+  payment_method: string | null;
   reference_number: string | null;
   status: string;
-  transaction_date: string;
+  paid_date: string;
+  installment_order_payment_history: null | InstallmentOrderPaymentHistory[]
+};
+
+export type InstallmentOrderPaymentHistory = {
+    id: number | string;
+    payment_id: number | string;
+    amount: number ;
+    payment_method: number,
+    reference_number: string | null,
+    paid_date: string
+    user: User;
+
 };
 // Usage examples:
 // suppliers: Paginated<Supplier>

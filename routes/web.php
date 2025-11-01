@@ -33,6 +33,7 @@ Route::resource('locations', LocationController::class);
 Route::resource('suppliers', SupplierController::class);
 
 
+Route::post('/pos-installment-orders/record-payment', [POSCreditOrderController::class, 'recordPayment']);
 Route::resource('/pos-installment-orders', POSCreditOrderController::class);
 Route::post('/pos-cash-orders/void/{id}', [POSCashOrderController::class, 'voidOrder']);
 Route::resource('pos-cash-orders', POSCashOrderController::class);

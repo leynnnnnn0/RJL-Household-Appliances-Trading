@@ -29,7 +29,7 @@ class CustomerResource extends JsonResource
                 'id' => $this->investigation_detail?->id,
                 'employee_id' => $this->investigation_detail?->employee_id,
                 'home_visit_date' => $this->investigation_detail?->home_visit_date,
-                'is_employment_verified' => $this->investigation_detail?->home_visit_date,
+                'is_employment_verified' => $this->investigation_detail?->is_employment_verified,
                 'investigation_notes' => $this->investigation_detail?->investigation_notes,
             ]
         ];

@@ -164,7 +164,6 @@ export default function Index({locations, employees} : PageProps) {
   };
   
   const selectCustomer = (customer: Customer) => {
-    console.log(customer);
     setSelectedCustomer(customer);
     setIsExistingCustomer(true);
     setFirstName(customer.first_name);
@@ -183,6 +182,7 @@ export default function Index({locations, employees} : PageProps) {
     }
 
     if (customer.investigation_detail?.id) {
+      console.log(customer.investigation_detail);
       setVisitDate(customer.investigation_detail?.home_visit_date);
       setEmploymentVerified(customer.investigation_detail?.is_employment_verified);
       setInvestigationNotes(customer.investigation_detail?.investigation_notes);
@@ -1000,12 +1000,11 @@ export default function Index({locations, employees} : PageProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  References
+                  Reference
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold">Reference 1</h3>
                   <div className="space-y-2">
                     <Label htmlFor="ref1Name">Name *</Label>
                     <Input 

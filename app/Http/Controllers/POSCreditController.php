@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\InstallmentOrder;
 use App\Models\InstallmentOrderItem;
+use App\Models\InstallmentOrderPayment;
 use App\Models\Item;
 use App\Models\Location;
 use App\Models\Order;
@@ -54,7 +55,6 @@ class POSCreditController extends Controller
             'promisory_note_value_interest' => 'required',
             'promisory_note_value_interest_additional_charge' => 'required',
         ]);
-
         try{
             DB::beginTransaction();
 
@@ -74,6 +74,7 @@ class POSCreditController extends Controller
             'full_name' => $validated['customer_reference_full_name'],
             'phone_number' => $validated['customer_reference_phone_number']
          ]);
+
 
         $customer->investigation_detail()->updateOrCreate([
                 'employee_id' => $validated['investigator_id'],
@@ -107,6 +108,26 @@ class POSCreditController extends Controller
         ]);
         $iventoryItem = Item::where('date_out', null)->findOrFail($validated['item_id']);
         $iventoryItem->update(['date_out' => Carbon::parse(Carbon::parse($order->transaction_date)->toDateString())]);
+
+        $total = $order->promisory_note_value * $order->promisory_note_value_interest + floatval($order->promisory_note_value_interest_additional_charge);
+
+        $monthlyPayment = $total / $order->number_of_terms;
+
+
+
+        for ($i = 1; $i <= $order->number_of_terms; $i++) {
+        InstallmentOrderPayment::create([
+        'installment_order_id' => $order->id,
+        'installment_number' => $i,
+        'amount_due' => $monthlyPayment,
+        'amount_paid' => 0,
+        'due_date' => Carbon::parse($order->transaction_date)->addMonths($i),
+        'payment_method' => null,
+        'reference_number' => null,
+        'status' => 'pending', // pending, paid, overdue, partial
+        'paid_date' => null,
+    ]);
+}
         DB::commit();
         return back()->with('success', 'Created Successfully');
         }catch(Exception $e){
@@ -115,9 +136,6 @@ class POSCreditController extends Controller
                 'message' => $e->getMessage(),
             ]);
         }
-
-
-
     }
 
       public function generateOrderNumber()

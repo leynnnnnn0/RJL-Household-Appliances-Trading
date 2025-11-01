@@ -12,15 +12,23 @@ class InstallmentOrderPayment extends Model
 
     protected $fillable = [
         'installment_order_id',
-        'amount',
+        'installment_number',
+        'amount_due',
+        'amount_paid',
+        'due_date',
         'payment_method',
         'reference_number',
         'status',
-        'transaction_date',
+        'paid_date'
     ];
 
     public function installment_order()
     {
         return $this->belongsTo(InstallmentOrder::class);
+    }
+
+    public function installment_order_payment_history()
+    {
+        return $this->hasMany(InstallmentOrderPaymentHistory::class, 'payment_id');
     }
 }

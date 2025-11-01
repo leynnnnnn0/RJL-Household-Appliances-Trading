@@ -14,11 +14,14 @@ return new class extends Migration
         Schema::create('installment_order_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('installment_order_id')->constrained();
-            $table->decimal('amount', 10, 2);
-            $table->string('payment_method');
+            $table->integer('installment_number');
+            $table->decimal('amount_due', 10, 2);
+            $table->decimal('amount_paid', 10, 2)->default(0);
+            $table->date('due_date');
+            $table->string('payment_method')->nullable();
             $table->string('reference_number')->nullable();
-            $table->string('status')->default('pending');
-            $table->dateTime('transaction_date')->useCurrent();
+            $table->string('status')->default('pending'); // pending, paid, overdue, partial
+            $table->dateTime('paid_date')->nullable();
             $table->timestamps();
         });
     }
