@@ -19,7 +19,7 @@ class POSCreditOrderController extends Controller
 {
      public function index(Request $request)
 {
-    $query = InstallmentOrder::with(['user', 'location', 'installment_order_item.item'])->latest();
+    $query = InstallmentOrder::with(['user', 'location', 'installment_order_item.item'])->latest('transaction_date');
 
     // Search by order number
     if ($request->filled('search')) {
@@ -55,27 +55,51 @@ class POSCreditOrderController extends Controller
               ->when($request->status == 'complete', fn($q) => $q->where('is_completed', true));
     }
 
-    // Aging Filter (only applies to active orders)
+    // Aging Filter (based on overdue payments)
     if ($request->filled('aging') && $request->aging !== 'all') {
-        $query->where('is_voided', false)->where('is_defaulted', false);
+        $query->where('is_voided', false)
+              ->where('is_defaulted', false)
+              ->where('is_completed', false);
         
         $agingValue = $request->aging;
+        $today = now();
         
-        if ($agingValue === 'current') {
-            // Current month
-            $query->whereMonth('transaction_date', now()->month)
-                  ->whereYear('transaction_date', now()->year);
+        if ($agingValue === '1') {
+            // 1-30 days overdue
+            $query->whereHas('installment_order_payments', function($q) use ($today) {
+                $q->whereRaw('amount_paid < amount_due')
+                  ->where('due_date', '<=', $today)
+                  ->where('due_date', '>=', $today->copy()->subDays(30));
+            });
+        } elseif ($agingValue === '2') {
+            // 31-60 days overdue
+            $query->whereHas('installment_order_payments', function($q) use ($today) {
+                $q->whereRaw('amount_paid < amount_due')
+                  ->where('due_date', '<=', $today->copy()->subDays(31))
+                  ->where('due_date', '>=', $today->copy()->subDays(60));
+            });
+        } elseif ($agingValue === '3') {
+            // 61-90 days overdue
+            $query->whereHas('installment_order_payments', function($q) use ($today) {
+                $q->whereRaw('amount_paid < amount_due')
+                  ->where('due_date', '<=', $today->copy()->subDays(61))
+                  ->where('due_date', '>=', $today->copy()->subDays(90));
+            });
+        } elseif ($agingValue === '4') {
+            // 91+ days overdue
+            $query->whereHas('installment_order_payments', function($q) use ($today) {
+                $q->whereRaw('amount_paid < amount_due')
+                  ->where('due_date', '<=', $today->copy()->subDays(91));
+            });
+        } elseif ($agingValue === 'current') {
+            // Current - no overdue payments (all payments either paid or not yet due)
+            $query->whereDoesntHave('installment_order_payments', function($q) use ($today) {
+                $q->whereRaw('amount_paid < amount_due')
+                  ->where('due_date', '<', $today);
+            });
         } elseif ($agingValue === 'new_releases') {
-            // Last 30 days
-            $query->whereDate('transaction_date', '>=', now()->subDays(30));
-        } else {
-            // Aging by months (1-12)
-            $monthsAgo = (int) $agingValue;
-            $startDate = now()->subMonths($monthsAgo)->startOfMonth();
-            $endDate = now()->subMonths($monthsAgo)->endOfMonth();
-            
-            $query->whereDate('transaction_date', '>=', $startDate)
-                  ->whereDate('transaction_date', '<=', $endDate);
+            // New releases - orders created in last 7 days
+            $query->whereDate('transaction_date', '>=', $today->copy()->subDays(7));
         }
     }
 
@@ -94,7 +118,6 @@ class POSCreditOrderController extends Controller
         'employees' => User::dropdown(),
     ]);
 }
-    
 
     public function show($order_number){
         $transction = InstallmentOrder::with(['customer', 'location', 'user', 'voider', 'installment_order_item.item', 'installment_order_payments.installment_order_payment_history.user'])
@@ -222,7 +245,7 @@ class POSCreditOrderController extends Controller
         $transaction->update([
             'is_defaulted' => true,
             'default_reason' => $validated['default_reason'],
-            'deafult_date' => now(),
+            'default_date' => now(),
             'defaulter_id' => Auth::id()
         ]);
 

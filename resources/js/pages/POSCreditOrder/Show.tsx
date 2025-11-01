@@ -33,7 +33,8 @@ import {
   ArrowRight,
   MoreVertical,
   Ban,
-  AlertTriangle
+  AlertTriangle,
+  ArrowLeft
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -45,7 +46,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ModuleHeading from '@/components/cards/module-heading';
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { IconTopologyStarRing3 } from '@tabler/icons-react';
 
@@ -55,6 +56,7 @@ interface PageProps {
 }
 
 export default function Show({transaction, paymentHistory} : PageProps){
+     const {previousUrl} = usePage().props as any;
     const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
     const [showVoidDialog, setShowVoidDialog] = useState(false);
     const [showDefaultDialog, setShowDefaultDialog] = useState(false);
@@ -233,6 +235,12 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 description='Installment order details and payment schedule'
                             />
                             <div className="flex gap-2 items-center">
+                                <Button variant="outline" asChild>
+              <Link href={previousUrl}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to List
+              </Link>
+            </Button>
                                 {transaction.is_voided == true && (
                                     <Badge variant="destructive" className="h-8">
                                         <XCircle className="w-4 h-4 mr-1" />

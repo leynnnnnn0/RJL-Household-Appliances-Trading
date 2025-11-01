@@ -31,7 +31,8 @@ class DatabaseSeeder extends Seeder
             LocationSeeder::class,
             ItemSeeder::class,
             OrderSeeder::class,
-            EmployeeSeeder::class
+            EmployeeSeeder::class,
+            InstallmentOrderSeeder::class
         ]);
     }
 }

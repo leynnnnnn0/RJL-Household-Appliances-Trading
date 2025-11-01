@@ -31,7 +31,7 @@ class InstallmentOrder extends Model
         'reason_for_cancellation',
         'void_date',
         'voider_id',
-        
+
         'is_completed',
 
         'is_defaulted',
@@ -39,6 +39,34 @@ class InstallmentOrder extends Model
         'default_date',
         'defaulter_id'
     ];
+
+    protected $appends = [
+        'total_amount_paid',
+        'remaining_balance'
+    ];
+
+    public function getTotalAmountPaidAttribute(){
+        $total = $this->installment_order_payments->sum(function($payment){
+            if($payment->status == 'paid' || $payment->status == 'partial'){
+                return $payment->amount_paid;
+            }else {
+                return 0;
+            }
+        });
+        return number_format($total, 2, '.', ',');
+    }
+
+    public function getRemainingBalanceAttribute()
+{
+    $noteValue = floatval($this->promisory_note_value);
+    $interest = floatval($this->promisory_note_value_interest);
+    $additional = floatval($this->promisory_note_value_interest_additional_charge);
+    $paid = floatval($this->getTotalAmountPaidAttribute());
+
+    $totalToPay = ($noteValue * $interest) + $additional;
+
+    return number_format(($totalToPay - $paid), 2, '.', ',');
+}
 
     public function customer()
     {

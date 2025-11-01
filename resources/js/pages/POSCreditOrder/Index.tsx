@@ -117,11 +117,7 @@ export default function Index({ transactions, locations, employees }: Props) {
     <AppLayout>
       <Head title="POS Installment Orders" />
       <ModuleHeading title="POS Installment Orders" description="View and manage all installment order transactions">
-        {hasActiveFilters && (
-          <Button variant="outline" onClick={clearFilters} className="cursor-pointer">
-            <X className="mr-2 h-4 w-4" /> Clear Filters
-          </Button>
-        )}
+     
       </ModuleHeading>
 
       {/* Filters */}
@@ -225,15 +221,6 @@ export default function Index({ transactions, locations, employees }: Props) {
                   <SelectItem value="1">1 Month</SelectItem>
                   <SelectItem value="2">2 Months</SelectItem>
                   <SelectItem value="3">3 Months</SelectItem>
-                  <SelectItem value="4">4 Months</SelectItem>
-                  <SelectItem value="5">5 Months</SelectItem>
-                  <SelectItem value="6">6 Months</SelectItem>
-                  <SelectItem value="7">7 Months</SelectItem>
-                  <SelectItem value="8">8 Months</SelectItem>
-                  <SelectItem value="9">9 Months</SelectItem>
-                  <SelectItem value="10">10 Months</SelectItem>
-                  <SelectItem value="11">11 Months</SelectItem>
-                  <SelectItem value="12">12 Months</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -255,7 +242,12 @@ export default function Index({ transactions, locations, employees }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
           </div>
+
+          
+
+            
         </CardContent>
       </Card>
 
@@ -265,10 +257,11 @@ export default function Index({ transactions, locations, employees }: Props) {
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Order Number</TableHead>
-              <TableHead>Date Released</TableHead>
+              <TableHead>Transaction Date</TableHead>
               <TableHead>No. of Terms</TableHead>
               <TableHead>Total PNV</TableHead>
               <TableHead>Monthly</TableHead>
+              <TableHead>Remaining Balance</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-center">Actions</TableHead>
             </TableRow>
@@ -294,6 +287,9 @@ export default function Index({ transactions, locations, employees }: Props) {
                   <TableCell>
                    ₱{((transaction.promisory_note_value * transaction.promisory_note_value_interest + Number(transaction.promisory_note_value_interest_additional_charge)) / transaction.number_of_terms).toLocaleString()}
                   </TableCell>
+                  <TableCell>
+                    ₱{transaction.remaining_balance}
+                </TableCell>
                   <TableCell>
                     {getStatusBadge(transaction)}
                   </TableCell>
