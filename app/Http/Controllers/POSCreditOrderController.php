@@ -18,33 +18,71 @@ class POSCreditOrderController extends Controller
 {
      public function index(Request $request)
 {
-    $query = InstallmentOrder::with('user', 'location')->latest();
+    $query = InstallmentOrder::with(['user', 'location', 'installment_order_item.item'])->latest();
 
-
+    // Search by order number
     if ($request->filled('search')) {
         $search = $request->input('search');
         $query->where('order_number', 'like', "%{$search}%");
     }
 
+    // Date From
     if ($request->filled('date_from')) {
         $query->whereDate('transaction_date', '>=', $request->input('date_from'));
     }
 
+    // Date To
     if ($request->filled('date_to')) {
         $query->whereDate('transaction_date', '<=', $request->input('date_to'));
     }
 
+    // Location Filter
     if ($request->filled('location_id') && $request->location_id !== 'all') {
         $query->where('location_id', $request->location_id);
     }
 
-    if ($request->filled('user_id') && $request->employee_id !== 'all') {
+    // Employee/User Filter
+    if ($request->filled('employee_id') && $request->employee_id !== 'all') {
         $query->where('user_id', $request->employee_id);
     }
 
+    // Status Filter (defaulted, voided, active)
     if ($request->filled('status') && $request->status !== 'all') {
-        $query->when($request->status === '0', fn($q) => $q->where('is_voided', false))
-              ->when($request->status === '1', fn($q) => $q->where('is_voided', true));
+        $query->when($request->status === 'active', fn($q) => $q->where('is_voided', false)->where('is_defaulted', false)->where('is_completed', false))
+              ->when($request->status === 'voided', fn($q) => $q->where('is_voided', true))
+              ->when($request->status === 'defaulted', fn($q) => $q->where('is_defaulted', true))
+              ->when($request->status == 'complete', fn($q) => $q->where('is_completed', true));
+    }
+
+    // Aging Filter (only applies to active orders)
+    if ($request->filled('aging') && $request->aging !== 'all') {
+        $query->where('is_voided', false)->where('is_defaulted', false);
+        
+        $agingValue = $request->aging;
+        
+        if ($agingValue === 'current') {
+            // Current month
+            $query->whereMonth('transaction_date', now()->month)
+                  ->whereYear('transaction_date', now()->year);
+        } elseif ($agingValue === 'new_releases') {
+            // Last 30 days
+            $query->whereDate('transaction_date', '>=', now()->subDays(30));
+        } else {
+            // Aging by months (1-12)
+            $monthsAgo = (int) $agingValue;
+            $startDate = now()->subMonths($monthsAgo)->startOfMonth();
+            $endDate = now()->subMonths($monthsAgo)->endOfMonth();
+            
+            $query->whereDate('transaction_date', '>=', $startDate)
+                  ->whereDate('transaction_date', '<=', $endDate);
+        }
+    }
+
+    // Item Type Filter (appliances, furniture, gadgets)
+    if ($request->filled('item_type') && $request->item_type !== 'all') {
+        $query->whereHas('installment_order_item.item', function($q) use ($request) {
+            $q->where('item_type', $request->item_type);
+        });
     }
 
     $transactions = $query->paginate(8)->withQueryString();

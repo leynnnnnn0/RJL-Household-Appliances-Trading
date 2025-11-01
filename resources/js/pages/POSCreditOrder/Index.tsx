@@ -11,8 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Eye, Calendar, MapPin, User, Filter, X, Download } from "lucide-react";
-import { Paginated, OrderWithrelations, Location, User as UserType, InstallmentOrderWithRelations } from "@/types";
+import { Search, Eye, Calendar, MapPin, User, Filter, X, Download, Clock, Package } from "lucide-react";
+import { Paginated, InstallmentOrderWithRelations, Location, User as UserType } from "@/types";
 import Pagination from "@/components/pagination";
 import {
   Select,
@@ -41,13 +41,15 @@ export default function Index({ transactions, locations, employees }: Props) {
   const getTodayDate = () => new Date().toISOString().split("T")[0];
 
   const [search, setSearch] = useState(query.get("search") || "");
-  const [dateFrom, setDateFrom] = useState(query.get("date_from") || getTodayDate());
-  const [dateTo, setDateTo] = useState(query.get("date_to") || getTodayDate());
+  const [dateFrom, setDateFrom] = useState(query.get("date_from") || "");
+  const [dateTo, setDateTo] = useState(query.get("date_to") || "");
   const [selectedLocation, setSelectedLocation] = useState(query.get("location_id") || "all");
   const [selectedEmployee, setSelectedEmployee] = useState(query.get("employee_id") || "all");
   const [selectedStatus, setSelectedStatus] = useState(query.get("status") || "all");
+  const [selectedAging, setSelectedAging] = useState(query.get("aging") || "all");
+  const [selectedItemType, setSelectedItemType] = useState(query.get("item_type") || "all");
 
-  // 🧠 Trigger server-side filter whenever filters change
+  // Trigger server-side filter whenever filters change
   useEffect(() => {
     const debounce = setTimeout(() => {
       const params: Record<string, string> = {};
@@ -58,12 +60,14 @@ export default function Index({ transactions, locations, employees }: Props) {
       if (selectedLocation !== "all") params.location_id = selectedLocation;
       if (selectedEmployee !== "all") params.employee_id = selectedEmployee;
       if (selectedStatus !== "all") params.status = selectedStatus;
+      if (selectedAging !== "all") params.aging = selectedAging;
+      if (selectedItemType !== "all") params.item_type = selectedItemType;
 
       router.get("/pos-installment-orders", params, { preserveState: true, replace: true });
     }, 400);
 
     return () => clearTimeout(debounce);
-  }, [search, dateFrom, dateTo, selectedLocation, selectedEmployee, selectedStatus]);
+  }, [search, dateFrom, dateTo, selectedLocation, selectedEmployee, selectedStatus, selectedAging, selectedItemType]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(amount);
@@ -73,11 +77,13 @@ export default function Index({ transactions, locations, employees }: Props) {
 
   const clearFilters = () => {
     setSearch("");
-    setDateFrom(getTodayDate());
-    setDateTo(getTodayDate());
+    setDateFrom("");
+    setDateTo("");
     setSelectedLocation("all");
     setSelectedEmployee("all");
     setSelectedStatus("all");
+    setSelectedAging("all");
+    setSelectedItemType("all");
   };
 
   const hasActiveFilters =
@@ -86,47 +92,52 @@ export default function Index({ transactions, locations, employees }: Props) {
     dateTo ||
     selectedLocation !== "all" ||
     selectedEmployee !== "all" ||
-    selectedStatus !== "all";
+    selectedStatus !== "all" ||
+    selectedAging !== "all" ||
+    selectedItemType !== "all";
 
   const handleViewDetails = (orderId: number) => {
     router.visit(`/pos-installment-orders/${orderId}`);
   };
 
-  const downloadPDF = () => {
-    const params = new URLSearchParams();
-    if (search) params.append("search", search);
-    if (dateFrom) params.append("date_from", dateFrom);
-    if (dateTo) params.append("date_to", dateTo);
-    if (selectedLocation !== "all") params.append("location_id", selectedLocation);
-    if (selectedEmployee !== "all") params.append("employee_id", selectedEmployee);
-    if (selectedStatus !== "all") params.append("status", selectedStatus);
-
-    window.open(`/pos-cash-orders/download-pdf?${params.toString()}`, "_blank");
+  const getStatusBadge = (transaction: InstallmentOrderWithRelations) => {
+    if (transaction.is_void) {
+      return <Badge className="bg-destructive">Voided</Badge>;
+    }
+    if (transaction.is_defaulted) {
+      return <Badge className="bg-orange-500">Defaulted</Badge>;
+    }
+    if (transaction.is_completed) {
+      return <Badge className="bg-green-500">Completed</Badge>;
+    }
+    return <Badge className="bg-blue-500">Active</Badge>;
   };
 
   return (
     <AppLayout>
       <Head title="POS Installment Orders" />
       <ModuleHeading title="POS Installment Orders" description="View and manage all installment order transactions">
-        {/* <Button onClick={downloadPDF} className="cursor-pointer">
-          <Download className="mr-2 h-4 w-4" /> Export to PDF
-        </Button> */}
+        {hasActiveFilters && (
+          <Button variant="outline" onClick={clearFilters} className="cursor-pointer">
+            <X className="mr-2 h-4 w-4" /> Clear Filters
+          </Button>
+        )}
       </ModuleHeading>
 
       {/* Filters */}
       <Card>
-        <CardContent className="space-y-4 lg:block">
+        <CardContent className="space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by order number or employee ID..."
+              placeholder="Search by order number..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Date From */}
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-1.5">
@@ -190,8 +201,57 @@ export default function Index({ transactions, locations, employees }: Props) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="0">Not Voided</SelectItem>
-                  <SelectItem value="1">Voided</SelectItem>
+                  <SelectItem value="complete">Complete</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="voided">Voided</SelectItem>
+                  <SelectItem value="defaulted">Defaulted</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Aging */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <Clock className="h-4 w-4" /> Aging
+              </label>
+              <Select value={selectedAging} onValueChange={setSelectedAging}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Aging" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Aging</SelectItem>
+                  <SelectItem value="current">Current</SelectItem>
+                  <SelectItem value="new_releases">New Releases</SelectItem>
+                  <SelectItem value="1">1 Month</SelectItem>
+                  <SelectItem value="2">2 Months</SelectItem>
+                  <SelectItem value="3">3 Months</SelectItem>
+                  <SelectItem value="4">4 Months</SelectItem>
+                  <SelectItem value="5">5 Months</SelectItem>
+                  <SelectItem value="6">6 Months</SelectItem>
+                  <SelectItem value="7">7 Months</SelectItem>
+                  <SelectItem value="8">8 Months</SelectItem>
+                  <SelectItem value="9">9 Months</SelectItem>
+                  <SelectItem value="10">10 Months</SelectItem>
+                  <SelectItem value="11">11 Months</SelectItem>
+                  <SelectItem value="12">12 Months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Item Type */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <Package className="h-4 w-4" /> Item Type
+              </label>
+              <Select value={selectedItemType} onValueChange={setSelectedItemType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Item Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Item Types</SelectItem>
+                  <SelectItem value="appliances">Appliances</SelectItem>
+                  <SelectItem value="furniture">Furniture</SelectItem>
+                  <SelectItem value="gadgets">Gadgets</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -215,7 +275,7 @@ export default function Index({ transactions, locations, employees }: Props) {
           <TableBody>
             {transactions.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={6} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Search className="h-12 w-12 mb-2 opacity-20" />
                     <p className="font-medium">No transactions found</p>
@@ -226,14 +286,12 @@ export default function Index({ transactions, locations, employees }: Props) {
             ) : (
               transactions.data.map((transaction) => (
                 <TableRow key={transaction.order_number} className="hover:bg-muted/50 transition-colors">
-                  <TableCell>{transaction.order_number}</TableCell>
+                  <TableCell className="font-medium">{transaction.order_number}</TableCell>
                   <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
                   <TableCell>{transaction.location.name}</TableCell>
                   <TableCell>{transaction.user.full_name}</TableCell>
                   <TableCell>
-                    <Badge className={`${transaction.is_void && "bg-destructive"}`}>
-                      {transaction.is_void ? "Voided" : "Active"}
-                    </Badge>
+                    {getStatusBadge(transaction)}
                   </TableCell>
                   <TableCell className="text-center">
                     <Button

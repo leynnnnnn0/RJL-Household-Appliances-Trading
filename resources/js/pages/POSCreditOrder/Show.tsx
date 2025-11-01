@@ -176,13 +176,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                         Voided
                                     </Badge>
                                 )}
-                                {transaction.is_completed && (
+                                {transaction.is_completed == true && (
                                     <Badge className="h-8 bg-green-600">
                                         <CheckCircle2 className="w-4 h-4 mr-1" />
                                         Completed
                                     </Badge>
                                 )}
-                                {transaction.is_defaulted && (
+                                {transaction.is_defaulted == true && (
                                     <Badge variant="destructive" className="h-8">
                                         <AlertCircle className="w-4 h-4 mr-1" />
                                         Defaulted
