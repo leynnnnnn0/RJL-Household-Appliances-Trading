@@ -258,7 +258,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 )}
 
                                 {/* Actions Menu */}
-                                {!transaction.is_voided && !transaction.is_completed && (
+                                {!transaction.is_voided && !transaction.is_completed && !transaction.is_defaulted && (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="outline" size="icon">

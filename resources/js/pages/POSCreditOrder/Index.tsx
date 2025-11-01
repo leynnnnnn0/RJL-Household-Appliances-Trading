@@ -101,7 +101,7 @@ export default function Index({ transactions, locations, employees }: Props) {
   };
 
   const getStatusBadge = (transaction: InstallmentOrderWithRelations) => {
-    if (transaction.is_void) {
+    if (transaction.is_voided) {
       return <Badge className="bg-destructive">Voided</Badge>;
     }
     if (transaction.is_defaulted) {
@@ -173,7 +173,7 @@ export default function Index({ transactions, locations, employees }: Props) {
             </div>
 
             {/* Employee */}
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-1.5">
                 <User className="h-4 w-4" /> Employee
               </label>
@@ -188,7 +188,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
 
             {/* Status */}
             <div className="space-y-2">
@@ -265,9 +265,10 @@ export default function Index({ transactions, locations, employees }: Props) {
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Order Number</TableHead>
-              <TableHead>Transaction Date</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Employee</TableHead>
+              <TableHead>Date Released</TableHead>
+              <TableHead>No. of Terms</TableHead>
+              <TableHead>Total PNV</TableHead>
+              <TableHead>Monthly</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-center">Actions</TableHead>
             </TableRow>
@@ -288,8 +289,11 @@ export default function Index({ transactions, locations, employees }: Props) {
                 <TableRow key={transaction.order_number} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{transaction.order_number}</TableCell>
                   <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
-                  <TableCell>{transaction.location.name}</TableCell>
-                  <TableCell>{transaction.user.full_name}</TableCell>
+                  <TableCell>{transaction.number_of_terms} months</TableCell>
+                  <TableCell>₱{(transaction.promisory_note_value * transaction.promisory_note_value_interest + Number(transaction.promisory_note_value_interest_additional_charge)).toLocaleString()}</TableCell>
+                  <TableCell>
+                   ₱{((transaction.promisory_note_value * transaction.promisory_note_value_interest + Number(transaction.promisory_note_value_interest_additional_charge)) / transaction.number_of_terms).toLocaleString()}
+                  </TableCell>
                   <TableCell>
                     {getStatusBadge(transaction)}
                   </TableCell>
