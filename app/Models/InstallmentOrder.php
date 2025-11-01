@@ -21,6 +21,7 @@ class InstallmentOrder extends Model
         'down_payment',
         'payment_method',
         'reference_number',
+        
         'promisory_note_value',
         'number_of_terms',
         'promisory_note_value_interest',

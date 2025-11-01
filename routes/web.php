@@ -7,6 +7,7 @@ use App\Http\Controllers\POSCashOrderController;
 use App\Http\Controllers\POSCashOrderSalesController;
 use App\Http\Controllers\POSCreditController;
 use App\Http\Controllers\POSCreditOrderController;
+use App\Http\Controllers\POSCreditOrderSalesController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -33,6 +34,7 @@ Route::resource('locations', LocationController::class);
 Route::resource('suppliers', SupplierController::class);
 
 
+Route::resource('/pos-installment-orders-sales', POSCreditOrderSalesController::class);
 Route::post('/pos-installment-orders/record-payment', [POSCreditOrderController::class, 'recordPayment']);
 Route::post('/pos-installment-orders/{id}/void', [POSCreditOrderController::class, 'void']);
 Route::post('/pos-installment-orders/{id}/default', [POSCreditOrderController::class, 'default']);

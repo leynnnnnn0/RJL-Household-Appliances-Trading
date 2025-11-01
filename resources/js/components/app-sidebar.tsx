@@ -45,6 +45,11 @@ const mainNavItems: NavItem[] = [
         icon: CreditCardIcon,
     },
        {
+        title: 'POS Credit Orders Sales',
+        href: '/pos-installment-orders-sales',
+        icon: ChartArea,
+    },
+       {
         title: 'Locations',
         href: '/locations',
         icon: Map,
