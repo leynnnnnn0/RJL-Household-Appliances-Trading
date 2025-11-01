@@ -34,6 +34,8 @@ return new class extends Migration
            $table->foreignId('voider_id')->nullable()->constrained('users');
            $table->boolean('is_completed')->default(false);
            $table->boolean('is_defaulted')->default(false);
+           $table->dateTime('default_date')->nullable();
+            $table->foreignId('defaulter_id')->nullable()->constrained('users');
            $table->text('default_reason')->nullable();
             $table->timestamps();
         });

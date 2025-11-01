@@ -233,7 +233,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 description='Installment order details and payment schedule'
                             />
                             <div className="flex gap-2 items-center">
-                                {transaction.is_voided && (
+                                {transaction.is_voided == true && (
                                     <Badge variant="destructive" className="h-8">
                                         <XCircle className="w-4 h-4 mr-1" />
                                         Voided
@@ -584,7 +584,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                     {/* Payment Form - Right Side (Sticky) */}
                     <div className="lg:col-span-1">
                         <div className="sticky top-6 space-y-6">
-                            {!transaction.is_voided && !transaction.is_completed && nextPayment ? (
+                            {!transaction.is_voided && !transaction.is_completed && !transaction.is_defaulted && nextPayment ? (
                                 <>
                                     <Card className="border-primary shadow-lg">
                                         <CardHeader className="bg-primary/5">

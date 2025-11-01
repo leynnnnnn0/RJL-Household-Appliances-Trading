@@ -208,6 +208,33 @@ class POSCreditOrderController extends Controller
         
         return back()->with('success', 'Order Voided');
 
+    }
+
+      public function default(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'installment_order_id' => 'required',
+            'default_reason' => 'required|string'
+        ]);
+        $transaction = InstallmentOrder::with('installment_order_item.item')->findOrFail($id);
+        
+        DB::beginTransaction();
+        $transaction->update([
+            'is_defaulted' => true,
+            'default_reason' => $validated['default_reason'],
+            'deafult_date' => now(),
+            'defaulter_id' => Auth::id()
+        ]);
+
+        $item = $transaction->installment_order_item->item;
+        $item->update([
+            'date_out' => null
+        ]);
+
+        $item->save();
+        DB::commit();
+        
+        return back()->with('success', 'Order Voided');
 
     }
 }
