@@ -26,7 +26,8 @@ class InstallmentOrder extends Model
         'promisory_note_value_interest',
         'promisory_note_value_interest_additional_charge',
         'transaction_date',
-        'is_void',
+
+        'is_voided',
         'reason_for_cancellation',
         'void_date',
         'voider_id',

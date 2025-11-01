@@ -9,6 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { 
   CreditCard, 
   User, 
   MapPin, 
@@ -21,12 +30,24 @@ import {
   AlertCircle,
   Clock,
   Check,
-  ArrowRight
+  ArrowRight,
+  MoreVertical,
+  Ban,
+  AlertTriangle
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import ModuleHeading from '@/components/cards/module-heading';
 import AppLayout from '@/layouts/app-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { toast } from 'sonner';
+import { IconTopologyStarRing3 } from '@tabler/icons-react';
 
 interface PageProps {
     transaction: InstallmentOrderWithRelations,
@@ -34,6 +55,10 @@ interface PageProps {
 }
 
 export default function Show({transaction, paymentHistory} : PageProps){
+    const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+    const [showVoidDialog, setShowVoidDialog] = useState(false);
+    const [showDefaultDialog, setShowDefaultDialog] = useState(false);
+
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-PH', {
             style: 'currency',
@@ -68,6 +93,18 @@ export default function Show({transaction, paymentHistory} : PageProps){
         payment_method: 'cash',
         reference_number: '',
         paid_date: new Date().toISOString().split('T')[0]
+    });
+
+    // Void transaction form
+    const voidForm = useForm({
+        installment_order_id: transaction.id,
+        reason_for_cancellation: ''
+    });
+
+    // Default transaction form
+    const defaultForm = useForm({
+        installment_order_id: transaction.id,
+        default_reason: ''
     });
 
     // Update form when nextPayment changes
@@ -116,16 +153,42 @@ export default function Show({transaction, paymentHistory} : PageProps){
         isOverdue(p.due_date, p.status)
     ).length || 0;
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handlePaymentSubmit = () => {
+        setShowPaymentConfirmation(false);
         
         post(`/pos-installment-orders/record-payment`, {
             onSuccess: () => {
                 reset('amount_paid', 'reference_number');
-                toast.success("Payment Recorded");
+                toast.success("Payment Recorded Successfully");
             },
             onError: (e) => {
-                toast.error("An error occured");
+                toast.error("An error occurred while recording payment");
+                console.log(e);
+            }
+        });
+    };
+
+    const handleVoidSubmit = () => {
+        voidForm.post(`/pos-installment-orders/${transaction.id}/void`, {
+            onSuccess: () => {
+                setShowVoidDialog(false);
+                toast.success("Transaction voided successfully");
+            },
+            onError: (e) => {
+                toast.error("An error occurred while voiding transaction");
+                console.log(e);
+            }
+        });
+    };
+
+    const handleDefaultSubmit = () => {
+        defaultForm.post(`/pos-installment-orders/${transaction.id}/default`, {
+            onSuccess: () => {
+                setShowDefaultDialog(false);
+                toast.success("Transaction marked as defaulted");
+            },
+            onError: (e) => {
+                toast.error("An error occurred while marking as default");
                 console.log(e);
             }
         });
@@ -159,7 +222,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
         <AppLayout>
             <Head title='Installment Order Details'/>
 
-             <div className="max-w-[1800px] mx-auto">
+            <div className="max-w-[1800px] mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Content - Left Side */}
                     <div className="lg:col-span-2 space-y-6">
@@ -169,8 +232,8 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 title={`Order #${transaction.order_number}`} 
                                 description='Installment order details and payment schedule'
                             />
-                            <div className="flex gap-2">
-                                {transaction.is_void && (
+                            <div className="flex gap-2 items-center">
+                                {transaction.is_voided && (
                                     <Badge variant="destructive" className="h-8">
                                         <XCircle className="w-4 h-4 mr-1" />
                                         Voided
@@ -188,16 +251,47 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                         Defaulted
                                     </Badge>
                                 )}
-                                {!transaction.is_completed && !transaction.is_void && !transaction.is_defaulted && (
+                                {!transaction.is_completed && !transaction.is_voided && !transaction.is_defaulted && (
                                     <Badge variant="secondary" className="h-8">
                                         Active
                                     </Badge>
                                 )}
+
+                                {/* Actions Menu */}
+                                {!transaction.is_voided && !transaction.is_completed && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="icon">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            {!transaction.is_defaulted && (
+                                                <DropdownMenuItem 
+                                                    onClick={() => setShowDefaultDialog(true)}
+                                                    className="text-orange-600 focus:text-orange-600"
+                                                >
+                                                    <AlertTriangle className="w-4 h-4 mr-2" />
+                                                    Mark as Default
+                                                </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuItem 
+                                                onClick={() => setShowVoidDialog(true)}
+                                                className="text-red-600 focus:text-red-600"
+                                            >
+                                                <Ban className="w-4 h-4 mr-2" />
+                                                Void Transaction
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
                             </div>
                         </div>
 
-                        {/* // Status Alerts
-                        {transaction.is_void && (
+                        {/* Status Alerts */}
+                        {transaction.is_voided == true && (
                             <Alert variant="destructive">
                                 <XCircle className="h-4 w-4" />
                                 <AlertDescription>
@@ -207,16 +301,16 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             </Alert>
                         )}
 
-                        {transaction.is_defaulted && (
+                        {transaction.is_defaulted == true && (
                             <Alert variant="destructive">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertDescription>
                                     This order is in default status. Reason: {transaction.default_reason}
                                 </AlertDescription>
                             </Alert>
-                        )} */}
+                        )}
 
-                        {overduePayments > 0 && !transaction.is_void && (
+                        {overduePayments > 0 && !transaction.is_voided && (
                             <Alert variant="destructive">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertDescription>
@@ -262,6 +356,29 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 </CardContent>
                             </Card>
                         </div>
+
+                          <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <IconTopologyStarRing3 className="w-5 h-5" />
+                                    Item Details
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className='grid grid-cols-3 gap-5'>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Name</p>
+                                        <p className="font-medium">{transaction.installment_order_item.item.description}</p>
+                                    </div>
+                                     <div>
+                                        <p className="text-sm text-muted-foreground">Model</p>
+                                        <p className="font-medium">{transaction.installment_order_item.item.model}</p>
+                                    </div>
+                                      <div>
+                                        <p className="text-sm text-muted-foreground">Serial</p>
+                                        <p className="font-medium">{transaction.installment_order_item.item.serial}</p>
+                                    </div>
+                            </CardContent>
+                            </Card>
 
                         <div className="grid gap-6 md:grid-cols-2">
                             {/* Customer Information */}
@@ -336,9 +453,9 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                     <div className="space-y-1">
                                         <p className="text-sm text-muted-foreground">Loan Contract Price</p>
                                         <p className="text-2xl font-bold">{formatCurrency(transaction.loan_contract_price)}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            +{transaction.lcp_markup_rate}% markup
-                                        </p>
+                                         <p className="text-xs text-muted-foreground">
+                                    +{transaction.lcp_markup_rate}% markup {transaction.lcp_additional_charge > 0 ? `+ ${transaction.lcp_additional_charge} charge` : ''}
+                                </p>
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-sm text-muted-foreground">Down Payment</p>
@@ -349,13 +466,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                             </p>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm text-muted-foreground">Total Amount Due</p>
-                                        <p className="text-2xl font-bold">{formatCurrency(final_pnv)}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {transaction.number_of_terms} monthly payments
-                                        </p>
-                                    </div>
+                                     <div className="space-y-1">
+                                <p className="text-sm text-muted-foreground">Total PNV</p>
+                                <p className="text-2xl font-bold">{formatCurrency(final_pnv)}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    +{transaction.promisory_note_value_interest}% markup {pnvAdditionalCharge > 0 ? `+ ${pnvAdditionalCharge} charge` : ''}
+                                </p>
+                            </div>
                                     <div className="space-y-1">
                                         <p className="text-sm text-muted-foreground">Remaining Balance</p>
                                         <p className="text-2xl font-bold text-orange-600">{formatCurrency(remainingBalance)}</p>
@@ -467,7 +584,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                     {/* Payment Form - Right Side (Sticky) */}
                     <div className="lg:col-span-1">
                         <div className="sticky top-6 space-y-6">
-                            {!transaction.is_void && !transaction.is_completed && nextPayment ? (
+                            {!transaction.is_voided && !transaction.is_completed && nextPayment ? (
                                 <>
                                     <Card className="border-primary shadow-lg">
                                         <CardHeader className="bg-primary/5">
@@ -601,21 +718,18 @@ export default function Show({transaction, paymentHistory} : PageProps){
 
                                                 <Button 
                                                     type="button" 
-                                                    onClick={handleSubmit}
+                                                    onClick={() => setShowPaymentConfirmation(true)}
                                                     disabled={processing || !isValidAmount()}
                                                     className="w-full"
                                                     size="lg"
                                                 >
                                                     <CreditCard className="w-4 h-4 mr-2" />
-                                                    {processing ? 'Processing...' : `Record ${formatCurrency(Number(data.amount_paid || 0))}`}
+                                                    Record {formatCurrency(Number(data.amount_paid || 0))}
                                                 </Button>
                                             </div>
                                         </CardContent>
                                     </Card>
-
-                                  
                                 </>
-                            
                             ) : transaction.is_completed ? (
                                 <Card className="border-green-600">
                                     <CardContent className="pt-6 text-center">
@@ -634,87 +748,255 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 </Card>
                             )}
 
-                              {/* Complete Payment History */}
-                                    {paymentHistory && paymentHistory.length > 0 && (
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle className="text-base flex items-center gap-2">
-                                                    <TrendingUp className="w-4 h-4" />
-                                                    All Payment Transactions
-                                                </CardTitle>
-                                                <CardDescription className="text-xs">
-                                                    Complete payment transaction history
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                                                    {paymentHistory
-                                                        .sort((a, b) => new Date(b.paid_date).getTime() - new Date(a.paid_date).getTime())
-                                                        .map((history) => {
-                                                            const payment = transaction.installment_order_payments?.find(
-                                                                p => p.id === history.payment_id
-                                                            );
-                                                            return (
-                                                                <div 
-                                                                    key={history.id} 
-                                                                    className="border rounded-lg p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
-                                                                >
-                                                                    <div className="flex justify-between items-start mb-2">
-                                                                        <div>
-                                                                            <Badge variant="outline" className="text-xs mb-1">
-                                                                                Installment #{payment?.installment_number}
-                                                                            </Badge>
-                                                                            <p className="font-bold text-lg text-green-600">
-                                                                                {formatCurrency(history.amount)}
-                                                                            </p>
-                                                                        </div>
-                                                                        <div className="text-right text-xs text-muted-foreground">
-                                                                            {formatDate(history.paid_date)}
-                                                                        </div>
-                                                                    </div>
-                                                                    <Separator className="my-2" />
-                                                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                                                        <div>
-                                                                            <span className="text-muted-foreground">Method:</span>
-                                                                            <p className="font-medium capitalize">{history.payment_method}</p>
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className="text-muted-foreground">Recorded by:</span>
-                                                                            <p className="font-medium">{history.user.full_name}</p>
-                                                                        </div>
-                                                                        {history.reference_number && (
-                                                                            <div className="col-span-2">
-                                                                                <span className="text-muted-foreground">Reference:</span>
-                                                                                <p className="font-medium">{history.reference_number}</p>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                            {/* Complete Payment History */}
+                            {paymentHistory && paymentHistory.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base flex items-center gap-2">
+                                            <TrendingUp className="w-4 h-4" />
+                                            All Payment Transactions
+                                        </CardTitle>
+                                        <CardDescription className="text-xs">
+                                            Complete payment transaction history
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                                            {paymentHistory
+                                                .sort((a, b) => new Date(b.paid_date).getTime() - new Date(a.paid_date).getTime())
+                                                .map((history) => {
+                                                    const payment = transaction.installment_order_payments?.find(
+                                                        p => p.id === history.payment_id
+                                                    );
+                                                    return (
+                                                        <div 
+                                                            key={history.id} 
+                                                            className="border rounded-lg p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+                                                        >
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <div>
+                                                                    <Badge variant="outline" className="text-xs mb-1">
+                                                                        Installment #{payment?.installment_number}
+                                                                    </Badge>
+                                                                    <p className="font-bold text-lg text-green-600">
+                                                                        {formatCurrency(history.amount)}
+                                                                    </p>
                                                                 </div>
-                                                            );
-                                                        })}
-                                                </div>
-                                                <Separator className="my-3" />
-                                                <div className="space-y-2">
-                                                    <div className="flex justify-between items-center text-sm">
-                                                        <span className="font-medium">Total Transactions:</span>
-                                                        <span className="font-bold">{paymentHistory.length}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center text-sm">
-                                                        <span className="font-medium">Total Amount:</span>
-                                                        <span className="font-bold text-green-600">
-                                                            {formatCurrency(
-                                                                paymentHistory.reduce((sum, h) => sum + Number(h.amount), 0)
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    )}
+                                                                <div className="text-right text-xs text-muted-foreground">
+                                                                    {formatDate(history.paid_date)}
+                                                                </div>
+                                                            </div>
+                                                            <Separator className="my-2" />
+                                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                <div>
+                                                                    <span className="text-muted-foreground">Method:</span>
+                                                                    <p className="font-medium capitalize">{history.payment_method}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-muted-foreground">Recorded by:</span>
+                                                                    <p className="font-medium">{history.user.full_name}</p>
+                                                                </div>
+                                                                {history.reference_number && (
+                                                                    <div className="col-span-2">
+                                                                        <span className="text-muted-foreground">Reference:</span>
+                                                                        <p className="font-medium">{history.reference_number}</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                        <Separator className="my-3" />
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="font-medium">Total Transactions:</span>
+                                                <span className="font-bold">{paymentHistory.length}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="font-medium">Total Amount:</span>
+                                                <span className="font-bold text-green-600">
+                                                    {formatCurrency(
+                                                        paymentHistory.reduce((sum, h) => sum + Number(h.amount), 0)
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Payment Confirmation Dialog */}
+            <Dialog open={showPaymentConfirmation} onOpenChange={setShowPaymentConfirmation}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Payment</DialogTitle>
+                        <DialogDescription>
+                            Please review the payment details before confirming.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                            <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Installment Number</span>
+                                <span className="font-bold">#{data.installment_number}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Payment Amount</span>
+                                <span className="font-bold text-lg text-green-600">
+                                    {formatCurrency(Number(data.amount_paid))}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Payment Method</span>
+                                <span className="font-medium capitalize">{data.payment_method}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Payment Date</span>
+                                <span className="font-medium">{formatDate(data.paid_date)}</span>
+                            </div>
+                            {data.reference_number && (
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-muted-foreground">Reference Number</span>
+                                    <span className="font-medium">{data.reference_number}</span>
+                                </div>
+                            )}
+                        </div>
+                        <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                This action will record the payment and update the installment status.
+                            </AlertDescription>
+                        </Alert>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowPaymentConfirmation(false)}
+                            disabled={processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handlePaymentSubmit}
+                            disabled={processing}
+                        >
+                            {processing ? 'Processing...' : 'Confirm Payment'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Void Transaction Dialog */}
+            <Dialog open={showVoidDialog} onOpenChange={setShowVoidDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <Ban className="w-5 h-5" />
+                            Void Transaction
+                        </DialogTitle>
+                        <DialogDescription>
+                            This will permanently void this installment order. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                <strong>Warning:</strong> Voiding this transaction will mark it as cancelled and prevent any further payments.
+                            </AlertDescription>
+                        </Alert>
+                        <div className="space-y-2">
+                            <Label htmlFor="void_reason">Reason for Voiding *</Label>
+                            <Textarea
+                                id="void_reason"
+                                placeholder="Please provide a reason for voiding this transaction..."
+                                value={voidForm.data.reason_for_cancellation}
+                                onChange={(e) => voidForm.setData('reason_for_cancellation', e.target.value)}
+                                rows={4}
+                                className={voidForm.errors.reason_for_cancellation ? 'border-red-500' : ''}
+                            />
+                            {voidForm.errors.reason_for_cancellation && (
+                                <p className="text-xs text-red-500">{voidForm.errors.reason_for_cancellation}</p>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowVoidDialog(false)}
+                            disabled={voidForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="destructive"
+                            onClick={handleVoidSubmit}
+                            disabled={voidForm.processing || !voidForm.data.reason_for_cancellation.trim()}
+                        >
+                            {voidForm.processing ? 'Processing...' : 'Void Transaction'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Default Transaction Dialog */}
+            <Dialog open={showDefaultDialog} onOpenChange={setShowDefaultDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-orange-600">
+                            <AlertTriangle className="w-5 h-5" />
+                            Mark as Default
+                        </DialogTitle>
+                        <DialogDescription>
+                            Mark this installment order as defaulted due to non-payment or other issues.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                <strong>Warning:</strong> This will mark the account as defaulted. This change is permanent and cannot be reverted.
+                            </AlertDescription>
+                        </Alert>
+                        <div className="space-y-2">
+                            <Label htmlFor="default_reason">Reason for Default *</Label>
+                            <Textarea
+                                id="default_reason"
+                                placeholder="Please provide a reason for marking as default (e.g., consecutive missed payments, customer unreachable, etc.)..."
+                                value={defaultForm.data.default_reason}
+                                onChange={(e) => defaultForm.setData('default_reason', e.target.value)}
+                                rows={4}
+                                className={defaultForm.errors.default_reason ? 'border-red-500' : ''}
+                            />
+                            {defaultForm.errors.default_reason && (
+                                <p className="text-xs text-red-500">{defaultForm.errors.default_reason}</p>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowDefaultDialog(false)}
+                            disabled={defaultForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="destructive"
+                            onClick={handleDefaultSubmit}
+                            disabled={defaultForm.processing || !defaultForm.data.default_reason.trim()}
+                        >
+                            {defaultForm.processing ? 'Processing...' : 'Mark as Default'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

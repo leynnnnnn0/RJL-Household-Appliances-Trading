@@ -145,7 +145,7 @@ export type InstallmentOrder = {
   promisory_note_value_interest: number;
   promisory_note_value_interest_additional_charge: number;
   transaction_date: string; // ISO date string, e.g. "2025-10-31"
-  is_void: boolean;
+  is_voided: boolean;
   reason_for_cancellation: string | null;
   void_date: string | null; // or Date if you parse it
   is_completed: boolean;
@@ -159,6 +159,7 @@ export type InstallmentOrderItem = {
    serial: string;
    sale_amount: number;
    discount_amount: number;
+   item: Item
 }
 
 export type InstallmentOrderWithRelations = InstallmentOrder & {

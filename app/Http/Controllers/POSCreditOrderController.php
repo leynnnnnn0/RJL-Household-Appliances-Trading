@@ -8,6 +8,7 @@ use App\Models\InstallmentOrderPaymentHistory;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Container\Attributes\Auth as AttributesAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -96,7 +97,7 @@ class POSCreditOrderController extends Controller
     
 
     public function show($order_number){
-        $transction = InstallmentOrder::with(['customer', 'location', 'user', 'voider', 'installment_order_item', 'installment_order_payments.installment_order_payment_history.user'])
+        $transction = InstallmentOrder::with(['customer', 'location', 'user', 'voider', 'installment_order_item.item', 'installment_order_payments.installment_order_payment_history.user'])
         ->where('order_number', $order_number)->firstOrFail();
 
          $paymentHistory = $transction->installment_order_payments
@@ -180,4 +181,33 @@ class POSCreditOrderController extends Controller
 
     return back()->with('success', 'Payment recorded successfully!');
 }
+
+    public function void(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'installment_order_id' => 'required',
+            'reason_for_cancellation' => 'required|string'
+        ]);
+        $transaction = InstallmentOrder::with('installment_order_item.item')->findOrFail($id);
+        
+        DB::beginTransaction();
+        $transaction->update([
+            'is_voided' => true,
+            'reason_for_cancellation' => $validated['reason_for_cancellation'],
+            'void_date' => now(),
+            'voider_id' => Auth::id()
+        ]);
+
+        $item = $transaction->installment_order_item->item;
+        $item->update([
+            'date_out' => null
+        ]);
+
+        $item->save();
+        DB::commit();
+        
+        return back()->with('success', 'Order Voided');
+
+
+    }
 }
