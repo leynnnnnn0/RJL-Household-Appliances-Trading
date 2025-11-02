@@ -250,7 +250,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Search className="h-8 w-8 mb-2" />
                       <p className="font-medium">No items found</p>
-                      <p className="text-sm">Try adjusting your search or filters</p>
+                    <p className="text-sm">Try adjusting your search or filters</p>
                     </div>
                   </TableCell>
                 </TableRow>

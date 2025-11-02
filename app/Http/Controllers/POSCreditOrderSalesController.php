@@ -16,22 +16,27 @@ class POSCreditOrderSalesController extends Controller
     {
         $dateFrom = $request->input('date_from', now()->startOfMonth()->toDateString());
         $dateTo = $request->input('date_to', now()->endOfMonth()->toDateString());
-        $itemType = $request->input('item_type', 'all');
+        $itemTypeFilter = $request->input('item_type', 'all');
         $locationId = $request->input('location_id', 'all');
 
+    
         $query = InstallmentOrder::query()
             ->where('is_voided', false)
-            ->whereBetween('transaction_date', [$dateFrom, $dateTo]);
+            ->where('transaction_date', '<=', $dateTo);
+       
+
+       
 
         if ($locationId !== 'all') {
             $query->where('location_id', $locationId);
         }
 
-        if ($itemType !== 'all') {
-            $query->whereHas('installment_order_item.item', function($q) use ($itemType) {
-                $q->where('item_type', $itemType);
+        if ($itemTypeFilter !== 'all') {
+            $query->whereHas('installment_order_item.item', function($q) use ($itemTypeFilter) {
+                $q->where('item_type', $itemTypeFilter);
             });
         }
+  
 
         $orders = $query->with(['installment_order_payments', 'installment_order_item.item'])->get();
 
@@ -80,15 +85,20 @@ class POSCreditOrderSalesController extends Controller
 
         $totalPNV = 0;
         $totalRemainingBalance = 0;
+        $collectibleBalance = 0;
+        $defaultedBalance = 0;
         $totalDownPayment = 0;
         $totalLCP = 0;
         $totalAmountDue = 0;
         $totalAmountPaid = 0;
+        $totalAdvancedPayments = 0;
 
         foreach ($orders as $order) {
             $itemType = $order->installment_order_item->item->item_type ?? 'furniture';
-            
-            $totalPNV += $order->promisory_note_value * $order->promisory_note_value_interest + floatval($order->promisory_note_value_interest_additional_charge);
+
+            $totalAdvancedPayments += $order->total_advanced_payment;
+
+            $totalPNV += $order->total_pnv;
             $totalLCP += $order->loan_contract_price * $order->lcp_markup_rate + floatval($order->lcp_additional_charge);
             $totalDownPayment += $order->down_payment;
 
@@ -157,7 +167,16 @@ class POSCreditOrderSalesController extends Controller
 
             $totalAmountDue += $orderAmountDue;
             $totalAmountPaid += $orderAmountPaid;
-            $totalRemainingBalance += ($orderAmountDue - $orderAmountPaid);
+            
+            $orderRemainingBalance = $orderAmountDue - $orderAmountPaid;
+            $totalRemainingBalance += $orderRemainingBalance;
+
+            // Separate collectible vs defaulted balances
+            if ($order->is_defaulted) {
+                $defaultedBalance += $orderRemainingBalance;
+            } else {
+                $collectibleBalance += $orderRemainingBalance;
+            }
 
             // Accounts per item type
             $accountsByItemType[$itemType]['count']++;
@@ -169,6 +188,7 @@ class POSCreditOrderSalesController extends Controller
         
         // Active accounts
         $activeAccounts = $orders->where('is_completed', false)->where('is_defaulted', false)->count();
+
         $completedAccounts = $orders->where('is_completed', true)->count();
         $defaultedAccounts = $orders->where('is_defaulted', true)->count();
 
@@ -177,7 +197,7 @@ class POSCreditOrderSalesController extends Controller
             'filters' => [
                 'date_from' => $dateFrom,
                 'date_to' => $dateTo,
-                'item_type' => $itemType,
+                'item_type' => $itemTypeFilter,
                 'location_id' => $locationId,
             ],
             'locations' => Location::select('id', 'name')->get(),
@@ -186,8 +206,12 @@ class POSCreditOrderSalesController extends Controller
                 'total_down_payment' => round($totalDownPayment, 2),
                 'total_pnv' => round($totalPNV, 2),
                 'total_amount_due' => round($totalAmountDue, 2),
-                'total_amount_paid' => round($totalAmountPaid, 2),
-                'total_remaining_balance' => round($totalRemainingBalance, 2),
+                'total_amount_paid' => round($totalAmountPaid, 2) - $totalAdvancedPayments,
+                'total_remaining_balance' => round($totalRemainingBalance,
+                 2),
+                 'total_advanced_payment' => $totalAdvancedPayments,
+                'collectible_balance' => round($collectibleBalance, 2),
+                'defaulted_balance' => round($defaultedBalance, 2),
                 'total_orders' => $orders->count(),
                 'active_accounts' => $activeAccounts,
                 'completed_accounts' => $completedAccounts,

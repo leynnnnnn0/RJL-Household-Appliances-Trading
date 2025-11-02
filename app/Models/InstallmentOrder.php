@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,7 +22,7 @@ class InstallmentOrder extends Model
         'down_payment',
         'payment_method',
         'reference_number',
-        
+
         'promisory_note_value',
         'number_of_terms',
         'promisory_note_value_interest',
@@ -43,30 +44,101 @@ class InstallmentOrder extends Model
 
     protected $appends = [
         'total_amount_paid',
-        'remaining_balance'
+        'remaining_balance',
+        'total_pnv',
+        'monthly_payment',
+        'total_advanced_payment'
     ];
 
-    public function getTotalAmountPaidAttribute(){
+    public function getMonthlyPaymentAttribute()
+    {
+        return $this->total_pnv / $this->number_of_terms;
+    }
+
+    public function getTotalAmountPaidAttribute()
+    {
         $data = $this->installment_order_payments
-        ->flatMap(function ($payment) {
-            return $payment->installment_order_payment_history;
-        });
+            ->flatMap(function ($payment) {
+                return $payment->installment_order_payment_history;
+            });
 
         $total = $data->count() > 0 ? $data->sum('amount') : 0;
         return $total;
     }
 
+    public function getTotalAdvancedPaymentAttribute()
+    {
+        $dates = $this->getNextDueDate($this->transaction_date);
+        $previousDue = $dates['previous_due'];
+
+        return $this->installment_order_payments
+            ->filter(function ($transaction) use ($previousDue) {
+                $dueDate = Carbon::parse($transaction->due_date);
+                $paidDate = Carbon::parse($transaction->paid_date);
+                $status = $transaction->status;
+                if ($status != 'paid' && $status != 'partial') return;
+               
+                return $transaction->amount_due > 0 && $paidDate->lt($dueDate) && $dueDate->gt($previousDue);
+            })
+            ->sum('amount_paid');
+
+    }
+
+
+    public function getNextDueDate($transactionDate)
+    {
+        $transactionDate = Carbon::parse($transactionDate);
+        $today = Carbon::today(); // or use Carbon::today() in production
+        $targetDay = $transactionDate->day;
+
+        // candidate date in the current month (adjust if month is shorter)
+        $daysInThisMonth = Carbon::create($today->year, $today->month, 1)->daysInMonth;
+        $candidate = Carbon::create($today->year, $today->month, min($targetDay, $daysInThisMonth));
+
+        if ($candidate->lte($today)) {
+            // next due is next month (adjust for month length)
+            $nextMonth = $candidate->copy()->addMonth();
+            $daysInNextMonth = Carbon::create($nextMonth->year, $nextMonth->month, 1)->daysInMonth;
+            $dueDate = Carbon::create($nextMonth->year, $nextMonth->month, min($targetDay, $daysInNextMonth));
+
+            // previous due is this month's candidate (most recent)
+            $previousDue = $candidate->copy();
+        } else {
+            // next due is still this month
+            $dueDate = $candidate;
+
+            // previous due is last month's same day (adjust for month length)
+            $previousMonth = $candidate->copy()->subMonth();
+            $daysInPrevMonth = Carbon::create($previousMonth->year, $previousMonth->month, 1)->daysInMonth;
+            $previousDue = Carbon::create($previousMonth->year, $previousMonth->month, min($targetDay, $daysInPrevMonth));
+        }
+
+        return [
+            'due_date'      => $dueDate->format('Y-m-d'),
+            'previous_due'  => $previousDue->format('Y-m-d'),
+        ];
+    }
+
+    public function getTotalPNVAttribute()
+    {
+        $noteValue = floatval($this->promisory_note_value);
+        $interest = floatval($this->promisory_note_value_interest);
+        $additional = floatval($this->promisory_note_value_interest_additional_charge);
+
+        return $noteValue * $interest + $additional;
+    }
+
     public function getRemainingBalanceAttribute()
-{
-    $noteValue = floatval($this->promisory_note_value);
-    $interest = floatval($this->promisory_note_value_interest);
-    $additional = floatval($this->promisory_note_value_interest_additional_charge);
-    $paid = floatval($this->getTotalAmountPaidAttribute());
+    {
+        $noteValue = floatval($this->promisory_note_value);
+        $interest = floatval($this->promisory_note_value_interest);
+        $additional = floatval($this->promisory_note_value_interest_additional_charge);
+        $paid = floatval($this->getTotalAmountPaidAttribute());
 
-    $totalToPay = ($noteValue * $interest) + $additional;
+        $totalToPay = ($noteValue * $interest) + $additional;
 
-    return $totalToPay - $paid;
-}
+        return $totalToPay - $paid;
+    }
 
     public function customer()
     {

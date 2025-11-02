@@ -113,6 +113,8 @@ export default function Index({ transactions, locations, employees }: Props) {
     return <Badge className="bg-blue-500">Active</Badge>;
   };
 
+    
+
   return (
     <AppLayout>
       <Head title="POS Installment Orders" />
@@ -218,9 +220,9 @@ export default function Index({ transactions, locations, employees }: Props) {
                   <SelectItem value="all">All Aging</SelectItem>
                   <SelectItem value="current">Current</SelectItem>
                   <SelectItem value="new_releases">New Releases</SelectItem>
-                  <SelectItem value="1">1 Month</SelectItem>
-                  <SelectItem value="2">2 Months</SelectItem>
-                  <SelectItem value="3">3 Months</SelectItem>
+                  <SelectItem value="1">30 Days</SelectItem>
+                  <SelectItem value="2">60 Days</SelectItem>
+                  <SelectItem value="3">90 Days</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -288,7 +290,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                    ₱{((transaction.promisory_note_value * transaction.promisory_note_value_interest + Number(transaction.promisory_note_value_interest_additional_charge)) / transaction.number_of_terms).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    ₱{transaction.remaining_balance}
+                    {formatCurrency(transaction.remaining_balance > 1 ? transaction.remaining_balance : 0)}
                 </TableCell>
                   <TableCell>
                     {getStatusBadge(transaction)}

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\POSCashController;
@@ -33,6 +35,9 @@ Route::get('/pos-cash-orders/download-pdf', [POSCashOrderController::class, 'dow
 Route::resource('locations', LocationController::class);
 Route::resource('suppliers', SupplierController::class);
 
+
+Route::resource('customers', CustomerController::class);
+Route::resource('employees', EmployeeController::class);
 
 Route::resource('/pos-installment-orders-sales', POSCreditOrderSalesController::class);
 Route::post('/pos-installment-orders/record-payment', [POSCreditOrderController::class, 'recordPayment']);

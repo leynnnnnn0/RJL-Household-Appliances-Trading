@@ -75,6 +75,7 @@ export type CustomerReference = {
   phone_number: string
 };
 
+
 export type InvenstigationDetail = {
   id: number | string;
   employee_id: number | string;
@@ -83,11 +84,15 @@ export type InvenstigationDetail = {
   investigation_notes: string;
 }
 
-export type CustomerWithRelation = Customer & {
-  reference: CustomerReference;
-  investigation_detail: InvenstigationDetail
 
+
+export type CustomerWithRelation = Customer & {
+  customer_reference: CustomerReference;
+  investigation_detail: InvenstigationDetail
+  orders: OrderWithrelations[],
+  installment_orders: InstallmentOrderWithRelations[]
 }
+
 
 export type ItemWithRelations = Item & {
   supplier?: Supplier;
@@ -188,6 +193,10 @@ export type InstallmentOrderPayment = {
   paid_date: string;
   installment_order_payment_history: null | InstallmentOrderPaymentHistory[]
 };
+
+export type Children = {
+  children: React.ReactNode
+}
 
 export type InstallmentOrderPaymentHistory = {
     id: number | string;
