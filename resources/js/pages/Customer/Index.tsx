@@ -55,7 +55,7 @@ export default function Index({customers} : PageProps ) {
                     <TableHeader>
                         <TableRow className="bg-muted/50">
                             <TableHead className="font-semibold">
-                                Name
+                                Full Name
                             </TableHead>
                             <TableHead className="font-semibold">
                                 Address
@@ -73,7 +73,7 @@ export default function Index({customers} : PageProps ) {
                             <NoResult count={4}/>
                         ) : customers.data.map(item => (
                             <TableBodyRow key={item.id}>
-                                <TableCell>{item.first_name}</TableCell>
+                                <TableCell>{item.full_name}</TableCell>
                                 <TableCell>{item.address}</TableCell>
                                 <TableCell>{item.phone_number}</TableCell>
                                 <TableCell>

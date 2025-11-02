@@ -134,6 +134,11 @@ const [existingCustomerId, setExistingCustomerId] = useState<null | string |numb
   }, [paymentMethod])
 
   const handleProductSelect = (product: Product) => {
+    console.log(orders);
+    if(orders.some(item => item.id == product.serial) == true) {
+      toast.info("This item is already on the order list");
+      return;
+    }
     setIsFree(false);
     setSelectedProduct(product);
     setSearchTerm(product.description);
@@ -221,6 +226,13 @@ const [existingCustomerId, setExistingCustomerId] = useState<null | string |numb
         setReferenceNumber("");
         setFormErrors({});
         setIsDialogOpen(false);
+
+        setSelectedProduct(null);
+        setSaleAmount("");
+        setSearchQuery("");
+        setSelectedCustomer(null);
+        setExistingCustomerId("");
+        setIsExistingCustomer(false);
       },
       onError: (e) => {
         if (e && typeof e === 'object') {
@@ -471,40 +483,7 @@ const handleSearchCustomer = (query: string) => {
               <CardDescription>Search by description or serial number</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-5">
-                 <div className="space-y-2">
-                <Label htmlFor="employee">Employee</Label>
-                <Select disabled value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                  <SelectTrigger id="employee">
-                    <SelectValue placeholder="Select employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.id.toString()}>
-                        {emp.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-                <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                  <SelectTrigger id="location">
-                    <SelectValue placeholder="Select a location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map(location => (
-                      <SelectItem key={location.id} value={location.id.toString()}>
-                        {location.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              </div>
-
+                       
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -812,6 +791,41 @@ const handleSearchCustomer = (query: string) => {
             : 'Required for non-cash payments (Gcash, Bank Transfer, etc.)'}
         </p>
       </div>
+
+           <div className="grid grid-cols-2 gap-5">
+                 <div className="space-y-2">
+                <Label htmlFor="employee">Employee</Label>
+                <Select disabled value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                  <SelectTrigger id="employee">
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.id.toString()}>
+                        {emp.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                  <SelectTrigger id="location">
+                    <SelectValue placeholder="Select a location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(location => (
+                      <SelectItem key={location.id} value={location.id.toString()}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              </div>
+
     </div>
     <Button onClick={() => placeOrder()} disabled={orders.length == 0} className='w-full'>Confirm Order</Button>
   </DialogContent>

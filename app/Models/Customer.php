@@ -17,6 +17,16 @@ class Customer extends Model
         'phone_number'
     ];
 
+     protected $appends = [
+        'full_name'
+    ];
+
+    public function getFullNameAttribute()
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+
     public function orders()
     {
         return $this->hasMany(Order::class);
