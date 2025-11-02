@@ -25,6 +25,7 @@ import {
   LayoutGrid, 
   List, 
   Map, 
+  UserSquare2Icon, 
   UsersRoundIcon 
 } from 'lucide-react';
 import AppLogo from './app-logo';
@@ -46,6 +47,11 @@ const mainNavItems: NavItem[] = [
     title: 'Customers',
     href: '/customers',
     icon: UsersRoundIcon,
+  },
+    {
+    title: 'Employees',
+    href: '/employees',
+    icon: UserSquare2Icon,
   },
 ];
 

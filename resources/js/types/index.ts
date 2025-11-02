@@ -61,6 +61,13 @@ export type User = {
   email: string;
 }
 
+export type Employee = {
+  id: number;
+  avatar: string | undefined;
+  full_name : string | null;
+  first_name: string;
+  last_name: string;
+}
 export type Customer = {
   id: number | string;
   first_name: string;

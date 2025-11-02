@@ -8,9 +8,15 @@ use Inertia\Inertia;
 
 class EmployeeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $employees = Employee::latest()->paginate(8);
+        $query = Employee::query();
+
+        $search = $request->input('search');
+        $query->when($search, fn($q) => $q->whereAny(['first_name', 'last_name'], 'like', "%{$search}%"));
+
+        $employees = $query->latest()->paginate(8);
+
         return Inertia::render('Employee/Index',[
             'employees' => $employees
         ]);
