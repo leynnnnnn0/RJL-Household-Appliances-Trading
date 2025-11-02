@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Search, ShoppingCart, Trash2, Plus, Menu, History, TrendingUp, Users } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Menu, History, TrendingUp, Users, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/sheet';
 import { router, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { Location, User, OrderWithrelations } from '@/types';
+import { Location, User, OrderWithrelations, Customer } from '@/types';
 import { toast } from 'sonner';
 import {
   Accordion,
@@ -84,7 +84,12 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isFree, setIsFree] = useState(false);
-
+      const [searchQuery, setSearchQuery] = useState<string>('');
+    const [searchResults, setSearchResults] = useState<Customer[]>([]);
+    const [showResults, setShowResults] = useState<boolean>(false);
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+    const [isExistingCustomer, setIsExistingCustomer] = useState<boolean>(false);
+const [existingCustomerId, setExistingCustomerId] = useState<null | string |number>();
 
   const peformSearch = async (value: string, locationId: string) => {
   if(value.trim().length === 0) {
@@ -194,6 +199,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
       phone: customerPhone,
       payment_method: paymentMethod,
       reference_number: referenceNumber,
+      existing_customer_id: existingCustomerId,
       orders: orders.map(function(item){
         return {
           id: item.product.id,
@@ -223,6 +229,42 @@ export default function Index({locations, employees, transactions} : PageProps) 
         console.log(e);
       }
     });
+}
+
+const clearCustomer = () => {
+  setCustomerFirstName('');
+  setCustomerLastName('');
+  setCustomerPhone('');
+  setCustomerAddress('');
+  setExistingCustomerId(null);
+}
+
+const selectCustomer = (customer : Customer) => {
+  setCustomerFirstName(customer.first_name);
+  setCustomerLastName(customer.last_name);
+  setCustomerAddress(customer.address);
+  setCustomerPhone(customer.phone_number);
+setExistingCustomerId(customer.id);
+    setShowResults(false);
+    setSearchQuery("");
+      setSearchResults([]);
+}
+
+const handleSearchCustomer = (query: string) => {
+  setSearchQuery(query);
+
+  if(query.length > 1) {
+    axios.get('/api/customers', {params: {search: query}})
+    .then(response => {
+      const customers = response.data?.data || [];
+      setSearchResults(customers);
+      setShowResults(true);
+    })
+    .catch(err => {
+      console.log(err);
+      setSearchResults([]);
+    })
+  }
 }
 
 
@@ -631,6 +673,48 @@ export default function Index({locations, employees, transactions} : PageProps) 
       </DialogDescription>
     </DialogHeader>
     <div className="space-y-4 py-4">
+         <div className="space-y-2">
+                <Label htmlFor="searchCustomer">Search Existing Customer</Label>
+                <div className="relative">
+                  <Input 
+                    id="searchCustomer" 
+                    placeholder="Type customer name..." 
+                    value={searchQuery}
+                    onChange={(e) => handleSearchCustomer(e.target.value)}
+                    className={isExistingCustomer ? 'border-green-500' : ''}
+                  />
+                  {isExistingCustomer && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearCustomer}
+                      className="absolute right-1 top-1 h-7"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {showResults && searchResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+                      {searchResults.map((customer) => (
+                        <div
+                          key={customer.id}
+                          onClick={() => selectCustomer(customer)}
+                          className="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                        >
+                          <p className="font-medium">{customer.first_name} {customer.last_name}</p>
+                          <p className="text-xs text-muted-foreground">{customer.phone_number}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {isExistingCustomer && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    ✓ Existing customer selected
+                  </p>
+                )}
+              </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
         <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
@@ -691,7 +775,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
           <SelectTrigger id="paymentMethod">
             <SelectValue placeholder="Select payment method" />
           </SelectTrigger>
-     c
+          <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Gcash">Gcash</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Debit/Credit Card">Debit/Credit Card</SelectItem>
+                      <SelectItem value="Home Credit/Skyro/Billease">Home Credit/Skyro/Billease</SelectItem>
+                    </SelectContent>
         </Select>
       </div>
       <div className="space-y-2">

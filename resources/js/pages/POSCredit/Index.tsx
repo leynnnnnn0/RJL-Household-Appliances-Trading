@@ -103,8 +103,9 @@ export default function Index({locations, employees} : PageProps) {
   const [employmentVerified, setEmploymentVerified] = useState<boolean>(false);
   
   // Customer search states
-  const [searchQuery, setSearchQuery] = useState<string>('');
+
   const [itemSearch, setItemSearch] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Customer[]>([]);
   const [showResults, setShowResults] = useState<boolean>(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -182,7 +183,7 @@ export default function Index({locations, employees} : PageProps) {
     }
 
     if (customer.investigation_detail?.id) {
-      console.log(customer.investigation_detail);
+      console.log(customer.investigation_detail)
       setVisitDate(customer.investigation_detail?.home_visit_date);
       setEmploymentVerified(customer.investigation_detail?.is_employment_verified);
       setInvestigationNotes(customer.investigation_detail?.investigation_notes);
@@ -205,7 +206,7 @@ export default function Index({locations, employees} : PageProps) {
     setRef1Contact('');
     setVisitDate('');
     setInvestigatorId('');
-    setEmploymentVerified(false);
+    setEmploymentVerified(false); 
     setInvestigationNotes('');
   };
 

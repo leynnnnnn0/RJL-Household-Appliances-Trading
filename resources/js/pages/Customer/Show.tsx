@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ModuleHeading from '@/components/cards/module-heading';
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -115,7 +115,7 @@ export default function Show({ customer }: Props) {
                             </div>
 
                             <div className="grid grid-cols-4 gap-3">
-                                <div className="text-center p-2 bg-gray-50 rounded">
+                                {/* <div className="text-center p-2 bg-gray-50 rounded">
                                     <Package className="h-4 w-4 mx-auto mb-1 text-gray-600" />
                                     <p className="text-xl font-bold text-gray-900">{activeOrders}</p>
                                     <p className="text-[10px] text-gray-500">Orders</p>
@@ -129,12 +129,12 @@ export default function Show({ customer }: Props) {
                                     <TrendingUp className="h-4 w-4 mx-auto mb-1 text-gray-600" />
                                     <p className="text-xl font-bold text-gray-900">{totalOrders + totalInstallmentOrders}</p>
                                     <p className="text-[10px] text-gray-500">Total</p>
-                                </div>
-                                <div className="text-center p-2 bg-black text-white rounded">
+                                </div> */}
+                                {/* <div className="text-center p-2 bg-black text-white rounded">
                                     <DollarSign className="h-4 w-4 mx-auto mb-1" />
                                     <p className="text-lg font-bold">{formatCurrency(totalRevenue).replace('PHP', '₱')}</p>
                                     <p className="text-[10px] opacity-80">Revenue</p>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
                     </CardContent>
@@ -232,7 +232,7 @@ export default function Show({ customer }: Props) {
 
                     {/* Orders Tab */}
                     <TabsContent value="orders" className="mt-4">
-                        <Card>
+                        <div>
                             <CardContent className="p-0">
                                 {customer.orders && customer.orders.length > 0 ? (
                                     <div className="overflow-x-auto">
@@ -242,8 +242,6 @@ export default function Show({ customer }: Props) {
                                                     <th className="text-left p-2 font-semibold text-gray-700">Order #</th>
                                                     <th className="text-left p-2 font-semibold text-gray-700">Date</th>
                                                     <th className="text-left p-2 font-semibold text-gray-700">Items</th>
-                                                    <th className="text-left p-2 font-semibold text-gray-700">Location</th>
-                                                    <th className="text-left p-2 font-semibold text-gray-700">Employee</th>
                                                     <th className="text-left p-2 font-semibold text-gray-700">Payment</th>
                                                     <th className="text-left p-2 font-semibold text-gray-700">Status</th>
                                                     <th className="text-right p-2 font-semibold text-gray-700">Total</th>
@@ -252,11 +250,12 @@ export default function Show({ customer }: Props) {
                                             <tbody>
                                                 {customer.orders.map((order) => (
                                                     <tr key={order.id} className="border-b hover:bg-gray-50">
-                                                        <td className="p-2 font-medium">{order.order_number}</td>
+                                                        <td className="p-2 font-medium">
+                                                            <Link href={`/pos-cash-orders/${order.order_number}`} className='underline'>{order.order_number}</Link>
+                                                        </td>
                                                         <td className="p-2 text-gray-600">{formatDate(order.transaction_date)}</td>
                                                         <td className="p-2">{order.order_items?.length || 0}</td>
-                                                        <td className="p-2 text-gray-600">{order.location?.name || 'N/A'}</td>
-                                                        <td className="p-2 text-gray-600">{order.employee?.full_name || order.employee?.first_name + ' ' + order.employee?.last_name || 'N/A'}</td>
+                                                        
                                                         <td className="p-2">
                                                             <Badge variant="outline" className="capitalize text-xs">
                                                                 {order.payment_method}
@@ -288,7 +287,7 @@ export default function Show({ customer }: Props) {
                                     </div>
                                 )}
                             </CardContent>
-                        </Card>
+                        </div>
                     </TabsContent>
 
                     {/* Installments Tab */}
@@ -299,7 +298,10 @@ export default function Show({ customer }: Props) {
                                     <CardHeader className="pb-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <CardTitle className="text-base">{installment.order_number}</CardTitle>
+                                                <CardTitle className="text-base">
+                                                    <Link className='underline' href={`/pos-installment-orders/${installment.order_number}`}>
+                                                    {installment.order_number}</Link>
+                                                </CardTitle>
                                                 {installment.is_completed == true && (
                                                     <Badge className="bg-green-600 text-xs">Completed</Badge>
                                                 )}

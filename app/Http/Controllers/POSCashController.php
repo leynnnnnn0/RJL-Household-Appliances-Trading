@@ -20,12 +20,12 @@ class POSCashController extends Controller
 {
     public function index()
     {
-        return Inertia::render('POSCash/Index',[
+        return Inertia::render('POSCash/Index', [
             'locations' => Location::dropdown(),
             'employees' => User::dropdown(),
             'transactions' => Order::with('order_items.item', 'location')->whereDate('transaction_date', today())->latest()->get()
         ]);
-    } 
+    }
 
     public function store(Request $request)
     {
@@ -33,16 +33,17 @@ class POSCashController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'address' => 'required|string|max:500',
+            'existing_customer_id' => 'nullable',
             'phone' => ['required', 'regex:/^09\d{9}$/'],
-              'payment_method' => 'required|string|in:Cash,Gcash,Bank Transfer,Debit/Credit Card,Home Credit/Skyro/Billease',
+            'payment_method' => 'required|string|in:Cash,Gcash,Bank Transfer,Debit/Credit Card,Home Credit/Skyro/Billease',
             'reference_number' => [
-        'nullable',
-        'string',
-        'max:255',
-        Rule::requiredIf(function () use ($request) {
-            return $request->payment_method !== 'Cash';
-        })
-    ],
+                'nullable',
+                'string',
+                'max:255',
+                Rule::requiredIf(function () use ($request) {
+                    return $request->payment_method !== 'Cash';
+                })
+            ],
             'location_id' => 'required|exists:locations,id',
             'employee_id' => 'required|exists:users,id',
             'orders' => 'required',
@@ -55,12 +56,22 @@ class POSCashController extends Controller
         try {
             DB::beginTransaction();
 
-            $customer = Customer::create([
-                'first_name' => $validated['first_name'],
-                'last_name' => $validated['last_name'],
-                'address' => $validated['address'],
-                'phone_number' => $validated['phone'] 
-            ]);
+            if ($validated['existing_customer_id']) {
+                $customer = Customer::findOrFail($validated['existing_customer_id']);
+                $customer->update([
+                    'first_name' => $validated['first_name'],
+                    'last_name' => $validated['last_name'],
+                    'address' => $validated['address'],
+                    'phone_number' => $validated['phone']
+                ]);
+            } else {
+                $customer = Customer::create([
+                    'first_name' => $validated['first_name'],
+                    'last_name' => $validated['last_name'],
+                    'address' => $validated['address'],
+                    'phone_number' => $validated['phone']
+                ]);
+            }
 
             $order = Order::create([
                 'customer_id' => $customer->id,
@@ -71,11 +82,11 @@ class POSCashController extends Controller
                 'payment_method' => $validated['payment_method'],
                 'reference_number' => $validated['reference_number'],
             ]);
-            
-            foreach($validated['orders'] as $item){
 
-                 $iventoryItem = Item::where('date_out', null)->findOrFail($item['id']);
-                 $iventoryItem->update(['date_out' => Carbon::parse(Carbon::parse($order->transaction_date)->toDateString())]);
+            foreach ($validated['orders'] as $item) {
+
+                $iventoryItem = Item::where('date_out', null)->findOrFail($item['id']);
+                $iventoryItem->update(['date_out' => Carbon::parse(Carbon::parse($order->transaction_date)->toDateString())]);
 
                 $order->order_items()->create([
                     'order_number' => $order->order_number,
@@ -83,16 +94,16 @@ class POSCashController extends Controller
                     'item_id' => $item['id'],
                     'sale_amount' => $item['sale_amount'],
                     'discount_amount' => $iventoryItem->srp - $item['sale_amount']
-                ]);     
+                ]);
             }
 
-            DB::commit(); 
-        }catch(Exception $e){
+            DB::commit();
+        } catch (Exception $e) {
             DB::rollBack();
             return back()->withErrors([
                 'error' => $e->getMessage()
             ]);
-        }  
+        }
     }
 
     public function generateOrderNumber()
