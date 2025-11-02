@@ -33,7 +33,7 @@ class POSCashController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'address' => 'required|string|max:500',
-            'existing_customer_id' => 'nullable',
+            'existing_customer_id' => 'nullable|numeric',
             'phone' => ['required', 'regex:/^09\d{9}$/'],
             'payment_method' => 'required|string|in:Cash,Gcash,Bank Transfer,Debit/Credit Card,Home Credit/Skyro/Billease',
             'reference_number' => [
@@ -49,6 +49,7 @@ class POSCashController extends Controller
             'orders' => 'required',
             'total_price' => 'required|numeric',
         ]);
+   
 
 
         $validated['order_number'] = $this->generateOrderNumber();
@@ -56,7 +57,7 @@ class POSCashController extends Controller
         try {
             DB::beginTransaction();
 
-            if ($validated['existing_customer_id']) {
+            if (isset($validated['existing_customer_id'])) {
                 $customer = Customer::findOrFail($validated['existing_customer_id']);
                 $customer->update([
                     'first_name' => $validated['first_name'],

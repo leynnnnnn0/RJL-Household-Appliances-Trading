@@ -139,6 +139,7 @@ const [existingCustomerId, setExistingCustomerId] = useState<null | string |numb
     setSearchTerm(product.description);
     setSaleAmount(product.srp.toString());
     setShowDropdown(false);
+  
   };
 
   const handleAddOrder = () => {
@@ -237,6 +238,8 @@ const clearCustomer = () => {
   setCustomerPhone('');
   setCustomerAddress('');
   setExistingCustomerId(null);
+  setIsExistingCustomer(false);
+  setSearchQuery("");
 }
 
 const selectCustomer = (customer : Customer) => {
@@ -248,6 +251,8 @@ setExistingCustomerId(customer.id);
     setShowResults(false);
     setSearchQuery("");
       setSearchResults([]);
+        setIsExistingCustomer(true);
+        setSearchQuery(`${customer.first_name} ${customer.last_name}`);
 }
 
 const handleSearchCustomer = (query: string) => {
@@ -259,6 +264,7 @@ const handleSearchCustomer = (query: string) => {
       const customers = response.data?.data || [];
       setSearchResults(customers);
       setShowResults(true);
+    
     })
     .catch(err => {
       console.log(err);
