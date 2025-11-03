@@ -55,4 +55,42 @@ class ExpenseRecordController extends Controller
             'filters' => $request->only(['status', 'user_id', 'date', 'category', 'search'])
         ]);
     }
+
+    public function create()
+    {
+        $users = User::dropdown();
+        
+        return Inertia::render('ExpenseRecord/Create', [
+            'users' => $users
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:fuel,repair,supplies,meal,emergency,other',
+            'payment_method' => 'required|in:cash,credit_card,debit_card,bank_transfer,e_wallet',
+            'reference_number' => 'nullable|string|max:255',
+            'remarks' => 'nullable|string',
+            'receipt_path' => 'nullable|image|mimes:jpeg,png,jpg|max:10240', // 10MB max
+        ]);
+
+        // Handle image upload
+        if ($request->hasFile('receipt_path')) {
+            $image = $request->file('receipt_path');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $imagePath = $image->storeAs('receipts', $imageName, 'public');
+            $validated['receipt_path'] = $imagePath;
+        }
+
+        // Set default status
+        $validated['status'] = 'pending';
+
+        ExpenseRecord::create($validated);
+
+        return redirect()->route('expense-record.index')
+            ->with('success', 'Expense record created successfully!');
+    }
 }

@@ -1,0 +1,300 @@
+import ModuleHeading from "@/components/cards/module-heading";
+import AppLayout from "@/layouts/app-layout";
+import { Head, useForm } from "@inertiajs/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Upload, X } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+interface User {
+  id: number;
+  full_name: string;
+}
+
+interface PageProps {
+  users: User[];
+}
+
+export default function Create({ users }: PageProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const { data, setData, post, processing, errors, reset } = useForm({
+    user_id: "",
+    amount: "",
+    category: "",
+    payment_method: "",
+    reference_number: "",
+    remarks: "",
+    receipt_path: null as File | null,
+  });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setData("receipt_path", file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setData("receipt_path", null);
+    setImagePreview(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    post(route("expense-record.store"), {
+      forceFormData: true,
+      onSuccess: () => {
+        reset();
+        setImagePreview(null);
+        toast.success("Record Created.");
+      },
+      onError: () => {
+        toast.error("An error occured while trying to create a record");
+      }
+    });
+  };
+
+  return (
+    <AppLayout>
+      <Head title="Create Expense Record" />
+      <ModuleHeading
+        title="Create Expense Record"
+        description="Add a new expense record"
+      >
+        <Button
+          variant="outline"
+          onClick={() => window.history.back()}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </ModuleHeading>
+
+      <div className="mt-6">
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Employee */}
+                <div className="space-y-2">
+                  <Label htmlFor="user_id">
+                    Employee <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={data.user_id}
+                    onValueChange={(value) => setData("user_id", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.id.toString()}>
+                          {user.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.user_id && (
+                    <p className="text-sm text-red-500">{errors.user_id}</p>
+                  )}
+                </div>
+
+                {/* Amount */}
+                <div className="space-y-2">
+                  <Label htmlFor="amount">
+                    Amount <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      ₱
+                    </span>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={data.amount}
+                      onChange={(e) => setData("amount", e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+                  {errors.amount && (
+                    <p className="text-sm text-red-500">{errors.amount}</p>
+                  )}
+                </div>
+
+                {/* Category */}
+                <div className="space-y-2">
+                  <Label htmlFor="category">
+                    Category <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={data.category}
+                    onValueChange={(value) => setData("category", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fuel">Fuel</SelectItem>
+                      <SelectItem value="repair">Repair</SelectItem>
+                      <SelectItem value="supplies">Supplies</SelectItem>
+                      <SelectItem value="meal">Meal</SelectItem>
+                      <SelectItem value="emergency">Emergency</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.category && (
+                    <p className="text-sm text-red-500">{errors.category}</p>
+                  )}
+                </div>
+
+                {/* Payment Method */}
+                <div className="space-y-2">
+                  <Label htmlFor="payment_method">
+                    Payment Method <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={data.payment_method}
+                    onValueChange={(value) => setData("payment_method", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="debit_card">Debit Card</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="e_wallet">E-Wallet</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.payment_method && (
+                    <p className="text-sm text-red-500">
+                      {errors.payment_method}
+                    </p>
+                  )}
+                </div>
+
+                {/* Reference Number */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="reference_number">Reference Number</Label>
+                  <Input
+                    id="reference_number"
+                    type="text"
+                    placeholder="Enter reference number"
+                    value={data.reference_number}
+                    onChange={(e) =>
+                      setData("reference_number", e.target.value)
+                    }
+                  />
+                  {errors.reference_number && (
+                    <p className="text-sm text-red-500">
+                      {errors.reference_number}
+                    </p>
+                  )}
+                </div>
+
+                {/* Remarks */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="remarks">Remarks</Label>
+                  <Textarea
+                    id="remarks"
+                    placeholder="Enter any additional remarks..."
+                    value={data.remarks}
+                    onChange={(e) => setData("remarks", e.target.value)}
+                    rows={4}
+                  />
+                  {errors.remarks && (
+                    <p className="text-sm text-red-500">{errors.remarks}</p>
+                  )}
+                </div>
+
+                {/* Receipt Upload */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="receipt_path">Receipt Image</Label>
+                  {!imagePreview ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <input
+                        id="receipt_path"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="receipt_path"
+                        className="cursor-pointer flex flex-col items-center"
+                      >
+                        <Upload className="h-10 w-10 text-gray-400 mb-2" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Click to upload receipt image
+                        </span>
+                        <span className="text-xs text-gray-500 mt-1">
+                          PNG, JPG, JPEG up to 10MB
+                        </span>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="relative border rounded-lg p-4">
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                      <img
+                        src={imagePreview}
+                        alt="Receipt preview"
+                        className="max-h-64 mx-auto rounded"
+                      />
+                    </div>
+                  )}
+                  {errors.receipt_path && (
+                    <p className="text-sm text-red-500">
+                      {errors.receipt_path}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end gap-4 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => window.history.back()}
+                  disabled={processing}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={processing}>
+                  {processing ? "Saving..." : "Create Expense Record"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
+  );
+}

@@ -2,7 +2,7 @@ import ModuleHeading from "@/components/cards/module-heading";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/layouts/app-layout";
 import { ExpenseRecord, Paginated, User } from "@/types";
-import { Head, router } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { Plus, Search } from "lucide-react";
 import {
   Table,
@@ -101,8 +101,9 @@ export default function Index({ expense_record, users, filters }: PageProps) {
     <AppLayout>
       <Head title="Expense Record" />
       <ModuleHeading title="Expense Record" description="Data of expenses">
-        <Button>
-          <Plus /> Add Expense Record
+        <Button asChild>
+          <Link href={route('expense-record.create')}>
+          <Plus /> Add Expense Record</Link>
         </Button>
       </ModuleHeading>
 
