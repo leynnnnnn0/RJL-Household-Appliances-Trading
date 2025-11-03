@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
-import { IconMoneybag, IconTools } from '@tabler/icons-react';
+import { IconMoneybag, IconMoneybagMove, IconTools } from '@tabler/icons-react';
 
 const mainNavItems: NavItem[] = [
   {
@@ -52,6 +52,11 @@ const mainNavItems: NavItem[] = [
     title: 'Employees',
     href: '/employees',
     icon: UserSquare2Icon,
+  },
+      {
+    title: 'Expense Record',
+    href: '/expense-record',
+    icon: IconMoneybagMove,
   },
 ];
 

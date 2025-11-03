@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ExpenseRecordController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\POSCashController;
@@ -36,6 +37,7 @@ Route::resource('locations', LocationController::class);
 Route::resource('suppliers', SupplierController::class);
 
 
+Route::resource('expense-record', ExpenseRecordController::class);
 Route::resource('customers', CustomerController::class);
 Route::resource('employees', EmployeeController::class);
 

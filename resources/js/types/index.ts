@@ -52,14 +52,6 @@ export type Item = {
   updated_at: string;
 };
 
-export type User = {
-  id: number;
-  avatar: string | undefined;
-  full_name : string | null;
-  first_name: string;
-  last_name: string;
-  email: string;
-}
 
 export type Employee = {
   id: number;
@@ -215,6 +207,33 @@ export type InstallmentOrderPaymentHistory = {
     user: User;
 
 };
+
+
+export type User = {
+  id: number;
+  avatar: string | undefined;
+  full_name : string | null;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
+export type ExpenseRecord = {
+  id: number | string;
+  user_id: number | string;
+  amount: number;
+  category: string;
+  status: string;
+  remarks: string;
+  approved_by: User | null;
+  approved_at: string | null;
+  payment_method: string;
+  reference_number: string;
+  receipt_path: string;
+  user?: User; 
+  created_at: string; 
+  updated_at: string;
+}
 // Usage examples:
 // suppliers: Paginated<Supplier>
 // locations: Paginated<Location>
