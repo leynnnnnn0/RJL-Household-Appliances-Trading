@@ -16,6 +16,7 @@ class InstallmentOrderPaymentHistory extends Model
         'payment_method',
         'reference_number',
         'paid_date',
+        'collection_receipt_number',
         'user_id'
     ];
 

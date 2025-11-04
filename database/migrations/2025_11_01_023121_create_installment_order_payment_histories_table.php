@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('payment_method');
             $table->string('reference_number')->nullable();
             $table->dateTime('paid_date');
+            $table->string('collection_receipt_number')->nullable();
             $table->timestamps();
         });
     }

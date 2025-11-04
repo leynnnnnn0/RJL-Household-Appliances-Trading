@@ -94,7 +94,8 @@ export default function Show({transaction, paymentHistory} : PageProps){
         amount_paid: '',
         payment_method: 'cash',
         reference_number: '',
-        paid_date: new Date().toISOString().split('T')[0]
+        paid_date: new Date().toISOString().split('T')[0],
+        collection_receipt_number: ''
     });
 
     // Void transaction form
@@ -157,7 +158,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
         
         post(`/pos-installment-orders/record-payment`, {
             onSuccess: () => {
-                reset('amount_paid', 'reference_number');
+                reset('amount_paid', 'reference_number', 'collection_receipt_number');
                 toast.success("Payment Recorded Successfully");
             },
             onError: (e) => {
@@ -527,6 +528,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Amount Due</th>
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Amount Paid</th>
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Remaining</th>
+                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Rebate</th>
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Payment Date</th>
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
                                                 </tr>
@@ -566,6 +568,9 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                                 </td>
                                                                 <td className="py-3 px-4 text-sm font-medium text-orange-600">
                                                                     {remaining > 0 ? formatCurrency(remaining) : '-'}
+                                                                </td>
+                                                                   <td className="py-3 px-4 text-sm font-medium text-orange-600">
+                                                                    {payment.rebate > 0 ? formatCurrency(remaining) : '-'}
                                                                 </td>
                                                                 <td className="py-3 px-4 text-sm text-muted-foreground">
                                                                     {payment.paid_date ? formatDate(payment.paid_date) : '-'}
@@ -721,6 +726,20 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     )}
                                                 </div>
 
+                                                    <div className="space-y-2">
+                                                    <Label htmlFor="collection_receipt_number">Collection Receipt Number *</Label>
+                                                    <Input
+                                                        id="collection_receipt_number"
+                                                        type="text"
+                                                        value={data.collection_receipt_number}
+                                                        onChange={(e) => setData('collection_receipt_number', e.target.value)}
+                                                        className={errors.collection_receipt_number ? 'border-red-500' : ''}
+                                                    />
+                                                    {errors.collection_receipt_number && (
+                                                        <p className="text-xs text-red-500">{errors.collection_receipt_number}</p>
+                                                    )}
+                                                </div>
+
                                                 <Button 
                                                     type="button" 
                                                     onClick={() => setShowPaymentConfirmation(true)}
@@ -792,14 +811,18 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                                 </div>
                                                             </div>
                                                             <Separator className="my-2" />
-                                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                            <div className="grid grid-cols-3 gap-2 text-xs">
                                                                 <div>
                                                                     <span className="text-muted-foreground">Method:</span>
                                                                     <p className="font-medium capitalize">{history.payment_method}</p>
                                                                 </div>
                                                                 <div>
-                                                                    <span className="text-muted-foreground">Recorded by:</span>
+                                                                        <span className="text-muted-foreground">Recorded by:</span>
                                                                     <p className="font-medium">{history.user.full_name}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-muted-foreground">CR No.:</span>
+                                                                    <p className="font-medium">{history.collection_receipt_number}</p>
                                                                 </div>
                                                                 {history.reference_number && (
                                                                     <div className="col-span-2">
@@ -871,6 +894,10 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                     <span className="font-medium">{data.reference_number}</span>
                                 </div>
                             )}
+                             <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Collection Receipt Number</span>
+                                <span className="font-medium">{data.collection_receipt_number ?? 'N/a'}</span>
+                            </div>
                         </div>
                         <Alert>
                             <AlertCircle className="h-4 w-4" />

@@ -4,6 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+use function Laravel\Prompts\table;
+
 return new class extends Migration
 {
     /**
@@ -25,6 +27,7 @@ return new class extends Migration
             $table->integer('number_of_terms');
             $table->decimal('promisory_note_value_interest', 10, 2);
             $table->decimal('promisory_note_value_interest_additional_charge', 10, 2);
+    
             $table->boolean('is_voided')->default(false);
             $table->text('reason_for_cancellation')->nullable();
             $table->string('payment_method')->nullable();

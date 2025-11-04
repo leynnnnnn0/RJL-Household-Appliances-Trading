@@ -191,6 +191,7 @@ export type InstallmentOrderPayment = {
   reference_number: string | null;
   status: string;
   paid_date: string;
+  rebate: number;
   installment_order_payment_history: null | InstallmentOrderPaymentHistory[]
 };
 
@@ -204,7 +205,8 @@ export type InstallmentOrderPaymentHistory = {
     amount: number ;
     payment_method: number,
     reference_number: string | null,
-    paid_date: string
+    paid_date: string;
+    collection_receipt_number: string
     user: User;
 
 };

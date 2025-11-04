@@ -145,7 +145,8 @@ class POSCreditOrderController extends Controller
             'amount_paid' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', 'string', 'in:cash,gcash,bank_transfer,credit_card,debit_card'],
             'reference_number' => ['nullable', 'string', 'max:255'],
-            'paid_date' => ['required', 'date']
+            'paid_date' => ['required', 'date'],
+            'collection_receipt_number' => ['required', 'string']
         ]);
 
         DB::beginTransaction();
@@ -186,6 +187,7 @@ class POSCreditOrderController extends Controller
                         'reference_number' => $validated['reference_number'],
                         'paid_date' => $validated['paid_date'],
                         'user_id' => Auth::id(),
+                        'collection_receipt_number' => $validated['collection_receipt_number']
                     ]);
 
                     $remainingPayment -= $remainingDue;
