@@ -258,6 +258,7 @@ export default function Index({ transactions, locations, employees }: Props) {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+             <TableHead>Customer</TableHead>
               <TableHead>Order Number</TableHead>
               <TableHead>Transaction Date</TableHead>
               <TableHead>No. of Terms</TableHead>
@@ -282,6 +283,7 @@ export default function Index({ transactions, locations, employees }: Props) {
             ) : (
               transactions.data.map((transaction) => (
                 <TableRow key={transaction.order_number} className="hover:bg-muted/50 transition-colors">
+                  <TableCell>{transaction.customer.full_name}</TableCell>
                   <TableCell className="font-medium">{transaction.order_number}</TableCell>
                   <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
                   <TableCell>{transaction.number_of_terms} months</TableCell>

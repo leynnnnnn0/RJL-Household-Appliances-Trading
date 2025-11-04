@@ -65,7 +65,8 @@ export type Customer = {
   first_name: string;
   last_name: string;
   address: string;
-  phone_number: string
+  phone_number: string;
+  full_name: string;
 }
 
 export type CustomerReference = {

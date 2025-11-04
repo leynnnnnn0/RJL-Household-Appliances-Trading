@@ -19,7 +19,7 @@ class POSCreditOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = InstallmentOrder::with(['user', 'location', 'installment_order_item.item'])->latest('transaction_date');
+        $query = InstallmentOrder::with(['customer', 'user', 'location', 'installment_order_item.item'])->latest('transaction_date');
 
         // Search by order number
         if ($request->filled('search')) {
