@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\ExpenseRecord;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ExpenseRecordController extends Controller
@@ -92,5 +93,87 @@ class ExpenseRecordController extends Controller
 
         return redirect()->route('expense-record.index')
             ->with('success', 'Expense record created successfully!');
+    }
+
+    public function show(ExpenseRecord $expenseRecord)
+    {
+        $expenseRecord->load(['user', 'approved_by']);
+        
+        return Inertia::render('ExpenseRecord/Show', [
+            'expense_record' => $expenseRecord
+        ]);
+    }
+
+    public function edit(ExpenseRecord $expenseRecord)
+    {
+        $users = User::dropdown();
+        $expenseRecord->load('user');
+        
+        return Inertia::render('ExpenseRecord/Edit', [
+            'users' => $users,
+            'expense_record' => $expenseRecord
+        ]);
+    }
+
+    public function update(Request $request, ExpenseRecord $expenseRecord)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'amount' => 'required|numeric|min:0',
+            'category' => 'required|in:fuel,repair,supplies,meal,emergency,other',
+            'payment_method' => 'required|in:cash,credit_card,debit_card,bank_transfer,e_wallet',
+            'reference_number' => 'nullable|string|max:255',
+            'remarks' => 'nullable|string',
+            'receipt_path' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+        ]);
+
+        // Remove receipt_path from validated if no new file uploaded
+        // This prevents overwriting existing receipt with null
+        if (!$request->hasFile('receipt_path')) {
+            unset($validated['receipt_path']);
+        } else {
+            // Delete old image if exists and new one is uploaded
+            if ($expenseRecord->receipt_path) {
+                Storage::disk('public')->delete($expenseRecord->receipt_path);
+            }
+
+            $image = $request->file('receipt_path');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $imagePath = $image->storeAs('receipts', $imageName, 'public');
+            $validated['receipt_path'] = $imagePath;
+        }
+
+        $expenseRecord->update($validated);
+
+        return redirect()->route('expense-record.index')
+            ->with('success', 'Expense record updated successfully!');
+    }
+
+    public function destroy(ExpenseRecord $expenseRecord)
+    {
+        // Delete receipt image if exists
+        if ($expenseRecord->receipt_path) {
+            Storage::disk('public')->delete($expenseRecord->receipt_path);
+        }
+
+        $expenseRecord->delete();
+
+        return redirect()->route('expense-record.index')
+            ->with('success', 'Expense record deleted successfully!');
+    }
+
+    public function updateStatus(Request $request, ExpenseRecord $expenseRecord)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,approved,rejected',
+        ]);
+
+        $expenseRecord->update([
+            'status' => $validated['status'],
+            'approved_by' => $validated['status'] === 'approved' ? auth()->id() : null,
+            'approved_at' => $validated['status'] === 'approved' ? now() : null,
+        ]);
+
+        return back()->with('success', 'Status updated successfully!');
     }
 }

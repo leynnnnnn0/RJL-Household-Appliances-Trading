@@ -2,8 +2,8 @@ import ModuleHeading from "@/components/cards/module-heading";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/layouts/app-layout";
 import { ExpenseRecord, Paginated, User } from "@/types";
-import { Head, Link, router } from "@inertiajs/react";
-import { Plus, Search } from "lucide-react";
+import { Head, router } from "@inertiajs/react";
+import { Plus, Search, Eye, Edit, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,6 +22,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import Pagination from "@/components/pagination";
 
 interface PageProps {
@@ -42,6 +59,7 @@ export default function Index({ expense_record, users, filters }: PageProps) {
   const [userId, setUserId] = useState(filters.user_id || "");
   const [date, setDate] = useState(filters.date || "");
   const [category, setCategory] = useState(filters.category || "");
+  const [deleteId, setDeleteId] = useState<number | string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -63,6 +81,14 @@ export default function Index({ expense_record, users, filters }: PageProps) {
       preserveState: true,
       preserveScroll: true,
     });
+  };
+
+  const handleDelete = () => {
+    if (deleteId) {
+      router.delete(route("expense-record.destroy", deleteId), {
+        onSuccess: () => setDeleteId(null),
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -101,9 +127,8 @@ export default function Index({ expense_record, users, filters }: PageProps) {
     <AppLayout>
       <Head title="Expense Record" />
       <ModuleHeading title="Expense Record" description="Data of expenses">
-        <Button asChild>
-          <Link href={route('expense-record.create')}>
-          <Plus /> Add Expense Record</Link>
+        <Button onClick={() => router.visit(route("expense-record.create"))}>
+          <Plus /> Add Expense Record
         </Button>
       </ModuleHeading>
 
@@ -197,7 +222,7 @@ export default function Index({ expense_record, users, filters }: PageProps) {
                 <TableHead>Payment Method</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Remarks</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -208,11 +233,13 @@ export default function Index({ expense_record, users, filters }: PageProps) {
                     <TableCell>{record.user?.full_name || "N/A"}</TableCell>
                     <TableCell>
                       <Badge className={getCategoryColor(record.category)}>
-                        {record.category.charAt(0).toUpperCase() + record.category.slice(1)}
+                        {record.category.charAt(0).toUpperCase() +
+                          record.category.slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-semibold">
-                      ₱{Number(record.amount).toLocaleString("en-PH", {
+                      ₱
+                      {Number(record.amount).toLocaleString("en-PH", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
@@ -222,20 +249,54 @@ export default function Index({ expense_record, users, filters }: PageProps) {
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(record.status)}>
-                        {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                        {record.status.charAt(0).toUpperCase() +
+                          record.status.slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       {new Date(record.created_at).toLocaleDateString("en-PH")}
                     </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {record.remarks || "—"}
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            router.visit(
+                              route("expense-record.show", record.id)
+                            )
+                          }
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            router.visit(
+                              route("expense-record.edit", record.id)
+                            )
+                          }
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteId(record.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={8}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     No expense records found
                   </TableCell>
                 </TableRow>
@@ -247,6 +308,28 @@ export default function Index({ expense_record, users, filters }: PageProps) {
         {/* Pagination */}
         <Pagination data={expense_record} />
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              expense record from the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

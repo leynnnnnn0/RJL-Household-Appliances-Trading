@@ -21,35 +21,38 @@ Route::get('/', function () {
 })->name('home');
 
 
-Route::middleware('auth')->group(function() {
+Route::middleware('auth')->group(function () {
+
+    Route::patch('/expense-record/{expenseRecord}/update-status', [ExpenseRecordController::class, 'updateStatus'])
+        ->name('expense-record.update-status');
+
     Route::resource('pos-cash', POSCashController::class)->only(['index', 'store']);
-Route::resource('pos-credit', POSCreditController::class)->only(['index', 'store']);
-Route::get('/pos-cash/search', [POSCashController::class, 'search'])->name('pos-cash.search');
-Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
+    Route::resource('pos-credit', POSCreditController::class)->only(['index', 'store']);
+    Route::get('/pos-cash/search', [POSCashController::class, 'search'])->name('pos-cash.search');
+    Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
     Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
-Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
-Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])->name('items.export.template');
-Route::post('/items/import', [ItemController::class, 'import'])->name('items.import.upload');
-Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
-Route::resource('items', ItemController::class);
-Route::get('/pos-cash-orders/download-pdf', [POSCashOrderController::class, 'downloadPDF']);
-Route::resource('locations', LocationController::class);
-Route::resource('suppliers', SupplierController::class);
+    Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
+    Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])->name('items.export.template');
+    Route::post('/items/import', [ItemController::class, 'import'])->name('items.import.upload');
+    Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
+    Route::resource('items', ItemController::class);
+    Route::get('/pos-cash-orders/download-pdf', [POSCashOrderController::class, 'downloadPDF']);
+    Route::resource('locations', LocationController::class);
+    Route::resource('suppliers', SupplierController::class);
 
 
-Route::resource('expense-record', ExpenseRecordController::class);
-Route::resource('customers', CustomerController::class);
-Route::resource('employees', EmployeeController::class);
+    Route::resource('expense-record', ExpenseRecordController::class);
+    Route::resource('customers', CustomerController::class);
+    Route::resource('employees', EmployeeController::class);
 
-Route::resource('/pos-installment-orders-sales', POSCreditOrderSalesController::class);
-Route::post('/pos-installment-orders/record-payment', [POSCreditOrderController::class, 'recordPayment']);
-Route::post('/pos-installment-orders/{id}/void', [POSCreditOrderController::class, 'void']);
-Route::post('/pos-installment-orders/{id}/default', [POSCreditOrderController::class, 'default']);
-Route::resource('/pos-installment-orders', POSCreditOrderController::class);
-Route::post('/pos-cash-orders/void/{id}', [POSCashOrderController::class, 'voidOrder']);
-Route::resource('pos-cash-orders', POSCashOrderController::class);
-Route::resource('pos-cash-order-sales', POSCashOrderSalesController::class);
-
+    Route::resource('/pos-installment-orders-sales', POSCreditOrderSalesController::class);
+    Route::post('/pos-installment-orders/record-payment', [POSCreditOrderController::class, 'recordPayment']);
+    Route::post('/pos-installment-orders/{id}/void', [POSCreditOrderController::class, 'void']);
+    Route::post('/pos-installment-orders/{id}/default', [POSCreditOrderController::class, 'default']);
+    Route::resource('/pos-installment-orders', POSCreditOrderController::class);
+    Route::post('/pos-cash-orders/void/{id}', [POSCashOrderController::class, 'voidOrder']);
+    Route::resource('pos-cash-orders', POSCashOrderController::class);
+    Route::resource('pos-cash-order-sales', POSCashOrderSalesController::class);
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -59,4 +62,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

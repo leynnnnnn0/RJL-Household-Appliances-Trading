@@ -25,7 +25,7 @@ class ExpenseRecord extends Model
         'receipt_path',
     ];
 
-      protected $casts = [
+    protected $casts = [
         'category' => ExpenseCategory::class,
         'status' => ExpenseStatus::class,
     ];
@@ -33,5 +33,10 @@ class ExpenseRecord extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function approved_by()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }
