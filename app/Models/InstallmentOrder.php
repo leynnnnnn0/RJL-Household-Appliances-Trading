@@ -47,12 +47,20 @@ class InstallmentOrder extends Model
         'remaining_balance',
         'total_pnv',
         'monthly_payment',
-        'total_advanced_payment'
+        'total_advanced_payment',
+        'total_rebate_amount'
     ];
 
     public function getMonthlyPaymentAttribute()
     {
         return $this->total_pnv / $this->number_of_terms;
+    }
+
+    public function getTotalRebateAmountAttribute()
+    {
+        $data = $this->installment_order_payments;
+        $total = $data->count() > 0 ? $data->sum('rebate_amount') : 0;
+        return $total;
     }
 
     public function getTotalAmountPaidAttribute()

@@ -156,7 +156,7 @@ number_of_terms: number;
   is_completed: boolean;
   is_defaulted: boolean;
   default_reason: string | null;
-
+  total_rebate_amount: number;
   total_amount_paid: number | 0;
   remaining_balance: number | 0;
 

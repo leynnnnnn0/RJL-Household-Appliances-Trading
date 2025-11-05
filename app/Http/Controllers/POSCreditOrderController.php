@@ -149,6 +149,7 @@ class POSCreditOrderController extends Controller
             'collection_receipt_number' => ['required', 'string']
         ]);
 
+
         DB::beginTransaction();
 
         try {
@@ -167,12 +168,12 @@ class POSCreditOrderController extends Controller
                 if ($remainingPayment <= 0) break;
 
                 $currentAmountPaid = $payment->amount_paid ?? 0;
-                $remainingDue = $payment->amount_due - $currentAmountPaid;
+                $remainingDue = ($payment->amount_due - $payment->rebate_amount) - $currentAmountPaid;
 
                 if ($remainingPayment >= $remainingDue) {
                     // Fully pay this installment
                     $payment->update([
-                        'amount_paid' => $payment->amount_due,
+                        'amount_paid' => $payment->amount_due - $payment->rebate_amount,
                         'status' => 'paid',
                         'payment_method' => $validated['payment_method'],
                         'reference_number' => $validated['reference_number'],
@@ -194,7 +195,7 @@ class POSCreditOrderController extends Controller
                 } else {
                     // Partial payment for this installment
                     $newTotalPaid = $currentAmountPaid + $remainingPayment;
-                    $status = $newTotalPaid >= $payment->amount_due ? 'paid' : 'partial';
+                    $status = $newTotalPaid >= $payment->amount_due - $payment->rebate_amount ? 'paid' : 'partial';
 
                     $payment->update([
                         'amount_paid' => $newTotalPaid,
@@ -211,6 +212,7 @@ class POSCreditOrderController extends Controller
                         'reference_number' => $validated['reference_number'],
                         'paid_date' => $validated['paid_date'],
                         'user_id' => Auth::id(),
+                          'collection_receipt_number' => $validated['collection_receipt_number']
                     ]);
 
                     $remainingPayment = 0;

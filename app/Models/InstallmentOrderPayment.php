@@ -24,6 +24,8 @@ class InstallmentOrderPayment extends Model
         'paid_date'
     ];
 
+    
+
     public function installment_order()
     {
         return $this->belongsTo(InstallmentOrder::class);

@@ -124,7 +124,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
     useEffect(() => {
         if (nextPayment) {
             const alreadyPaid = Number(nextPayment.amount_paid || 0);
-            const remainingAmount = Number(nextPayment.amount_due) - alreadyPaid;
+            const remainingAmount = Number(nextPayment.amount_due) - alreadyPaid - nextPayment.rebate_amount;
             
             setData({
                 installment_order_payment_id: nextPayment.id.toString(),
@@ -150,7 +150,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
 
     
     const totalToPay = final_pnv;
-    const remainingBalance = transaction.remaining_balance;
+    const remainingBalance = transaction.remaining_balance - transaction.total_rebate_amount;
     let paymentProgress = 0;
     if(totalPaid > 0 && final_pnv > 0){
         paymentProgress = (totalPaid / final_pnv) * 100
@@ -583,8 +583,8 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                         const isPaid = payment.status === 'paid' || payment.status === 'completed';
                                                         const isNext = nextPayment?.id === payment.id;
                                                         const amountPaid = Number(payment.amount_paid || 0);
-                                                        const amountDue = Number(payment.amount_due);
-                                                        const remaining = amountDue - amountPaid;
+                                                        const amountDue = Number(payment.amount_due) - payment.rebate_amount;
+                                                        const remaining = (amountDue - amountPaid);
                                                         const hasBalance = remaining > 0;
                                                         
                                                         return (
@@ -666,7 +666,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-sm text-muted-foreground">Amount Due</span>
-                                                        <span className="font-medium text-sm">{formatCurrency(nextPayment.amount_due)}</span>
+                                                        <span className="font-medium text-sm">{formatCurrency(nextPayment.amount_due - nextPayment.rebate_amount)}</span>
                                                     </div>
                                                     {Number(nextPayment.amount_paid || 0) > 0 && (
                                                         <>
@@ -679,7 +679,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     )}
                                                     <div className="flex justify-between">
                                                         <span className="text-sm font-medium">Remaining</span>
-                                                        <span className="font-bold text-lg text-primary">{formatCurrency(nextPaymentRemaining)}</span>
+                                                        <span className="font-bold text-lg text-primary">{formatCurrency(nextPaymentRemaining - nextPayment.rebate_amount)}</span>
                                                     </div>
                                                 </div>
 
@@ -711,13 +711,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     {errors.amount_paid && (
                                                         <p className="text-xs text-red-500">{errors.amount_paid}</p>
                                                     )}
-                                                    {data.amount_paid && Number(data.amount_paid) < nextPaymentRemaining && Number(data.amount_paid) > 0 && (
+                                                    {/* {data.amount_paid && Number(data.amount_paid) < nextPaymentRemaining && Number(data.amount_paid) > 0 && (
                                                         <Alert className="mt-2">
                                                             <AlertDescription className="text-xs">
                                                                 Partial payment: {formatCurrency(nextPaymentRemaining - Number(data.amount_paid))} will remain
                                                             </AlertDescription>
                                                         </Alert>
-                                                    )}
+                                                    )} */}
                                                 </div>
 
                                                 <div className="space-y-2">
