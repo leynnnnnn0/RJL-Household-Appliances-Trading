@@ -289,4 +289,20 @@ class POSCreditOrderController extends Controller
 
         return back()->with('success', 'Order Voided');
     }
+
+    public function rebate(Request $request)
+    {
+        $validated = $request->validate([
+            'installment_order_payment_id' => 'required',
+            'rebate_amount' => 'required',
+            'rebate_reason' => 'required'
+        ]);
+        $payment = InstallmentOrderPayment::findOrFail($validated['installment_order_payment_id']);
+        $payment->update([
+            'rebate_amount' => $payment->rebate_amount += $validated['rebate_amount'],
+            'rebate_reason' => $validated['rebate_reason']
+        ]);
+
+        return back()->with('success', 'Rebate added successfully.');
+    }
 }

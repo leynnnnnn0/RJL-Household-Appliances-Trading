@@ -17,7 +17,8 @@ class InstallmentOrderPayment extends Model
         'amount_paid',
         'due_date',
         'payment_method',
-        'rebate',
+        'rebate_amount',
+        'rebate_reason',
         'reference_number',
         'status',
         'paid_date'

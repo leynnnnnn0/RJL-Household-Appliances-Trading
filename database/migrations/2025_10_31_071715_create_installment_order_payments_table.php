@@ -20,7 +20,8 @@ return new class extends Migration
             $table->date('due_date');
             $table->string('payment_method')->nullable();
             $table->string('reference_number')->nullable();
-            $table->decimal('rebate', 10, 2)->default(0);
+            $table->decimal('rebate_amount', 10, 2)->default(0);
+            $table->string('rebate_reason')->nullable();
             $table->string('status')->default('pending'); // pending, paid, overdue, partial
             $table->dateTime('paid_date')->nullable();
             $table->timestamps();

@@ -191,7 +191,8 @@ export type InstallmentOrderPayment = {
   reference_number: string | null;
   status: string;
   paid_date: string;
-  rebate: number;
+  rebate_amount: number;
+  rebate_reason: string | null;
   installment_order_payment_history: null | InstallmentOrderPaymentHistory[]
 };
 

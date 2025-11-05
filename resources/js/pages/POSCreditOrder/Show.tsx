@@ -34,7 +34,8 @@ import {
   MoreVertical,
   Ban,
   AlertTriangle,
-  ArrowLeft
+  ArrowLeft,
+  Percent
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -56,10 +57,12 @@ interface PageProps {
 }
 
 export default function Show({transaction, paymentHistory} : PageProps){
-     const {previousUrl} = usePage().props as any;
+    const {previousUrl} = usePage().props as any;
     const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
     const [showVoidDialog, setShowVoidDialog] = useState(false);
     const [showDefaultDialog, setShowDefaultDialog] = useState(false);
+    const [showRebateDialog, setShowRebateDialog] = useState(false);
+    const [selectedPayment, setSelectedPayment] = useState<InstallmentOrderPayment | null>(null);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-PH', {
@@ -110,6 +113,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
         default_reason: ''
     });
 
+    // Rebate form
+    const rebateForm = useForm({
+        installment_order_payment_id: '',
+        rebate_amount: '',
+        rebate_reason: ''
+    });
+
     // Update form when nextPayment changes
     useEffect(() => {
         if (nextPayment) {
@@ -124,7 +134,8 @@ export default function Show({transaction, paymentHistory} : PageProps){
                 amount_paid: remainingAmount.toString(),
                 payment_method: 'cash',
                 reference_number: '',
-                paid_date: new Date().toISOString().split('T')[0]
+                paid_date: new Date().toISOString().split('T')[0],
+                collection_receipt_number: ''
             });
         }
     }, [nextPayment?.id]);
@@ -194,6 +205,38 @@ export default function Show({transaction, paymentHistory} : PageProps){
         });
     };
 
+    const handleRebateClick = (payment: InstallmentOrderPayment) => {
+        const amountPaid = Number(payment.amount_paid || 0);
+        const amountDue = Number(payment.amount_due);
+        const remaining = amountDue - amountPaid;
+        
+        // Only allow rebate if there's a remaining balance
+        if (remaining > 0) {
+            setSelectedPayment(payment);
+            rebateForm.setData({
+                installment_order_payment_id: payment.id.toString(),
+                rebate_amount: '',
+                rebate_reason: ''
+            });
+            setShowRebateDialog(true);
+        }
+    };
+
+    const handleRebateSubmit = () => {
+        rebateForm.put(`/pos-installment-orders/rebate`, {
+            onSuccess: () => {
+                setShowRebateDialog(false);
+                setSelectedPayment(null);
+                rebateForm.reset();
+                toast.success("Rebate added successfully");
+            },
+            onError: (e) => {
+                toast.error("An error occurred while adding rebate");
+                console.log(e);
+            }
+        });
+    };
+
     const getPaymentStatusBadge = (payment: InstallmentOrderPayment) => {
         if (payment.status === 'paid' || payment.status === 'completed') {
             return <Badge className="bg-green-600"><CheckCircle2 className="w-3 h-3 mr-1" />Paid</Badge>;
@@ -234,11 +277,11 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             />
                             <div className="flex gap-2 items-center">
                                 <Button variant="outline" asChild>
-              <Link href={previousUrl}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to List
-              </Link>
-            </Button>
+                                    <Link href={previousUrl}>
+                                        <ArrowLeft className="h-4 w-4 mr-2" />
+                                        Back to List
+                                    </Link>
+                                </Button>
                                 {transaction.is_voided == true && (
                                     <Badge variant="destructive" className="h-8">
                                         <XCircle className="w-4 h-4 mr-1" />
@@ -363,7 +406,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             </Card>
                         </div>
 
-                          <Card>
+                        <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <IconTopologyStarRing3 className="w-5 h-5" />
@@ -371,20 +414,20 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className='grid grid-cols-3 gap-5'>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Name</p>
-                                        <p className="font-medium">{transaction.installment_order_item.item.description}</p>
-                                    </div>
-                                     <div>
-                                        <p className="text-sm text-muted-foreground">Model</p>
-                                        <p className="font-medium">{transaction.installment_order_item.item.model}</p>
-                                    </div>
-                                      <div>
-                                        <p className="text-sm text-muted-foreground">Serial</p>
-                                        <p className="font-medium">{transaction.installment_order_item.item.serial}</p>
-                                    </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Name</p>
+                                    <p className="font-medium">{transaction.installment_order_item.item.description}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Model</p>
+                                    <p className="font-medium">{transaction.installment_order_item.item.model}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Serial</p>
+                                    <p className="font-medium">{transaction.installment_order_item.item.serial}</p>
+                                </div>
                             </CardContent>
-                            </Card>
+                        </Card>
 
                         <div className="grid gap-6 md:grid-cols-2">
                             {/* Customer Information */}
@@ -459,9 +502,9 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                     <div className="space-y-1">
                                         <p className="text-sm text-muted-foreground">Loan Contract Price</p>
                                         <p className="text-2xl font-bold">{formatCurrency(transaction.loan_contract_price)}</p>
-                                         <p className="text-xs text-muted-foreground">
-                                    +{transaction.lcp_markup_rate}% markup {transaction.lcp_additional_charge > 0 ? `+ ${transaction.lcp_additional_charge} charge` : ''}
-                                </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            +{transaction.lcp_markup_rate}% markup {transaction.lcp_additional_charge > 0 ? `+ ${transaction.lcp_additional_charge} charge` : ''}
+                                        </p>
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-sm text-muted-foreground">Down Payment</p>
@@ -472,13 +515,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                             </p>
                                         )}
                                     </div>
-                                     <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Total PNV</p>
-                                <p className="text-2xl font-bold">{formatCurrency(final_pnv)}</p>
-                                <p className="text-xs text-muted-foreground">
-                                    +{transaction.promisory_note_value_interest}% markup {pnvAdditionalCharge > 0 ? `+ ${pnvAdditionalCharge} charge` : ''}
-                                </p>
-                            </div>
+                                    <div className="space-y-1">
+                                        <p className="text-sm text-muted-foreground">Total PNV</p>
+                                        <p className="text-2xl font-bold">{formatCurrency(final_pnv)}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            +{transaction.promisory_note_value_interest}% markup {pnvAdditionalCharge > 0 ? `+ ${pnvAdditionalCharge} charge` : ''}
+                                        </p>
+                                    </div>
                                     <div className="space-y-1">
                                         <p className="text-sm text-muted-foreground">Remaining Balance</p>
                                         <p className="text-2xl font-bold text-orange-600">{formatCurrency(remainingBalance)}</p>
@@ -514,7 +557,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                     Payment Schedule
                                 </CardTitle>
                                 <CardDescription>
-                                    Complete payment history and schedule
+                                    Complete payment history and schedule. Click on a row to add rebate.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -528,7 +571,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Amount Due</th>
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Amount Paid</th>
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Remaining</th>
-                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Rebate</th>
+                                                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Rebate</th>
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Payment Date</th>
                                                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
                                                 </tr>
@@ -542,13 +585,15 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                         const amountPaid = Number(payment.amount_paid || 0);
                                                         const amountDue = Number(payment.amount_due);
                                                         const remaining = amountDue - amountPaid;
+                                                        const hasBalance = remaining > 0;
                                                         
                                                         return (
                                                             <tr 
                                                                 key={payment.id} 
+                                                                onClick={() => hasBalance && handleRebateClick(payment)}
                                                                 className={`border-b transition-colors ${
                                                                     isNext ? 'bg-primary/10' : ''
-                                                                }`}
+                                                                } ${hasBalance ? 'cursor-pointer hover:bg-muted/50' : 'cursor-not-allowed opacity-60'}`}
                                                             >
                                                                 <td className="py-3 px-4">
                                                                     <div className="flex items-center gap-2">
@@ -569,8 +614,8 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                                 <td className="py-3 px-4 text-sm font-medium text-orange-600">
                                                                     {remaining > 0 ? formatCurrency(remaining) : '-'}
                                                                 </td>
-                                                                   <td className="py-3 px-4 text-sm font-medium text-orange-600">
-                                                                    {payment.rebate > 0 ? formatCurrency(remaining) : '-'}
+                                                                <td className="py-3 px-4 text-sm font-medium text-blue-600">
+                                                                    {payment.rebate_amount > 0 ? formatCurrency(payment.rebate_amount) : '-'}
                                                                 </td>
                                                                 <td className="py-3 px-4 text-sm text-muted-foreground">
                                                                     {payment.paid_date ? formatDate(payment.paid_date) : '-'}
@@ -661,15 +706,11 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                         placeholder="0.00"
                                                         value={data.amount_paid}
                                                         onChange={(e) => setData('amount_paid', e.target.value)}
-                                                        // max={remainingBalance}
                                                         className={errors.amount_paid ? 'border-red-500' : ''}
                                                     />
                                                     {errors.amount_paid && (
                                                         <p className="text-xs text-red-500">{errors.amount_paid}</p>
                                                     )}
-                                                    {/* {data.amount_paid && Number(data.amount_paid) > nextPaymentRemaining && (
-                                                        <p className="text-xs text-red-500">Amount exceeds remaining balance</p>
-                                                    )} */}
                                                     {data.amount_paid && Number(data.amount_paid) < nextPaymentRemaining && Number(data.amount_paid) > 0 && (
                                                         <Alert className="mt-2">
                                                             <AlertDescription className="text-xs">
@@ -726,7 +767,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     )}
                                                 </div>
 
-                                                    <div className="space-y-2">
+                                                <div className="space-y-2">
                                                     <Label htmlFor="collection_receipt_number">Collection Receipt Number *</Label>
                                                     <Input
                                                         id="collection_receipt_number"
@@ -817,7 +858,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                                     <p className="font-medium capitalize">{history.payment_method}</p>
                                                                 </div>
                                                                 <div>
-                                                                        <span className="text-muted-foreground">Recorded by:</span>
+                                                                    <span className="text-muted-foreground">Recorded by:</span>
                                                                     <p className="font-medium">{history.user.full_name}</p>
                                                                 </div>
                                                                 <div>
@@ -894,7 +935,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                     <span className="font-medium">{data.reference_number}</span>
                                 </div>
                             )}
-                             <div className="flex justify-between">
+                            <div className="flex justify-between">
                                 <span className="text-sm text-muted-foreground">Collection Receipt Number</span>
                                 <span className="font-medium">{data.collection_receipt_number ?? 'N/a'}</span>
                             </div>
@@ -1025,6 +1066,130 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             disabled={defaultForm.processing || !defaultForm.data.default_reason.trim()}
                         >
                             {defaultForm.processing ? 'Processing...' : 'Mark as Default'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Rebate Dialog */}
+            <Dialog open={showRebateDialog} onOpenChange={setShowRebateDialog}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Percent className="w-5 h-5 text-blue-600" />
+                            Add Rebate
+                        </DialogTitle>
+                        <DialogDescription>
+                            Add a rebate discount to this installment payment
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedPayment && (
+                        <div className="space-y-4 py-4">
+                            {/* Payment Info Summary */}
+                            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Installment</span>
+                                    <span className="font-bold">#{selectedPayment.installment_number}</span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-muted-foreground">Amount Due</span>
+                                    <span className="font-medium">{formatCurrency(Number(selectedPayment.amount_due))}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-muted-foreground">Amount Paid</span>
+                                    <span className="font-medium text-green-600">
+                                        {formatCurrency(Number(selectedPayment.amount_paid || 0))}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-muted-foreground">Current Rebate</span>
+                                    <span className="font-medium text-blue-600">
+                                        {selectedPayment.rebate_amount > 0 ? formatCurrency(Number(selectedPayment.rebate_amount)) : '-'}
+                                    </span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between">
+                                    <span className="text-sm font-medium">Remaining Balance</span>
+                                    <span className="font-bold text-lg text-orange-600">
+                                        {formatCurrency(Number(selectedPayment.amount_due) - Number(selectedPayment.amount_paid || 0))}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Rebate Form Fields */}
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="rebate_amount">Rebate Amount *</Label>
+                                    <Input
+                                        id="rebate_amount"
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        value={rebateForm.data.rebate_amount}
+                                        onChange={(e) => rebateForm.setData('rebate_amount', e.target.value)}
+                                        className={rebateForm.errors.rebate_amount ? 'border-red-500' : ''}
+                                    />
+                                    {rebateForm.errors.rebate_amount && (
+                                        <p className="text-xs text-red-500">{rebateForm.errors.rebate_amount}</p>
+                                    )}
+                                    {rebateForm.data.rebate_amount && Number(rebateForm.data.rebate_amount) > 0 && (
+                                        <p className="text-xs text-muted-foreground">
+                                            New balance after rebate: {formatCurrency(
+                                                Number(selectedPayment.amount_due) - 
+                                                Number(selectedPayment.amount_paid || 0) - 
+                                                Number(rebateForm.data.rebate_amount)
+                                            )}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="rebate_reason">Reason for Rebate *</Label>
+                                    <Textarea
+                                        id="rebate_reason"
+                                        placeholder="e.g., Early payment discount, promotional offer, customer loyalty, etc."
+                                        value={rebateForm.data.rebate_reason}
+                                        onChange={(e) => rebateForm.setData('rebate_reason', e.target.value)}
+                                        rows={3}
+                                        className={rebateForm.errors.rebate_reason ? 'border-red-500' : ''}
+                                    />
+                                    {rebateForm.errors.rebate_reason && (
+                                        <p className="text-xs text-red-500">{rebateForm.errors.rebate_reason}</p>
+                                    )}
+                                </div>
+
+                                <Alert>
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertDescription className="text-xs">
+                                        This rebate will be deducted from the remaining balance of this installment.
+                                    </AlertDescription>
+                                </Alert>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => {
+                                setShowRebateDialog(false);
+                                setSelectedPayment(null);
+                                rebateForm.reset();
+                            }}
+                            disabled={rebateForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleRebateSubmit}
+                            disabled={
+                                rebateForm.processing || 
+                                !rebateForm.data.rebate_amount || 
+                                !rebateForm.data.rebate_reason.trim() ||
+                                Number(rebateForm.data.rebate_amount) <= 0
+                            }
+                        >
+                            {rebateForm.processing ? 'Processing...' : 'Add Rebate'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
