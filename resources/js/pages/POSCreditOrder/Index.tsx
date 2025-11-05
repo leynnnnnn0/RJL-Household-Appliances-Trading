@@ -292,7 +292,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                    ₱{((transaction.promisory_note_value * transaction.promisory_note_value_interest + Number(transaction.promisory_note_value_interest_additional_charge)) / transaction.number_of_terms).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    {formatCurrency(transaction.remaining_balance > 1 ? transaction.remaining_balance : 0)}
+                    {formatCurrency(transaction.remaining_balance - transaction.total_rebate_amount > 1 ? transaction.remaining_balance - transaction.total_rebate_amount : 0)}
                 </TableCell>
                   <TableCell>
                     {getStatusBadge(transaction)}
