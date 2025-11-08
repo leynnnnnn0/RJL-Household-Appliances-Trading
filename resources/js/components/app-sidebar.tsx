@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
-import { IconMoneybag, IconMoneybagMove, IconTools } from '@tabler/icons-react';
+import { IconCashBanknote, IconMoneybag, IconMoneybagMove, IconTools } from '@tabler/icons-react';
 
 const mainNavItems: NavItem[] = [
   {
@@ -81,6 +81,11 @@ const salesNavItems: NavItem[] = [
     href: '/pos-installment-orders-sales',
     icon: ChartBar,
   },
+  {
+    title: "Bulk Payments",
+    href: '/bulk-payments',
+    icon: IconCashBanknote
+  }
 ];
 
 const referencesNavItems: NavItem[] = [

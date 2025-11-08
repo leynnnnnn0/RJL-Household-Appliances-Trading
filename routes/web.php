@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BulkPaymentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseRecordController;
@@ -54,6 +55,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/pos-cash-orders/void/{id}', [POSCashOrderController::class, 'voidOrder']);
     Route::resource('pos-cash-orders', POSCashOrderController::class);
     Route::resource('pos-cash-order-sales', POSCashOrderSalesController::class);
+
+    Route::resource('bulk-payments', BulkPaymentController::class);
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
