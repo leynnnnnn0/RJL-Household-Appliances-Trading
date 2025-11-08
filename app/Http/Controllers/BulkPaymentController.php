@@ -45,6 +45,7 @@ class BulkPaymentController extends Controller
             'payments.*.collection_receipt_number' => ['required', 'string', 'max:255']
         ]);
 
+
         DB::beginTransaction();
 
         try {

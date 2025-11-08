@@ -21,9 +21,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import AppLayout from "@/layouts/app-layout";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import ModuleHeading from "@/components/cards/module-heading";
 import axios from "axios";
 import { toast } from "sonner";
@@ -35,6 +48,8 @@ export default function BulkPayments() {
   const [isSearching, setIsSearching] = useState(false);
   const [openPopovers, setOpenPopovers] = useState({});
   const [processing, setProcessing] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   
   const [payments, setPayments] = useState([
     {
@@ -106,6 +121,21 @@ export default function BulkPayments() {
     const newPayments = payments.filter((_, i) => i !== index);
     setRows(newRows);
     setPayments(newPayments);
+    
+    // Clear validation errors for removed row
+    const newErrors = { ...validationErrors };
+    delete newErrors[index];
+    // Reindex remaining errors
+    const reindexedErrors = {};
+    Object.keys(newErrors).forEach(key => {
+      const idx = parseInt(key);
+      if (idx > index) {
+        reindexedErrors[idx - 1] = newErrors[key];
+      } else {
+        reindexedErrors[idx] = newErrors[key];
+      }
+    });
+    setValidationErrors(reindexedErrors);
   };
 
   const selectOrder = (index, order) => {
@@ -140,7 +170,7 @@ export default function BulkPayments() {
     setSearchQuery(""); // Reset search query after selection
   };
 
- const selectInstallment = (index, installmentId) => {
+  const selectInstallment = (index, installmentId) => {
     const newPayments = [...payments];
     const currentOrderId = newPayments[index].installment_order_id;
     
@@ -161,9 +191,30 @@ export default function BulkPayments() {
     );
     
     if (selectedInstallment) {
+      // Check if installment is already paid
+      if (selectedInstallment.status?.toLowerCase() === 'paid') {
+        toast.error("This installment has already been paid and cannot be selected.");
+        return;
+      }
+      
       const installmentNumber = newPayments[index].available_installments.findIndex(
         (inst) => inst.id === installmentId
       ) + 1;
+      
+      // Check sequence - all previous installments must be paid or selected
+      const allInstallments = newPayments[index].available_installments;
+      const currentOrderPayments = newPayments.filter(p => p.installment_order_id === currentOrderId);
+      
+      for (let i = 0; i < installmentNumber - 1; i++) {
+        const prevInstallment = allInstallments[i];
+        const isPaid = prevInstallment.status?.toLowerCase() === 'paid';
+        const isSelected = currentOrderPayments.some(p => p.installment_order_payment_id === prevInstallment.id);
+        
+        if (!isPaid && !isSelected) {
+          toast.error(`You must select installment #${i + 1} before selecting #${installmentNumber}.`);
+          return;
+        }
+      }
       
       newPayments[index] = {
         ...newPayments[index],
@@ -176,43 +227,93 @@ export default function BulkPayments() {
       setPayments(newPayments);
     }
   };
+
   const updatePayment = (index, field, value) => {
     const newPayments = [...payments];
     newPayments[index][field] = value;
     setPayments(newPayments);
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[index]?.[field]) {
+      const newErrors = { ...validationErrors };
+      delete newErrors[index][field];
+      if (Object.keys(newErrors[index] || {}).length === 0) {
+        delete newErrors[index];
+      }
+      setValidationErrors(newErrors);
+    }
+  };
+
+  const validatePayments = () => {
+    const errors = {};
+    let isValid = true;
+    
+    payments.forEach((payment, index) => {
+      const rowErrors = {};
+      
+      // Validate amount paid
+      if (!payment.amount_paid || parseFloat(payment.amount_paid) <= 0) {
+        rowErrors.amount_paid = true;
+        isValid = false;
+      }
+      
+      // Validate receipt number
+      if (!payment.collection_receipt_number || payment.collection_receipt_number.trim() === '') {
+        rowErrors.collection_receipt_number = true;
+        isValid = false;
+      }
+      
+      if (Object.keys(rowErrors).length > 0) {
+        errors[index] = rowErrors;
+      }
+    });
+    
+    setValidationErrors(errors);
+    return isValid;
   };
 
   const handleSubmit = async () => {
-    setProcessing(true);
-    
-    try {
-      // Validate payments before submission
-      const validPayments = payments.filter(p => 
-        p.installment_order_id && 
-        p.installment_order_payment_id && 
-        p.amount_paid
-      );
-      
-      if (validPayments.length != payments.length) {
-        toast.error("Please make sure that all amount paid fields are filled.");
-        setProcessing(false);
-        return;
-      }
-      
-      // Replace with your actual API call
-      console.log("Submitting payments:", validPayments);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      alert(`${validPayments.length} payment(s) saved successfully!`);
-      resetForm();
-    } catch (error) {
-      console.error("Submission error:", error);
-      alert("Failed to save payments. Please try again.");
-    } finally {
-      setProcessing(false);
+    // Validate all required fields
+    if (!validatePayments()) {
+      toast.error("Please fill in all required fields (Amount Paid and Receipt #).");
+      return;
     }
+    
+    // Check if all payments have order and installment selected
+    const validPayments = payments.filter(p => 
+      p.installment_order_id && 
+      p.installment_order_payment_id && 
+      p.amount_paid
+    );
+    
+    if (validPayments.length !== payments.length) {
+      toast.error("Please make sure that all rows have order and installment selected.");
+      return;
+    }
+    
+    // Show confirmation modal
+    setShowConfirmModal(true);
+  };
+
+  const confirmSubmit = async () => {
+    setShowConfirmModal(false);
+    setProcessing(true);
+
+    router.post(route('bulk-payments.store'), {
+      payments: payments
+    },{
+      onSuccess: () => {
+        toast.success("Payments Recorded Successfully.");
+        resetForm();
+      },
+      onError: (e) => {
+        console.error("Submission error:", e);
+        toast.error("Failed to save payments. Please try again.");
+      },
+      onFinish: () => {
+        setProcessing(false);
+      }
+    });
   };
 
   const resetForm = () => {
@@ -234,6 +335,7 @@ export default function BulkPayments() {
     ]);
     setSearchQuery("");
     setSearchResults([]);
+    setValidationErrors({});
   };
 
   return (
@@ -261,11 +363,11 @@ export default function BulkPayments() {
                   <th className="px-2 py-3 text-left font-medium min-w-[200px]">Order / Customer</th>
                   <th className="px-2 py-3 text-left font-medium w-32">Installment</th>
                   <th className="px-2 py-3 text-left font-medium w-28">Amount Due</th>
-                  <th className="px-2 py-3 text-left font-medium w-28">Amount Paid</th>
+                  <th className="px-2 py-3 text-left font-medium w-28">Amount Paid *</th>
                   <th className="px-2 py-3 text-left font-medium w-32">Payment Method</th>
                   <th className="px-2 py-3 text-left font-medium w-32">Reference #</th>
                   <th className="px-2 py-3 text-left font-medium w-32">Paid Date</th>
-                  <th className="px-2 py-3 text-left font-medium w-32">Receipt #</th>
+                  <th className="px-2 py-3 text-left font-medium w-32">Receipt # *</th>
                   <th className="px-2 py-3 text-center font-medium w-16">Action</th>
                 </tr>
               </thead>
@@ -350,11 +452,19 @@ export default function BulkPayments() {
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
-                          {payments[index]?.available_installments?.map((inst, idx) => (
-                            <SelectItem key={inst.id} value={inst.id} className="text-xs">
-                              #{idx + 1} - {inst.status}
-                            </SelectItem>
-                          ))}
+                          {payments[index]?.available_installments?.map((inst, idx) => {
+                            const isPaid = inst.status?.toLowerCase() === 'paid';
+                            return (
+                              <SelectItem 
+                                key={inst.id} 
+                                value={inst.id} 
+                                className="text-xs"
+                                disabled={isPaid}
+                              >
+                                #{idx + 1} - {inst.status} {isPaid ? '(Paid)' : ''}
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </td>
@@ -379,7 +489,11 @@ export default function BulkPayments() {
                         type="number"
                         step="0.01"
                         placeholder="0.00"
-                        className="h-8 text-xs"
+                        className={`h-8 text-xs ${
+                          validationErrors[index]?.amount_paid 
+                            ? 'border-red-500 focus-visible:ring-red-500' 
+                            : ''
+                        }`}
                         value={payments[index]?.amount_paid || ""}
                         onChange={(e) => updatePayment(index, "amount_paid", e.target.value)}
                       />
@@ -430,7 +544,11 @@ export default function BulkPayments() {
                       <Input
                         type="text"
                         placeholder="CR-123"
-                        className="h-8 text-xs"
+                        className={`h-8 text-xs ${
+                          validationErrors[index]?.collection_receipt_number 
+                            ? 'border-red-500 focus-visible:ring-red-500' 
+                            : ''
+                        }`}
                         value={payments[index]?.collection_receipt_number || ""}
                         onChange={(e) => updatePayment(index, "collection_receipt_number", e.target.value)}
                       />
@@ -502,6 +620,25 @@ export default function BulkPayments() {
         </div>
       </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Payment Submission</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to save {payments.length} payment{payments.length > 1 ? 's' : ''}. 
+              This action cannot be undone. Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSubmit}>
+              Confirm & Save
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
