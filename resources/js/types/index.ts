@@ -146,7 +146,7 @@ export type InstallmentOrder = {
   payment_method: string | null;
   reference_number: string | null;
   promisory_note_value: number;
-number_of_terms: number;
+  number_of_terms: number;
   promisory_note_value_interest: number;
   promisory_note_value_interest_additional_charge: number;
   transaction_date: string; // ISO date string, e.g. "2025-10-31"
@@ -159,6 +159,11 @@ number_of_terms: number;
   total_rebate_amount: number;
   total_amount_paid: number | 0;
   remaining_balance: number | 0;
+
+  is_accelerated: boolean,
+  reason_for_acceleration: string | null;
+  acceleration_discount: number; 
+  acceleration_date: string;
 
 }
 

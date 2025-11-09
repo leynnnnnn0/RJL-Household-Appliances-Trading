@@ -36,6 +36,11 @@ class InstallmentOrder extends Model
 
         'is_completed',
 
+        'is_accelerated',
+        'reason_for_acceleration',
+        'acceleration_discount',
+        'acceleration_date',
+
         'is_defaulted',
         'default_reason',
         'default_date',

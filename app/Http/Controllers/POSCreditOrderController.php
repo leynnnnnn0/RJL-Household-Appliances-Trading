@@ -212,7 +212,7 @@ class POSCreditOrderController extends Controller
                         'reference_number' => $validated['reference_number'],
                         'paid_date' => $validated['paid_date'],
                         'user_id' => Auth::id(),
-                          'collection_receipt_number' => $validated['collection_receipt_number']
+                        'collection_receipt_number' => $validated['collection_receipt_number']
                     ]);
 
                     $remainingPayment = 0;
@@ -306,5 +306,109 @@ class POSCreditOrderController extends Controller
         ]);
 
         return back()->with('success', 'Rebate added successfully.');
+    }
+
+    public function accelerate(Request $request)
+    {
+        $validated = $request->validate([
+            'installment_order_id' => 'required',
+            'acceleration_discount' => ['required'],
+            'amount_paid' => ['required'],
+            'reason_for_acceleration' => ['required', 'string'],
+             'payment_method' => ['required', 'string', 'in:cash,gcash,bank_transfer,credit_card,debit_card'],
+            'reference_number' => ['nullable', 'string', 'max:255'],
+            'paid_date' => ['required', 'date'],
+            'collection_receipt_number' => ['required', 'string'],
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $installmentOrder = InstallmentOrder::findOrFail($validated['installment_order_id']);
+            $remainingPayment = $validated['amount_paid'];
+
+            $installmentOrder->update([
+                'acceleration_date' => now(),
+                'is_accelerated' => true,
+                'reason_for_acceleration' => $validated['reason_for_acceleration'],
+                'acceleration_discount' => $validated['acceleration_discount']
+            ]); 
+
+            // Start from the current installment and move forward
+            $payments = $installmentOrder->installment_order_payments()
+                ->whereIn('status', ['pending', 'partial'])
+                ->orderBy('installment_number')
+                ->get();
+
+            foreach ($payments as $payment) {
+                // Skip if no remaining payment
+                if ($remainingPayment <= 0) break;
+
+                $currentAmountPaid = $payment->amount_paid ?? 0;
+                $remainingDue = ($payment->amount_due - $payment->rebate_amount) - $currentAmountPaid;
+
+                if ($remainingPayment >= $remainingDue) {
+                    // Fully pay this installment
+                    $payment->update([
+                        'amount_paid' => $payment->amount_due - $payment->rebate_amount,
+                        'status' => 'paid',
+                        'payment_method' => $validated['payment_method'],
+                        'reference_number' => $validated['reference_number'],
+                        'paid_date' => $validated['paid_date'],
+                    ]);
+
+                    // Create payment history
+                    InstallmentOrderPaymentHistory::create([
+                        'payment_id' => $payment->id,
+                        'amount' => $remainingDue,
+                        'payment_method' => $validated['payment_method'],
+                        'reference_number' => $validated['reference_number'],
+                        'paid_date' => $validated['paid_date'],
+                        'user_id' => Auth::id(),
+                        'collection_receipt_number' => $validated['collection_receipt_number']
+                    ]);
+
+                    $remainingPayment -= $remainingDue;
+                } else {
+                    // Partial payment for this installment
+                    $newTotalPaid = $currentAmountPaid + $remainingPayment;
+                    $status = $newTotalPaid >= $payment->amount_due - $payment->rebate_amount ? 'paid' : 'partial';
+
+                    $payment->update([
+                        'amount_paid' => $newTotalPaid,
+                        'status' => 'paid',
+                        'payment_method' => $validated['payment_method'],
+                        'reference_number' => $validated['reference_number'],
+                        'paid_date' => $validated['paid_date'],
+                    ]);
+
+                    InstallmentOrderPaymentHistory::create([
+                        'payment_id' => $payment->id,
+                        'amount' => $remainingPayment,
+                        'payment_method' => $validated['payment_method'],
+                        'reference_number' => $validated['reference_number'],
+                        'paid_date' => $validated['paid_date'],
+                        'user_id' => Auth::id(),
+                        'collection_receipt_number' => $validated['collection_receipt_number']
+                    ]);
+
+                    $remainingPayment = 0;
+                }
+            }
+
+            // Mark order as completed if all payments are paid
+            $unpaidCount = $installmentOrder->installment_order_payments()
+                ->where('status', '!=', 'paid')
+                ->count();
+
+            $installmentOrder->update(['is_completed' => true]);
+
+            DB::commit();
+
+            return back()->with('success', 'Loan accelerated successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Payment processing failed: ' . $e->getMessage()]);
+        }
     }
 }

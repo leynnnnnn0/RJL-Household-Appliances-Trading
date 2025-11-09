@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('/pos-installment-orders-sales', POSCreditOrderSalesController::class);
     Route::post('/pos-installment-orders/record-payment', [POSCreditOrderController::class, 'recordPayment']);
     Route::post('/pos-installment-orders/{id}/void', [POSCreditOrderController::class, 'void']);
+    Route::post('/pos-installment-orders/{id}/accelerate', [POSCreditOrderController::class, 'accelerate']);
     Route::post('/pos-installment-orders/{id}/default', [POSCreditOrderController::class, 'default']);
      Route::put('/pos-installment-orders/rebate', [POSCreditOrderController::class, 'rebate']);
     Route::resource('/pos-installment-orders', POSCreditOrderController::class);

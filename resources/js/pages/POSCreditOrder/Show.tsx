@@ -35,7 +35,8 @@ import {
   Ban,
   AlertTriangle,
   ArrowLeft,
-  Percent
+  Percent,
+  CloudLightning
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -61,6 +62,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
     const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
     const [showVoidDialog, setShowVoidDialog] = useState(false);
     const [showDefaultDialog, setShowDefaultDialog] = useState(false);
+     const [showAccelerateDialog, setAcceleratetDialog] = useState(false);
     const [showRebateDialog, setShowRebateDialog] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<InstallmentOrderPayment | null>(null);
 
@@ -117,8 +119,10 @@ export default function Show({transaction, paymentHistory} : PageProps){
     const rebateForm = useForm({
         installment_order_payment_id: '',
         rebate_amount: '',
-        rebate_reason: ''
+        rebate_reason: '',
     });
+
+
 
     // Update form when nextPayment changes
     useEffect(() => {
@@ -150,11 +154,24 @@ export default function Show({transaction, paymentHistory} : PageProps){
 
     
     const totalToPay = final_pnv;
-    const remainingBalance = transaction.remaining_balance - transaction.total_rebate_amount;
+    const remainingBalance = transaction.remaining_balance - transaction.total_rebate_amount - transaction.acceleration_discount;
     let paymentProgress = 0;
     if(totalPaid > 0 && final_pnv > 0){
         paymentProgress = (totalPaid / final_pnv) * 100
     }
+
+        // Acceleration form
+    const accelerationForm = useForm({
+       installment_order_id: transaction.id,
+       acceleration_discount: "",
+       amount_paid: remainingBalance.toFixed(2),
+               reason_for_acceleration: '',
+                       payment_method: 'cash',
+        reference_number: '',
+        paid_date: new Date().toISOString().split('T')[0],
+        collection_receipt_number: ''
+        
+    });
 
     const pendingPayments = transaction.installment_order_payments?.filter(p => 
         p.status === 'pending' || p.status === 'overdue' || p.status === 'partial'
@@ -204,6 +221,20 @@ export default function Show({transaction, paymentHistory} : PageProps){
             }
         });
     };
+
+    const handleAccelerationSubmit = () => {
+        console.log("accelerate");
+         accelerationForm.post(`/pos-installment-orders/${transaction.id}/accelerate`, {
+            onSuccess: () => {
+                setAcceleratetDialog(false);
+                toast.success("Transaction marked as accelerated");
+            },
+            onError: (e) => {
+                toast.error("An error occurred while marking as accelerated");
+                console.log(e);
+            }
+        });
+    }
 
     const handleRebateClick = (payment: InstallmentOrderPayment) => {
         const amountPaid = Number(payment.amount_paid || 0);
@@ -317,6 +348,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
+                                               <DropdownMenuItem 
+                                                onClick={() => setAcceleratetDialog(true)}
+                                                className="text-green-600 focus:text-green-600"
+                                            >
+                                                <CloudLightning className="w-4 h-4 mr-2" />
+                                                Accelerate Transaction
+                                            </DropdownMenuItem>
                                             {!transaction.is_defaulted && (
                                                 <DropdownMenuItem 
                                                     onClick={() => setShowDefaultDialog(true)}
@@ -346,6 +384,16 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 <AlertDescription>
                                     This order was voided on {formatDate(transaction.void_date || '')}. 
                                     Reason: {transaction.reason_for_cancellation}
+                                </AlertDescription>
+                            </Alert>
+                        )}
+
+                         {transaction.is_accelerated == true && (
+                            <Alert>
+                                <XCircle className="h-4 w-4" />
+                                <AlertDescription>
+                                    This order was accelerated on {formatDate(transaction.acceleration_date || '')}. 
+                                    Reason: {transaction.reason_for_acceleration}
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -529,6 +577,16 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                             {paymentProgress.toFixed(1)}% paid
                                         </p>
                                     </div>
+
+                                      <div className="space-y-1">
+                                        <p className="text-sm text-muted-foreground">Total Rebate</p>
+                                        <p className="text-2xl font-bold">{formatCurrency(transaction.total_rebate_amount)}</p>
+                                    </div>
+
+                                    {transaction.is_accelerated == true &&    <div className="space-y-1">
+                                        <p className="text-sm text-muted-foreground">Total Acceleration Discount</p>
+                                        <p className="text-2xl font-bold">{formatCurrency(transaction.acceleration_discount)}</p>
+                                    </div>}
                                 </div>
                                 
                                 <Separator className="my-4" />
@@ -590,10 +648,10 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                         return (
                                                             <tr 
                                                                 key={payment.id} 
-                                                                onClick={() => hasBalance && handleRebateClick(payment)}
+                                                                onClick={() => transaction.is_accelerated == false && hasBalance && handleRebateClick(payment)}
                                                                 className={`border-b transition-colors ${
                                                                     isNext ? 'bg-primary/10' : ''
-                                                                } ${hasBalance ? 'cursor-pointer hover:bg-muted/50' : 'cursor-not-allowed opacity-60'}`}
+                                                                } ${hasBalance && transaction.is_accelerated == false ? 'cursor-pointer hover:bg-muted/50' : 'cursor-not-allowed opacity-60'}`}
                                                             >
                                                                 <td className="py-3 px-4">
                                                                     <div className="flex items-center gap-2">
@@ -1066,6 +1124,160 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             disabled={defaultForm.processing || !defaultForm.data.default_reason.trim()}
                         >
                             {defaultForm.processing ? 'Processing...' : 'Mark as Default'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+               {/* Accelerate Loan Dialog */}
+            <Dialog open={showAccelerateDialog} onOpenChange={setAcceleratetDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-green-600">
+                            <CloudLightning className="w-5 h-5" />
+                            Loan Acceleration
+                        </DialogTitle>
+                        <DialogDescription>
+                            Accelerate the payment for this loan and give discount.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                <strong>Warning:</strong> This will mark the account as accelerated. This change is permanent and cannot be reverted.
+                            </AlertDescription>
+                        </Alert>
+                          <div className="space-y-2">
+                            <Label>Discount Amount<span className="text-red-500">*</span> </Label>
+                            <Input  step="0.01"
+                                    value={accelerationForm.data.acceleration_discount}
+                                    onChange={(e) => {
+                                        const discount = e.target.value ?  Number(e.target.value) : 0;
+                                        if(discount > remainingBalance) {
+                                            accelerationForm.setError("acceleration_discount", "Discount amount should be less than the remaining balance")
+                                        }      
+                                        else {
+                                            accelerationForm.clearErrors();
+                                        }
+                                        accelerationForm.setData('acceleration_discount', discount)
+                                        const amountPaid = (Number(transaction.remaining_balance) - discount).toFixed(2);
+                                        accelerationForm.setData('amount_paid', amountPaid);
+
+                                        if(Number(amountPaid) < transaction.installment_order_item.item.srp){
+      accelerationForm.setError("acceleration_discount", `The discount given is too high. Item SRP: ${transaction.installment_order_item.item.srp}`)
+                                        }
+
+                                         
+                                        
+                                    }}
+                                    placeholder="0.00" 
+                                    type='number'/>
+                                     {accelerationForm.errors.acceleration_discount && (
+                                <p className="text-xs text-red-500">{accelerationForm.errors.acceleration_discount}</p>
+                            )}
+                          </div>
+                            <div className="space-y-2">
+                            <Label>Amount Paid<span className="text-red-500">*</span> </Label>
+                            <Input  step="0.01"
+                                    value={accelerationForm.data.amount_paid}
+                                    onChange={(e) => accelerationForm.setData('amount_paid', e.target.value)}
+                                    disabled
+                                    placeholder="0.00" 
+                                    type='number'/>
+                                       {accelerationForm.errors.amount_paid && (
+                                <p className="text-xs text-red-500">{accelerationForm.errors.amount_paid}</p>
+                            )}
+                          </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="reason_for_acceleration">Reason for Acceleration *</Label>
+                            <Textarea
+                                id="reason_for_acceleration"
+                                placeholder="Please provide a reason for marking as accelerated (e.g., customer's choice, etc.)..."
+                                value={accelerationForm.data.reason_for_acceleration}
+                                onChange={(e) => accelerationForm.setData('reason_for_acceleration', e.target.value)}
+                                rows={4}
+                                className={accelerationForm.errors.reason_for_acceleration ? 'border-red-500' : ''}
+                            />
+                            {accelerationForm.errors.reason_for_acceleration && (
+                                <p className="text-xs text-red-500">{accelerationForm.errors.reason_for_acceleration}</p>
+                            )}
+                        </div>
+                             <div className="space-y-2">
+                                                    <Label htmlFor="payment_method">Payment Method *</Label>
+                                                    <Select 
+                                                        value={accelerationForm.data.payment_method}
+                                                        onValueChange={(value) => accelerationForm.setData('payment_method', value)}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="cash">Cash</SelectItem>
+                                                            <SelectItem value="gcash">GCash</SelectItem>
+                                                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                                            <SelectItem value="credit_card">Credit Card</SelectItem>
+                                                            <SelectItem value="debit_card">Debit Card</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {accelerationForm.errors.payment_method && (
+                                                        <p className="text-xs text-red-500">{accelerationForm.errors.payment_method}</p>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="reference_number">Reference Number</Label>
+                                                    <Input
+                                                        id="reference_number"
+                                                        type="text"
+                                                        placeholder="Optional"
+                                                        value={accelerationForm.data.reference_number}
+                                                        onChange={(e) => accelerationForm.setData('reference_number', e.target.value)}
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="paid_date">Payment Date *</Label>
+                                                    <Input
+                                                        id="paid_date"
+                                                        type="date"
+                                                        value={accelerationForm.data.paid_date}
+                                                        onChange={(e) => accelerationForm.setData('paid_date', e.target.value)}
+                                                        className={accelerationForm.errors.paid_date ? 'border-red-500' : ''}
+                                                    />
+                                                    {accelerationForm.errors.paid_date && (
+                                                        <p className="text-xs text-red-500">{accelerationForm.errors.paid_date}</p>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="collection_receipt_number">Collection Receipt Number *</Label>
+                                                    <Input
+                                                        id="collection_receipt_number"
+                                                        type="text"
+                                                        value={accelerationForm.data.collection_receipt_number}
+                                                        onChange={(e) => accelerationForm.setData('collection_receipt_number', e.target.value)}
+                                                        className={errors.collection_receipt_number ? 'border-red-500' : ''}
+                                                    />
+                                                    {accelerationForm.errors.collection_receipt_number && (
+                                                        <p className="text-xs text-red-500">{accelerationForm.errors.collection_receipt_number}</p>
+                                                    )}
+                                                </div>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowDefaultDialog(false)}
+                            disabled={defaultForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            className='bg-green-500'
+                            onClick={handleAccelerationSubmit}
+                            disabled={accelerationForm.processing  || !accelerationForm.data.reason_for_acceleration.trim() || !accelerationForm.data.amount_paid || !accelerationForm.data.acceleration_discount}
+                        >
+                            {defaultForm.processing ? 'Processing...' : 'Accelerate Loan'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

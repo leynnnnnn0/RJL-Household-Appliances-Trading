@@ -36,6 +36,12 @@ return new class extends Migration
            $table->dateTime('void_date')->nullable();
            $table->foreignId('voider_id')->nullable()->constrained('users');
            $table->boolean('is_completed')->default(false);
+
+           $table->boolean('is_accelerated')->default(false);
+           $table->text('reason_for_acceleration')->nullable();
+           $table->decimal('acceleration_discount', 10, 2)->default(0);
+           $table->dateTime('acceleration_date')->nullable();
+
            $table->boolean('is_defaulted')->default(false);
            $table->dateTime('default_date')->nullable();
             $table->foreignId('defaulter_id')->nullable()->constrained('users');
