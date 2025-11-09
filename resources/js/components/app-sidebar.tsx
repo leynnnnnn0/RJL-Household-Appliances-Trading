@@ -53,11 +53,7 @@ const mainNavItems: NavItem[] = [
     href: '/employees',
     icon: UserSquare2Icon,
   },
-      {
-    title: 'Expense Record',
-    href: '/expense-record',
-    icon: IconMoneybagMove,
-  },
+
 ];
 
 const salesNavItems: NavItem[] = [
@@ -72,7 +68,7 @@ const salesNavItems: NavItem[] = [
     icon: ChartArea,
   },
   {
-    title: 'POS Installment Orders',
+    title: 'POS Credit Orders',
     href: '/pos-installment-orders',
     icon: CreditCardIcon,
   },
@@ -85,7 +81,12 @@ const salesNavItems: NavItem[] = [
     title: "Bulk Payments",
     href: '/bulk-payments',
     icon: IconCashBanknote
-  }
+  },
+        {
+    title: 'Expense Record',
+    href: '/expense-record',
+    icon: IconMoneybagMove,
+  },
 ];
 
 const referencesNavItems: NavItem[] = [

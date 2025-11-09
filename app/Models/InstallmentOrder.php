@@ -150,7 +150,7 @@ class InstallmentOrder extends Model
 
         $totalToPay = ($noteValue * $interest) + $additional;
 
-        return $totalToPay - $paid;
+        return $totalToPay - $paid - $this->acceleration_discount;
     }
 
     public function customer()

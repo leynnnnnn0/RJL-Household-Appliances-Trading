@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
             ItemSeeder::class,
             // OrderSeeder::class,
             EmployeeSeeder::class,
-            // InstallmentOrderSeeder::class
+            InstallmentOrderSeeder::class
         ]);
     }
 }

@@ -159,6 +159,7 @@ export type InstallmentOrder = {
   total_rebate_amount: number;
   total_amount_paid: number | 0;
   remaining_balance: number | 0;
+  total_advanced_payment: number;
 
   is_accelerated: boolean,
   reason_for_acceleration: string | null;

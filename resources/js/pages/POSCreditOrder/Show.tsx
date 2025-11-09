@@ -154,7 +154,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
 
     
     const totalToPay = final_pnv;
-    const remainingBalance = transaction.remaining_balance - transaction.total_rebate_amount - transaction.acceleration_discount;
+    const remainingBalance = transaction.remaining_balance - transaction.total_rebate_amount;
     let paymentProgress = 0;
     if(totalPaid > 0 && final_pnv > 0){
         paymentProgress = (totalPaid / final_pnv) * 100
@@ -581,6 +581,11 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                       <div className="space-y-1">
                                         <p className="text-sm text-muted-foreground">Total Rebate</p>
                                         <p className="text-2xl font-bold">{formatCurrency(transaction.total_rebate_amount)}</p>
+                                    </div>
+
+                                      <div className="space-y-1">
+                                        <p className="text-sm text-muted-foreground">Total Advanced Payment</p>
+                                        <p className="text-2xl font-bold">{formatCurrency(transaction.total_advanced_payment)}</p>
                                     </div>
 
                                     {transaction.is_accelerated == true &&    <div className="space-y-1">

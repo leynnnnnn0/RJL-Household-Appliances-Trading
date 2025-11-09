@@ -45,7 +45,6 @@ class BulkPaymentController extends Controller
             'payments.*.collection_receipt_number' => ['required', 'string', 'max:255']
         ]);
 
-
         DB::beginTransaction();
 
         try {
@@ -56,8 +55,10 @@ class BulkPaymentController extends Controller
                 try {
                     $this->processPayment($paymentData);
                     $successCount++;
+
                 } catch (\Exception $e) {
                     $errors[] = "Row " . ($index + 1) . ": " . $e->getMessage();
+                    dd('there');
                 }
             }
 
@@ -71,22 +72,26 @@ class BulkPaymentController extends Controller
 
             DB::commit();
 
+
             return back()->with('success', "Successfully processed {$successCount} payment(s)!");
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withErrors(['error' => 'Bulk payment processing failed: ' . $e->getMessage()]);
         }
     }
 
     private function processPayment(array $paymentData)
     {
-        $installmentOrder = InstallmentOrder::findOrFail($paymentData['installment_order_id']);
+
+        $installmentOrder = InstallmentOrder::with('installment_order_payments')
+        ->findOrFail($paymentData['installment_order_id']);
         $remainingPayment = $paymentData['amount_paid'];
         $currentPayment = InstallmentOrderPayment::findOrFail($paymentData['installment_order_payment_id']);
 
         // Start from the current installment and move forward
         $payments = $installmentOrder->installment_order_payments()
-            ->whereIn('status', ['pending', 'partial'])
+            ->whereIn('status', ['pending', 'partial', 'overdue'])
             ->orderBy('installment_number')
             ->get();
 
@@ -144,6 +149,7 @@ class BulkPaymentController extends Controller
 
                 $remainingPayment = 0;
             }
+        
         }
 
         // Mark order as completed if all payments are paid
@@ -154,5 +160,6 @@ class BulkPaymentController extends Controller
         if ($unpaidCount === 0) {
             $installmentOrder->update(['is_completed' => true]);
         }
+
     }
 }

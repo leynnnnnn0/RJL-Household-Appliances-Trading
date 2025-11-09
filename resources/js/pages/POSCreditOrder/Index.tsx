@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Eye, Calendar, MapPin, User, Filter, X, Download, Clock, Package } from "lucide-react";
+import { Search, Eye, Calendar, MapPin, Filter, X, Clock, Package, Settings2 } from "lucide-react";
 import { Paginated, InstallmentOrderWithRelations, Location, User as UserType } from "@/types";
 import Pagination from "@/components/pagination";
 import {
@@ -38,36 +38,40 @@ interface Props {
 export default function Index({ transactions, locations, employees }: Props) {
   const query = new URLSearchParams(window.location.search);
 
-  const getTodayDate = () => new Date().toISOString().split("T")[0];
+  // Filter mode state
+  const [filterMode, setFilterMode] = useState<"simple" | "advanced">(query.get("filter_mode") as any || "simple");
 
+  // Common filters
   const [search, setSearch] = useState(query.get("search") || "");
   const [dateFrom, setDateFrom] = useState(query.get("date_from") || "");
   const [dateTo, setDateTo] = useState(query.get("date_to") || "");
   const [selectedLocation, setSelectedLocation] = useState(query.get("location_id") || "all");
-  const [selectedEmployee, setSelectedEmployee] = useState(query.get("employee_id") || "all");
   const [selectedStatus, setSelectedStatus] = useState(query.get("status") || "all");
-  const [selectedAging, setSelectedAging] = useState(query.get("aging") || "all");
   const [selectedItemType, setSelectedItemType] = useState(query.get("item_type") || "all");
+
+  // Advanced filter - single select for all options
+  const [advancedFilter, setAdvancedFilter] = useState(query.get("advanced_filter") || "all");
 
   // Trigger server-side filter whenever filters change
   useEffect(() => {
     const debounce = setTimeout(() => {
       const params: Record<string, string> = {};
 
+      // Common filters
       if (search) params.search = search;
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
       if (selectedLocation !== "all") params.location_id = selectedLocation;
-      if (selectedEmployee !== "all") params.employee_id = selectedEmployee;
       if (selectedStatus !== "all") params.status = selectedStatus;
-      if (selectedAging !== "all") params.aging = selectedAging;
       if (selectedItemType !== "all") params.item_type = selectedItemType;
+
+       params.advanced_filter = advancedFilter;
 
       router.get("/pos-installment-orders", params, { preserveState: true, replace: true });
     }, 400);
 
     return () => clearTimeout(debounce);
-  }, [search, dateFrom, dateTo, selectedLocation, selectedEmployee, selectedStatus, selectedAging, selectedItemType]);
+  }, [search, dateFrom, dateTo, selectedLocation, selectedStatus, selectedItemType, filterMode, advancedFilter]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(amount);
@@ -80,10 +84,9 @@ export default function Index({ transactions, locations, employees }: Props) {
     setDateFrom("");
     setDateTo("");
     setSelectedLocation("all");
-    setSelectedEmployee("all");
     setSelectedStatus("all");
-    setSelectedAging("all");
     setSelectedItemType("all");
+    setAdvancedFilter("all");
   };
 
   const hasActiveFilters =
@@ -91,10 +94,9 @@ export default function Index({ transactions, locations, employees }: Props) {
     dateFrom ||
     dateTo ||
     selectedLocation !== "all" ||
-    selectedEmployee !== "all" ||
     selectedStatus !== "all" ||
-    selectedAging !== "all" ||
-    selectedItemType !== "all";
+    selectedItemType !== "all" ||
+    advancedFilter !== "all";
 
   const handleViewDetails = (orderId: number) => {
     router.visit(`/pos-installment-orders/${orderId}`);
@@ -113,52 +115,60 @@ export default function Index({ transactions, locations, employees }: Props) {
     return <Badge className="bg-blue-500">Active</Badge>;
   };
 
-    
-
   return (
     <AppLayout>
       <Head title="POS Installment Orders" />
-      <ModuleHeading title="POS Installment Orders" description="View and manage all installment order transactions">
-     
-      </ModuleHeading>
+      <ModuleHeading title="POS Installment Orders" description="View and manage all installment order transactions" />
 
       {/* Filters */}
       <Card>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by order number..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by order number or customer name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+             
+               
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Date From */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" /> Date From
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium flex items-center gap-1">
+                <Calendar className="h-3 w-3" /> Date From
               </label>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-sm" />
             </div>
 
             {/* Date To */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" /> Date To
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium flex items-center gap-1">
+                <Calendar className="h-3 w-3" /> Date To
               </label>
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-sm" />
             </div>
 
             {/* Location */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <MapPin className="h-4 w-4" /> Location
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium flex items-center gap-1">
+                <MapPin className="h-3 w-3" /> Location
               </label>
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 text-sm">
                   <SelectValue placeholder="All Locations" />
                 </SelectTrigger>
                 <SelectContent>
@@ -170,32 +180,14 @@ export default function Index({ transactions, locations, employees }: Props) {
               </Select>
             </div>
 
-            {/* Employee */}
-            {/* <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <User className="h-4 w-4" /> Employee
-              </label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Employees" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Employees</SelectItem>
-                  {employees.map((emp) => (
-                    <SelectItem key={emp.id} value={emp.id.toString()}>{emp.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div> */}
-
             {/* Status */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <IconQuestionMark className="h-4 w-4" /> Status
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium flex items-center gap-1">
+                <IconQuestionMark className="h-3 w-3" /> Status
               </label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
@@ -207,34 +199,14 @@ export default function Index({ transactions, locations, employees }: Props) {
               </Select>
             </div>
 
-            {/* Aging */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <Clock className="h-4 w-4" /> Aging
-              </label>
-              <Select value={selectedAging} onValueChange={setSelectedAging}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Aging" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Aging</SelectItem>
-                  <SelectItem value="current">Current</SelectItem>
-                  <SelectItem value="new_releases">New Releases</SelectItem>
-                  <SelectItem value="1">30 Days</SelectItem>
-                  <SelectItem value="2">60 Days</SelectItem>
-                  <SelectItem value="3">90 Days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Item Type */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <Package className="h-4 w-4" /> Item Type
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium flex items-center gap-1">
+                <Package className="h-3 w-3" /> Item Type
               </label>
               <Select value={selectedItemType} onValueChange={setSelectedItemType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Item Types" />
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="All Items" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Item Types</SelectItem>
@@ -245,11 +217,29 @@ export default function Index({ transactions, locations, employees }: Props) {
               </Select>
             </div>
 
+            {/* Advanced Filter - Only show when advanced mode */}
+             <div className="space-y-1.5">
+                <label className="text-xs font-medium flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> Loan Analytics
+                </label>
+                <Select value={advancedFilter} onValueChange={setAdvancedFilter}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Select Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Loans</SelectItem>
+                    <SelectItem value="30_days_aging">30 Days Aging</SelectItem>
+                    <SelectItem value="60_days_aging">60 Days Aging</SelectItem>
+                    <SelectItem value="90_days_aging">90 Days Aging</SelectItem>
+                    <SelectItem value="due_loans">Due Loans</SelectItem>
+                    <SelectItem value="missed_repayments">Missed Repayments</SelectItem>
+                    <SelectItem value="loans_in_arrears">Loans in Arrears</SelectItem>
+                    <SelectItem value="no_repayments">No Repayments</SelectItem>
+                    <SelectItem value="past_maturity">Past Maturity Dates</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
           </div>
-
-          
-
-            
         </CardContent>
       </Card>
 
@@ -258,7 +248,7 @@ export default function Index({ transactions, locations, employees }: Props) {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-             <TableHead>Customer</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead>Order Number</TableHead>
               <TableHead>Transaction Date</TableHead>
               <TableHead>No. of Terms</TableHead>
@@ -272,7 +262,7 @@ export default function Index({ transactions, locations, employees }: Props) {
           <TableBody>
             {transactions.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12">
+                <TableCell colSpan={9} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Search className="h-12 w-12 mb-2 opacity-20" />
                     <p className="font-medium">No transactions found</p>
@@ -289,11 +279,11 @@ export default function Index({ transactions, locations, employees }: Props) {
                   <TableCell>{transaction.number_of_terms} months</TableCell>
                   <TableCell>₱{(transaction.promisory_note_value * transaction.promisory_note_value_interest + Number(transaction.promisory_note_value_interest_additional_charge)).toLocaleString()}</TableCell>
                   <TableCell>
-                   ₱{((transaction.promisory_note_value * transaction.promisory_note_value_interest + Number(transaction.promisory_note_value_interest_additional_charge)) / transaction.number_of_terms).toLocaleString()}
+                    ₱{((transaction.promisory_note_value * transaction.promisory_note_value_interest + Number(transaction.promisory_note_value_interest_additional_charge)) / transaction.number_of_terms).toLocaleString()}
                   </TableCell>
                   <TableCell>
                     {formatCurrency(transaction.remaining_balance - transaction.total_rebate_amount > 1 ? transaction.remaining_balance - transaction.total_rebate_amount : 0)}
-                </TableCell>
+                  </TableCell>
                   <TableCell>
                     {getStatusBadge(transaction)}
                   </TableCell>

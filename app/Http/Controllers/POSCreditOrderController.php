@@ -17,108 +17,221 @@ use Inertia\Inertia;
 
 class POSCreditOrderController extends Controller
 {
-    public function index(Request $request)
-    {
-        $query = InstallmentOrder::with(['customer', 'user', 'location', 'installment_order_item.item'])->latest('transaction_date');
+  public function index(Request $request)
+{
+    $query = InstallmentOrder::with(['customer', 'user', 'location', 'installment_order_item.item'])
+        ->latest('transaction_date');
 
-        // Search by order number
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where('order_number', 'like', "%{$search}%");
-        }
+    // ============================================
+    // COMMON FILTERS (Available in both Simple and Advanced modes)
+    // ============================================
 
-        // Date From
-        if ($request->filled('date_from')) {
-            $query->whereDate('transaction_date', '>=', $request->input('date_from'));
-        }
+    /**
+     * Search Filter
+     * Searches by order number or customer name
+     */
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $query->where(function($q) use ($search) {
+            $q->where('order_number', 'like', "%{$search}%")
+              ->orWhereHas('customer', function($customerQuery) use ($search) {
+                  $customerQuery->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
+              });
+        });
+    }
 
-        // Date To
-        if ($request->filled('date_to')) {
-            $query->whereDate('transaction_date', '<=', $request->input('date_to'));
-        }
+    /**
+     * Date Range Filter
+     * Filters orders between date_from and date_to based on transaction_date
+     */
+    if ($request->filled('date_from')) {
+        $query->whereDate('transaction_date', '>=', $request->input('date_from'));
+    }
 
-        // Location Filter
-        if ($request->filled('location_id') && $request->location_id !== 'all') {
-            $query->where('location_id', $request->location_id);
-        }
+    if ($request->filled('date_to')) {
+        $query->whereDate('transaction_date', '<=', $request->input('date_to'));
+    }
 
-        // Employee/User Filter
-        if ($request->filled('employee_id') && $request->employee_id !== 'all') {
-            $query->where('user_id', $request->employee_id);
-        }
+    /**
+     * Location Filter
+     * Filters orders by branch/location
+     */
+    if ($request->filled('location_id') && $request->location_id !== 'all') {
+        $query->where('location_id', $request->location_id);
+    }
 
-        // Status Filter (defaulted, voided, active)
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->when($request->status === 'active', fn($q) => $q->where('is_voided', false)->where('is_defaulted', false)->where('is_completed', false))
-                ->when($request->status === 'voided', fn($q) => $q->where('is_voided', true))
-                ->when($request->status === 'defaulted', fn($q) => $q->where('is_defaulted', true))
-                ->when($request->status == 'complete', fn($q) => $q->where('is_completed', true));
-        }
-
-        // Aging Filter (based on overdue payments)
-        if ($request->filled('aging') && $request->aging !== 'all') {
-            $query->where('is_voided', false)
+    /**
+     * Status Filter
+     * Filters by order status: active, complete, voided, defaulted
+     */
+    if ($request->filled('status') && $request->status !== 'all') {
+        $query->when($request->status === 'active', fn($q) => $q->where('is_voided', false)
                 ->where('is_defaulted', false)
-                ->where('is_completed', false);
+                ->where('is_completed', false))
+            ->when($request->status === 'voided', fn($q) => $q->where('is_voided', true))
+            ->when($request->status === 'defaulted', fn($q) => $q->where('is_defaulted', true))
+            ->when($request->status === 'complete', fn($q) => $q->where('is_completed', true));
+    }
 
-            $agingValue = $request->aging;
-            $today = now();
+    /**
+     * Item Type Filter
+     * Filters by product category: appliances, furniture, gadgets
+     */
+    if ($request->filled('item_type') && $request->item_type !== 'all') {
+        $query->whereHas('installment_order_item.item', function ($q) use ($request) {
+            $q->where('item_type', $request->item_type);
+        });
+    }
 
-            if ($agingValue === '1') {
-                // 1-30 days overdue
+    // ============================================
+    // ADVANCED FILTERS (Only when advanced_filter is provided)
+    // ============================================
+
+    /**
+     * Advanced Loan Analytics Filter
+     * These filters help identify problematic loans and payment patterns
+     */
+    if ($request->filled('advanced_filter') && $request->advanced_filter !== 'all') {
+        $today = now();
+        $advancedFilter = $request->advanced_filter;
+
+        // Only apply to active orders (not voided, defaulted, or completed)
+        $query->where('is_voided', false)
+            ->where('is_defaulted', false)
+            ->where('is_accelerated', false)
+            ->where('is_completed', false);
+
+        switch ($advancedFilter) {
+            /**
+             * 30 Days Aging
+             * Shows orders with payments overdue between 30-59 days
+             * Logic: Has at least one payment where due_date is 30-59 days in the past and not fully paid
+             */
+            case '30_days_aging':
                 $query->whereHas('installment_order_payments', function ($q) use ($today) {
                     $q->whereRaw('amount_paid < amount_due')
-                        ->where('due_date', '<=', $today)
-                        ->where('due_date', '>=', $today->copy()->subDays(30));
+                        ->where('due_date', '<=', $today->copy()->subDays(30))
+                        ->where('due_date', '>', $today->copy()->subDays(60));
                 });
-            } elseif ($agingValue === '2') {
-                // 31-60 days overdue
+                break;
+
+            /**
+             * 60 Days Aging
+             * Shows orders with payments overdue between 60-89 days
+             * Logic: Has at least one payment where due_date is 60-89 days in the past and not fully paid
+             */
+            case '60_days_aging':
                 $query->whereHas('installment_order_payments', function ($q) use ($today) {
                     $q->whereRaw('amount_paid < amount_due')
-                        ->where('due_date', '<=', $today->copy()->subDays(31))
-                        ->where('due_date', '>=', $today->copy()->subDays(60));
+                        ->where('due_date', '<=', $today->copy()->subDays(60))
+                        ->where('due_date', '>', $today->copy()->subDays(90));
                 });
-            } elseif ($agingValue === '3') {
-                // 61-90 days overdue
+                break;
+
+            /**
+             * 90+ Days Aging
+             * Shows orders with payments overdue 90 or more days
+             * Logic: Has at least one payment where due_date is 90+ days in the past and not fully paid
+             * These are high-risk accounts that may need collection action
+             */
+            case '90_days_aging':
                 $query->whereHas('installment_order_payments', function ($q) use ($today) {
                     $q->whereRaw('amount_paid < amount_due')
-                        ->where('due_date', '<=', $today->copy()->subDays(61))
-                        ->where('due_date', '>=', $today->copy()->subDays(90));
+                        ->where('due_date', '<=', $today->copy()->subDays(90));
                 });
-            } elseif ($agingValue === '4') {
-                // 91+ days overdue
+                break;
+
+            /**
+             * Due Loans
+             * Shows orders with payments due within the next 7 days
+             * Logic: Has at least one payment where due_date is within 7 days and not yet fully paid
+             * Useful for proactive customer reminders
+             */
+            case 'due_loans':
                 $query->whereHas('installment_order_payments', function ($q) use ($today) {
                     $q->whereRaw('amount_paid < amount_due')
-                        ->where('due_date', '<=', $today->copy()->subDays(91));
+                        ->where('due_date', '>=', $today)
+                        ->where('due_date', '<=', $today->copy()->addDays(29));
                 });
-            } elseif ($agingValue === 'current') {
-                // Current - no overdue payments (all payments either paid or not yet due)
-                $query->whereDoesntHave('installment_order_payments', function ($q) use ($today) {
+                break;
+
+            /**
+             * Missed Repayments
+             * Shows orders with at least one overdue payment
+             * Logic: Has at least one payment where due_date has passed and not fully paid
+             * Identifies customers who have missed at least one payment
+             */
+            case 'missed_repayments':
+                $query->whereHas('installment_order_payments', function ($q) use ($today) {
                     $q->whereRaw('amount_paid < amount_due')
                         ->where('due_date', '<', $today);
                 });
-            } elseif ($agingValue === 'new_releases') {
-                // New releases - orders created in last 7 days
-                $query->whereDate('transaction_date', '>=', $today->copy()->subDays(7));
-            }
+                break;
+
+            /**
+             * Loans in Arrears
+             * Shows orders with 2 or more consecutive missed payments
+             * Logic: Has at least 2 consecutive payments that are overdue and unpaid
+             * These are serious delinquencies that need immediate attention
+             */
+            case 'loans_in_arrears':
+                $query->whereHas('installment_order_payments', function ($q) use ($today) {
+                    $q->select('installment_order_id')
+                        ->whereRaw('amount_paid < amount_due')
+                        ->where('due_date', '<', $today)
+                        ->groupBy('installment_order_id')
+                        ->havingRaw('COUNT(*) >= 2');
+                });
+                break;
+
+            /**
+             * No Repayments
+             * Shows orders where no payments have been made at all
+             * Logic: All payments have amount_paid = 0
+             * Identifies customers who haven't started paying despite having an active loan
+             */
+            case 'no_repayments':
+                $query->whereDoesntHave('installment_order_payments', function ($q) {
+                    $q->where('amount_paid', '>', 0);
+                });
+                break;
+
+            /**
+             * Past Maturity Dates
+             * Shows orders where the final payment due date has passed but loan is not completed
+             * Logic: The last payment's due_date is in the past and order is still not marked as completed
+             * These loans should have been fully paid but aren't
+             */
+            case 'past_maturity':
+                $query->whereHas('installment_order_payments', function ($q) use ($today) {
+                    $q->whereRaw('installment_number = (
+                        SELECT MAX(installment_number) 
+                        FROM installment_order_payments AS iop 
+                        WHERE iop.installment_order_id = installment_order_payments.installment_order_id
+                    )')
+                    ->where('due_date', '<', $today)
+                    ->whereRaw('amount_paid < amount_due');
+                });
+                break;
         }
-
-        // Item Type Filter (appliances, furniture, gadgets)
-        if ($request->filled('item_type') && $request->item_type !== 'all') {
-            $query->whereHas('installment_order_item.item', function ($q) use ($request) {
-                $q->where('item_type', $request->item_type);
-            });
-        }
-
-        $transactions = $query->paginate(8)->withQueryString();
-
-        return Inertia::render('POSCreditOrder/Index', [
-            'transactions' => $transactions,
-            'locations' => Location::dropdown(),
-            'employees' => User::dropdown(),
-        ]);
     }
 
+    // ============================================
+    // PAGINATION & RESPONSE
+    // ============================================
+
+    /**
+     * Paginate results and return to frontend
+     * withQueryString() preserves all filter parameters in pagination links
+     */
+    $transactions = $query->paginate(8)->withQueryString();
+
+    return Inertia::render('POSCreditOrder/Index', [
+        'transactions' => $transactions,
+        'locations' => Location::dropdown(),
+        'employees' => User::dropdown(),
+    ]);
+}
     public function show($order_number)
     {
         $transction = InstallmentOrder::with(['customer', 'location', 'user', 'voider', 'installment_order_item.item', 'installment_order_payments.installment_order_payment_history.user'])
