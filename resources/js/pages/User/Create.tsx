@@ -23,17 +23,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Role } from "@/types";
 
-const roles = [
-  { value: 'super_admin', label: 'Super Admin' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'collector', label: 'Collector' },
-  { value: 'investigator', label: 'Investigator' },
-  { value: 'cashier', label: 'Cashier' },
-  { value: 'inventory_manager', label: 'Inventory Manager' },
-];
 
-export default function Create() {
+
+export default function Create({roles} : {roles: Role[]}) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { data, setData, post, processing, errors } = useForm({
     first_name: '',
@@ -50,7 +45,10 @@ export default function Create() {
 
   const confirmCreate = () => {
     post(route('users.store'), {
-      onSuccess: () => setShowConfirmDialog(false),
+      onSuccess: () => {
+        setShowConfirmDialog(false);
+        toast.success("User Created Successfully.");
+      },
     });
   };
 
@@ -144,18 +142,18 @@ export default function Create() {
               <div className="space-y-2">
                 <Label htmlFor="role">Roles</Label>
                 <div className="grid grid-cols-2 gap-3 space-y-3 border rounded-md p-4">
-                  {roles.map((role) => (
-                    <div key={role.value} className="flex items-center space-x-2">
+                 {roles.map((role) => (
+                    <div key={role.id} className="flex items-center space-x-2">
                       <Checkbox
-                        id={role.value}
-                        checked={data.roles.includes(role.value)}
-                        onCheckedChange={() => toggleRole(role.value)}
+                        id={role.name}
+                        checked={data.roles.includes(role.name)}
+                        onCheckedChange={() => toggleRole(role.name)}
                       />
                       <Label
-                        htmlFor={role.value}
+                        htmlFor={role.name}
                         className="text-sm font-normal cursor-pointer"
                       >
-                        {role.label}
+                        {role.name}
                       </Label>
                     </div>
                   ))}

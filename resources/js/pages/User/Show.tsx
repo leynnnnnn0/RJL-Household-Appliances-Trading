@@ -23,6 +23,7 @@ import { useState } from "react";
 import { Archive, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Role } from "@/types";
+import { toast } from "sonner";
 
 const roles = [
   { value: 'super_admin', label: 'Super Admin' },
@@ -59,6 +60,9 @@ export default function Show({ user }: ShowProps) {
   const handleArchive = () => {
     setIsArchiving(true);
     router.delete(route('users.destroy', user.id), {
+        onSuccess: () => {
+                    toast.success("User Deleted Successfully.");
+        },
       onFinish: () => {
         setIsArchiving(false);
         setShowArchiveDialog(false);
@@ -208,7 +212,7 @@ export default function Show({ user }: ShowProps) {
             <AlertDialogAction 
               onClick={handleArchive} 
               disabled={isArchiving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive hover:bg-destructive/90 text-white"
             >
               {isArchiving ? 'Archiving...' : 'Archive'}
             </AlertDialogAction>

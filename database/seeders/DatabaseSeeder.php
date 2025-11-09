@@ -21,12 +21,14 @@ class DatabaseSeeder extends Seeder
             [
                 'first_name' => 'Test',
                 'last_name' => 'User',
+                'phone_number' => '09899887676',
                 'password' => 'password',
                 'email_verified_at' => now(),
             ]
         );
 
         $this->call([
+            RoleAndPermissionSeeder::class,
             SupplierSeeder::class,
             LocationSeeder::class,
             ItemSeeder::class,

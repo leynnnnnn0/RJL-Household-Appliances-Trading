@@ -23,15 +23,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-
-const roles = [
-  { value: 'super_admin', label: 'Super Admin' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'collector', label: 'Collector' },
-  { value: 'investigator', label: 'Investigator' },
-  { value: 'cashier', label: 'Cashier' },
-  { value: 'inventory_manager', label: 'Inventory Manager' },
-];
+import { toast } from "sonner";
+import { Role } from "@/types";
 
 interface User {
   id: number;
@@ -44,15 +37,16 @@ interface User {
 
 interface EditProps {
   user: User;
+  roles: Role[]
 }
 
-export default function Edit({ user }: EditProps) {
+export default function Edit({ user, roles }: EditProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { data, setData, put, processing, errors } = useForm({
     first_name: user.first_name,
     last_name: user.last_name,
     email: user.email,
-    roles: user.roles || [],
+    roles: user.roles.map(role => role.name) || [],
     phone_number: user.phone_number,
   });
 
@@ -62,8 +56,16 @@ export default function Edit({ user }: EditProps) {
   };
 
   const confirmUpdate = () => {
+    console.log(data);
     put(route('users.update', user.id), {
-      onSuccess: () => setShowConfirmDialog(false),
+      onSuccess: () => {
+        setShowConfirmDialog(false)
+        toast.success("User Updated Successfully.");
+    },
+    onError: (e) => {
+        toast.error("Error");
+        console.log(e);
+    }
     });
   };
 
@@ -158,17 +160,17 @@ export default function Edit({ user }: EditProps) {
                 <Label htmlFor="role">Roles</Label>
                 <div className="grid grid-cols-2 gap-3 space-y-3 border rounded-md p-4">
                   {roles.map((role) => (
-                    <div key={role.value} className="flex items-center space-x-2">
+                    <div key={role.id} className="flex items-center space-x-2">
                       <Checkbox
-                        id={role.value}
-                        checked={data.roles.includes(role.value)}
-                        onCheckedChange={() => toggleRole(role.value)}
+                        id={role.name}
+                        checked={data.roles.includes(role.name)}
+                        onCheckedChange={() => toggleRole(role.name)}
                       />
                       <Label
-                        htmlFor={role.value}
+                        htmlFor={role.name}
                         className="text-sm font-normal cursor-pointer"
                       >
-                        {role.label}
+                        {role.name}
                       </Label>
                     </div>
                   ))}
