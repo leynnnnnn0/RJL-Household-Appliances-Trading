@@ -25,6 +25,7 @@ import {
   LayoutGrid, 
   List, 
   Map, 
+  PersonStandingIcon, 
   UserSquare2Icon, 
   UsersRoundIcon 
 } from 'lucide-react';
@@ -43,17 +44,6 @@ const mainNavItems: NavItem[] = [
     href: '/items',
     icon: IconTools,
   },
-  {
-    title: 'Customers',
-    href: '/customers',
-    icon: UsersRoundIcon,
-  },
-    {
-    title: 'Employees',
-    href: '/employees',
-    icon: UserSquare2Icon,
-  },
-
 ];
 
 const salesNavItems: NavItem[] = [
@@ -86,6 +76,24 @@ const salesNavItems: NavItem[] = [
     title: 'Expense Record',
     href: '/expense-record',
     icon: IconMoneybagMove,
+  },
+];
+
+const peopleNavItem: NavItem[] = [
+      {
+    title: 'Users',
+    href: '/users',
+    icon: PersonStandingIcon,
+  },
+    {
+    title: 'Employees',
+    href: '/employees',
+    icon: UserSquare2Icon,
+  },
+      {
+    title: 'Customers',
+    href: '/customers',
+    icon: UsersRoundIcon,
   },
 ];
 
@@ -132,6 +140,7 @@ export function AppSidebar() {
       <SidebarContent>
         <NavMain items={mainNavItems} label="Platform" />
         <NavMain items={salesNavItems} label="Sales" />
+              <NavMain items={peopleNavItem} label="People" />
         <NavMain items={referencesNavItems} label="References" />
       </SidebarContent>
       <SidebarFooter>

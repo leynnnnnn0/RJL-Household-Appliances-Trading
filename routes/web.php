@@ -13,6 +13,7 @@ use App\Http\Controllers\POSCreditController;
 use App\Http\Controllers\POSCreditOrderController;
 use App\Http\Controllers\POSCreditOrderSalesController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -41,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('locations', LocationController::class);
     Route::resource('suppliers', SupplierController::class);
 
+    Route::resource('users', UserController::class);
 
     Route::resource('expense-record', ExpenseRecordController::class);
     Route::resource('customers', CustomerController::class);

@@ -26,6 +26,43 @@ class RoleAndPermissionSeeder extends Seeder
         foreach($roles as $role){
             Role::create(['name' => $role]);
         }
+
+        $itemsModulePermission = [
+            'can view items',
+            'can view item details',
+            'can add item',
+            'can edit item',
+            'can archive item',
+        ];
+
+        $customersModule = [
+            'can view customers',
+            'can view customer details'
+        ];
+
+        $employeesModule = [
+            'can view employees',
+            'can view employee details',
+            'can add employee',
+            'can edit employee',
+            'can archive employee'
+        ];
+
+        $usersModule = [
+            'can view users',
+            'can view user details',
+            'can add user',
+            'can edit user',
+            'can archive user'
+        ];
+
+        $referencesModule = [
+            'can manage locations',
+            'can manage suppliers'
+        ]
+
+
+
         
     }
 }

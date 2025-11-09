@@ -135,7 +135,7 @@ export default function Show({ expense_record }: PageProps) {
         {/* Main Information */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status Update Card */}
-          <Card>
+        {expense_record.status != "approved" &&   <Card>
             <CardHeader>
               <CardTitle className="text-lg">Update Status</CardTitle>
             </CardHeader>
@@ -167,7 +167,7 @@ export default function Show({ expense_record }: PageProps) {
                 </Button>
               </div>
             </CardContent>
-          </Card>
+          </Card>}
 
           <Card>
             <CardHeader>
