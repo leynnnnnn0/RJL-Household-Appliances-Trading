@@ -168,6 +168,10 @@ export type InstallmentOrder = {
 
 }
 
+export type Role = {
+  id: number | string;
+  name: string
+}
 export type InstallmentOrderItem = {
    installment_order_id: number;
    item_id: number;

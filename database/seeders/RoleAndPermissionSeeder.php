@@ -20,7 +20,6 @@ class RoleAndPermissionSeeder extends Seeder
             'investigator',
             'cashier',
             'inventory_manager',
-            'customer',
         ];
 
         foreach($roles as $role){
@@ -59,10 +58,6 @@ class RoleAndPermissionSeeder extends Seeder
         $referencesModule = [
             'can manage locations',
             'can manage suppliers'
-        ]
-
-
-
-        
+        ];
     }
 }

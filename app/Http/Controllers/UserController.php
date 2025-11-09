@@ -22,4 +22,23 @@ class UserController extends Controller
             'filters' => ['search' => $search]
         ]);
     }
+
+    public function create()
+    {
+        return Inertia::render('User/Create');
+    }
+
+     public function edit($id)
+    {
+        return Inertia::render('User/Edit',[
+            'user' => User::with('roles')->findOrFail($id)
+        ]);
+    }
+
+    public function show($id)
+    {
+        return Inertia::render('User/Show',[
+            'user' => User::with('roles')->findOrFail($id)
+        ]);
+    }
 }

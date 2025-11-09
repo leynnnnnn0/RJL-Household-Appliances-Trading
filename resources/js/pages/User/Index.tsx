@@ -4,11 +4,13 @@ import NoResult from '@/components/cards/no-result';
 import SearchBox from '@/components/cards/search-box';
 import TableBodyRow from '@/components/cards/table-body-row';
 import TableContainer from '@/components/cards/table-container';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { User, Paginated } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 
@@ -39,7 +41,11 @@ export default function Index({users} : PageProps ) {
             <ModuleHeading
                 title="Users List"
                 description="Manage users data"
-            ></ModuleHeading>
+            >
+                <Button onClick={() => router.get('/users/create')}>
+                  <Plus/>Add New User
+                    </Button>
+            </ModuleHeading>
 
             <SearchBox>
                 <Input
