@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-
+import Logo from "../../images/logo.png";
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { 
@@ -159,7 +159,8 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href='/dashboard' prefetch>
-                <h1 className='font-bold text-2xl'>RJL Home Depot</h1>
+                <img src={Logo} alt="logo" className='size-10'/>
+                <h1 className="font-bold text-lg">RJL Home Depot</h1>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
