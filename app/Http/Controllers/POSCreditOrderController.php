@@ -449,7 +449,7 @@ class POSCreditOrderController extends Controller
 
             // Start from the current installment and move forward
             $payments = $installmentOrder->installment_order_payments()
-                ->whereIn('status', ['pending', 'partial'])
+                ->whereIn('status', ['pending', 'partial', 'overdue'])
                 ->orderBy('installment_number')
                 ->get();
 

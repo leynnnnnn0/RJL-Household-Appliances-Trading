@@ -4,6 +4,7 @@ import NoResult from '@/components/cards/no-result';
 import SearchBox from '@/components/cards/search-box';
 import TableBodyRow from '@/components/cards/table-body-row';
 import TableContainer from '@/components/cards/table-container';
+import Pagination from '@/components/pagination';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
@@ -85,6 +86,7 @@ export default function Index({customers} : PageProps ) {
                         ))}
                     </TableBody>
                 </Table>
+                <Pagination data={customers}/>
             </TableContainer>
         </AppLayout>
     );

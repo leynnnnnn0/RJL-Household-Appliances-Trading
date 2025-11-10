@@ -22,9 +22,40 @@ class RoleAndPermissionSeeder extends Seeder
             'inventory_manager',
         ];
 
-        foreach($roles as $role){
+        foreach ($roles as $role) {
             Role::create(['name' => $role]);
         }
+
+        // Sales
+        $cashOrdersModule = [
+            'can view cash orders',
+            'can view cash order details',
+            'can void cash order',
+            'can view cash orders sales'
+        ];
+
+        $bulkPaymentsModule = [
+            'can access bulk payments'
+        ];
+
+        $expenseRecordsModule = [
+            'can view expense records',
+            'can view expense record details',
+            'can edit expense record',
+            'can delete expense record',
+            'can review expense record',
+        ];
+
+        $creditOrdersModule = [
+            'can view installment orders',
+            'can view installment order details',
+            'can record installment order payment',
+            'can add rebate',
+            'can accelerate',
+            'can default',
+            'can void',
+        ];
+        // Platform
 
         $itemsModulePermission = [
             'can view items',
@@ -33,6 +64,15 @@ class RoleAndPermissionSeeder extends Seeder
             'can edit item',
             'can archive item',
         ];
+
+        // References
+
+        $referencesModule = [
+            'can manage locations',
+            'can manage suppliers'
+        ];
+
+        // People
 
         $customersModule = [
             'can view customers',
@@ -55,9 +95,10 @@ class RoleAndPermissionSeeder extends Seeder
             'can archive user'
         ];
 
-        $referencesModule = [
-            'can manage locations',
-            'can manage suppliers'
+        $posPermisssion = [
+            'can access cash pos',
+            'can access credit pos',
         ];
+
     }
 }
