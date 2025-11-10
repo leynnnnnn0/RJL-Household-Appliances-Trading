@@ -199,11 +199,11 @@ export default function Show({ role }: Props) {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {Object.entries(groupedPermissions).map(([moduleKey, modulePermissions]) => (
-                                <Card key={moduleKey} className="border-black shadow-sm">
-                                    <CardHeader className="bg-gray-100 border-b border-black pb-3">
+                                <Card key={moduleKey} className="shadow-sm">
+                                    <CardHeader className="border-b pb-3">
                                         <CardTitle className="text-sm font-bold uppercase tracking-wide flex items-center justify-between">
                                             <span>{MODULE_LABELS[moduleKey] || moduleKey}</span>
-                                            <Badge variant="outline" className="border-black text-xs">
+                                            <Badge variant="outline" className="text-xs">
                                                 {modulePermissions.length}
                                             </Badge>
                                         </CardTitle>
