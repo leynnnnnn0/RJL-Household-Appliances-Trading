@@ -16,8 +16,8 @@ class ExpenseRecordController extends Controller
     {
         $query = ExpenseRecord::with('user');
 
-        if(!Auth::user()->getPermissionsViaRoles()->contains('can review expense record')){
-            $query->where('id', Auth::id());
+        if(!Auth::user()->getRoleNames()->contains('super admin')){
+            $query->where('user_id', Auth::id());
         }
         
         // Search filter

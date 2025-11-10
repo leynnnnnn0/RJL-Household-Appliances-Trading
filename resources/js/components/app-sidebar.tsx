@@ -173,7 +173,7 @@ export function AppSidebar() {
         <NavMain items={filterByPermission(referencesNavItems)} label="References" />
       </SidebarContent>
       <SidebarFooter>
-        <NavFooter items={footerNavItems} className="mt-auto" />
+        <NavFooter items={filterByPermission(footerNavItems)} className="mt-auto" />
         <NavUser />
       </SidebarFooter>
     </Sidebar>

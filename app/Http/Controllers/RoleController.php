@@ -25,6 +25,7 @@ class RoleController extends Controller
                 'can view expense records',
                 'can view expense record details',
                 'can edit expense record',
+                'can add expense record',
                 'can delete expense record',
                 'can review expense record',
             ],
