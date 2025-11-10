@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BulkPaymentController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseRecordController;
 use App\Http\Controllers\ItemController;
@@ -64,10 +65,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('bulk-payments', BulkPaymentController::class);
 });
 
+Route::get('/dashboard', [DashboardController::class, 'index']);
+
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+   
 });
 
 

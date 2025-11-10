@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { 
@@ -158,7 +158,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={dashboard()} prefetch>
+              <Link href='/dashboard' prefetch>
                 <h1 className='font-bold text-2xl'>RJL Home Depot</h1>
               </Link>
             </SidebarMenuButton>

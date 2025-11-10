@@ -137,8 +137,8 @@ export default function Show({ role }: Props) {
 
             <div className="space-y-6">
                 {/* Role Information Card */}
-                <Card className="border-black">
-                    <CardHeader className="bg-black text-white">
+                <Card>
+                    <CardHeader >
                         <CardTitle className="flex items-center gap-2">
                             <Shield className="w-5 h-5" />
                             Role Information
@@ -188,7 +188,7 @@ export default function Show({ role }: Props) {
                     </h2>
 
                     {role.permissions.length === 0 ? (
-                        <Card className="border-black">
+                        <Card>
                             <CardContent className="py-12">
                                 <div className="text-center">
                                     <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
