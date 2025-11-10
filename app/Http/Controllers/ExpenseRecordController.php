@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\ExpenseRecord;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -14,6 +15,10 @@ class ExpenseRecordController extends Controller
     public function index(Request $request)
     {
         $query = ExpenseRecord::with('user');
+
+        if(!Auth::user()->getPermissionsViaRoles()->contains('can review expense record')){
+            $query->where('id', Auth::id());
+        }
         
         // Search filter
         if ($request->filled('search')) {
