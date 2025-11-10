@@ -11,12 +11,8 @@ class RoleAndPermissionSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            'super_admin',
-            'admin',
             'collector',
             'investigator',
-            'cashier',
-            'inventory_manager',
         ];
 
         foreach ($roles as $role) {

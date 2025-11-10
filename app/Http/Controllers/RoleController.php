@@ -90,6 +90,7 @@ class RoleController extends Controller
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
+            ->whereNot('name', 'super admin')
             ->withCount('permissions')
             ->paginate(8)
             ->withQueryString();
