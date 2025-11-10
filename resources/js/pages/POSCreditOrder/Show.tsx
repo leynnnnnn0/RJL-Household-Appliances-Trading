@@ -182,6 +182,10 @@ export default function Show({transaction, paymentHistory} : PageProps){
     ).length || 0;
 
     const handlePaymentSubmit = () => {
+        if(!window.can('can record installment oder payment')){
+            toast.info("You do not have an access for this action.");
+            return;
+        }
         setShowPaymentConfirmation(false);
         
         post(`/pos-installment-orders/record-payment`, {
@@ -237,6 +241,9 @@ export default function Show({transaction, paymentHistory} : PageProps){
     }
 
     const handleRebateClick = (payment: InstallmentOrderPayment) => {
+        if(!window.can('can add rebate')){
+            return;
+        }
         const amountPaid = Number(payment.amount_paid || 0);
         const amountDue = Number(payment.amount_due);
         const remaining = amountDue - amountPaid;
@@ -348,14 +355,14 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
-                                               <DropdownMenuItem 
+                                              {window.can('can accelerate') &&  <DropdownMenuItem 
                                                 onClick={() => setAcceleratetDialog(true)}
                                                 className="text-green-600 focus:text-green-600"
                                             >
                                                 <CloudLightning className="w-4 h-4 mr-2" />
                                                 Accelerate Transaction
-                                            </DropdownMenuItem>
-                                            {!transaction.is_defaulted && (
+                                            </DropdownMenuItem>}
+                                            {!transaction.is_defaulted && window.can('can default') && (
                                                 <DropdownMenuItem 
                                                     onClick={() => setShowDefaultDialog(true)}
                                                     className="text-orange-600 focus:text-orange-600"
@@ -364,13 +371,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     Mark as Default
                                                 </DropdownMenuItem>
                                             )}
-                                            <DropdownMenuItem 
+                                          {window.can('can void') &&   <DropdownMenuItem 
                                                 onClick={() => setShowVoidDialog(true)}
                                                 className="text-red-600 focus:text-red-600"
                                             >
                                                 <Ban className="w-4 h-4 mr-2" />
                                                 Void Transaction
-                                            </DropdownMenuItem>
+                                            </DropdownMenuItem>}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 )}
@@ -705,7 +712,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             {!transaction.is_voided && !transaction.is_completed && !transaction.is_defaulted && nextPayment ? (
                                 <>
                                     <Card className="border-primary shadow-lg">
-                                        <CardHeader className="bg-primary/5">
+                                        <CardHeader>
                                             <CardTitle className="flex items-center gap-2">
                                                 <CreditCard className="w-5 h-5" />
                                                 Record Payment
@@ -714,7 +721,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                 Next payment in sequence
                                             </CardDescription>
                                         </CardHeader>
-                                        <CardContent className="pt-6">
+                                        <CardContent>
                                             {/* Next Payment Info */}
                                             <div className="space-y-4 mb-6">
                                                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">

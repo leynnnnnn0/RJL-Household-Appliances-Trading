@@ -256,7 +256,7 @@ export default function Index({ transactions, locations, employees }: Props) {
               <TableHead>Monthly</TableHead>
               <TableHead>Remaining Balance</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
+              {window.can('can view installment order details') &&    <TableHead className="text-center">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -287,7 +287,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                   <TableCell>
                     {getStatusBadge(transaction)}
                   </TableCell>
-                  <TableCell className="text-center">
+                  {window.can('can view installment order details') && <TableCell className="text-center">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -296,7 +296,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                  </TableCell>
+                  </TableCell>}
                 </TableRow>
               ))
             )}
