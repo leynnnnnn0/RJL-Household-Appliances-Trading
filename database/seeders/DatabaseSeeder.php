@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $role = Role::create(['name' => 'super admin']);
-        $permission = Permission::create(['name' => 'can access roles']);
+        $permission = Permission::create(['name' => 'can manage roles']);
         $role->givePermissionTo($permission);
         $user->syncRoles([$role->id]);
 
@@ -90,5 +90,9 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,
             InstallmentOrderSeeder::class
         ]);
+
+          $superAdmin = Role::where('name', 'super admin')->first();
+        $superAdmin->syncPermissions(Permission::all());
+        
     }
 }

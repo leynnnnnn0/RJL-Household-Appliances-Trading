@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/user-password';
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -46,6 +47,9 @@ export default function Password() {
                             'current_password',
                         ]}
                         resetOnSuccess
+                        onSuccess={() => {
+                            toast.success("Password Updated.")
+                        }}
                         onError={(errors) => {
                             if (errors.password) {
                                 passwordInput.current?.focus();

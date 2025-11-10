@@ -18,58 +18,139 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-})->name('home');
+Route::get('/', fn () => redirect()->route('login'))->name('home');
 
+// Dashboard
+Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
 
-    Route::patch('/expense-record/{expenseRecord}/update-status', [ExpenseRecordController::class, 'updateStatus'])
+    /*
+    |--------------------------------------------------------------------------
+    | POS Cash
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can access cash pos')->group(function () {
+        Route::resource('pos-cash', POSCashController::class)->only(['index', 'store']);
+        Route::get('/pos-cash/search', [POSCashController::class, 'search'])->name('pos-cash.search');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | POS Credit
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can access credit pos')->group(function () {
+        Route::resource('pos-credit', POSCreditController::class)->only(['index', 'store']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cash Orders
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can view cash orders')->group(function () {
+        Route::get('/pos-cash-orders/download-pdf', [POSCashOrderController::class, 'downloadPDF']);
+        Route::resource('pos-cash-orders', POSCashOrderController::class);
+    });
+    Route::put('/pos-cash-orders/void/{id}', [POSCashOrderController::class, 'voidOrder'])
+        ->middleware('permission:can void cash order')
+        ->name('pos-cash-orders.void');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cash Orders Sales
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can view cash orders sales')->group(function () {
+        Route::resource('pos-cash-order-sales', POSCashOrderSalesController::class);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Credit / Installment Orders
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can view installment orders')->group(function () {
+        Route::resource('/pos-installment-orders', POSCreditOrderController::class);
+    });
+
+    Route::put('/pos-installment-orders/rebate', [POSCreditOrderController::class, 'rebate'])
+        ->middleware('permission:can add rebate');
+    Route::post('/pos-installment-orders/{id}/accelerate', [POSCreditOrderController::class, 'accelerate'])
+        ->middleware('permission:can accelerate');
+    Route::post('/pos-installment-orders/{id}/default', [POSCreditOrderController::class, 'default'])
+        ->middleware('permission:can default');
+    Route::post('/pos-installment-orders/{id}/void', [POSCreditOrderController::class, 'void'])
+        ->middleware('permission:can void');
+    Route::post('/pos-installment-orders/record-payment', [POSCreditOrderController::class, 'recordPayment'])
+        ->middleware('permission:can record installment order payment');
+
+    Route::middleware('permission:can view installment orders sales')->group(function () {
+        Route::resource('/pos-installment-orders-sales', POSCreditOrderSalesController::class);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bulk Payments
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can access bulk payments')->group(function () {
+        Route::resource('bulk-payments', BulkPaymentController::class);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Expense Records
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can view expense records')->group(function () {
+        Route::resource('expense-record', ExpenseRecordController::class);
+    });
+
+    Route::put('/expense-record/{expenseRecord}/update-status', [ExpenseRecordController::class, 'updateStatus'])
+        ->middleware('permission:can review expense record')
         ->name('expense-record.update-status');
 
-    Route::resource('pos-cash', POSCashController::class)->only(['index', 'store']);
-    Route::resource('pos-credit', POSCreditController::class)->only(['index', 'store']);
-    Route::get('/pos-cash/search', [POSCashController::class, 'search'])->name('pos-cash.search');
-    Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
-    Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
-    Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
-    Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])->name('items.export.template');
-    Route::post('/items/import', [ItemController::class, 'import'])->name('items.import.upload');
-    Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
-    Route::resource('items', ItemController::class);
-    Route::get('/pos-cash-orders/download-pdf', [POSCashOrderController::class, 'downloadPDF']);
-    Route::resource('locations', LocationController::class);
-    Route::resource('suppliers', SupplierController::class);
+    /*
+    |--------------------------------------------------------------------------
+    | Items
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can view items')->group(function () {
+        Route::get('/items/export', [ItemController::class, 'export'])->name('items.export');
+        Route::get('/export/items-template', [ItemController::class, 'exportTemplate'])->name('items.export.template');
+        Route::get('/items/create-from-import', [ItemController::class, 'createFromImport']);
+        Route::post('/items/import', [ItemController::class, 'import'])->name('items.import.upload');
+        Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
+        Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
+        Route::resource('items', ItemController::class);
+    });
 
-    Route::resource('users', UserController::class);
+    /*
+    |--------------------------------------------------------------------------
+    | References
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can manage locations')->resource('locations', LocationController::class);
+    Route::middleware('permission:can manage suppliers')->resource('suppliers', SupplierController::class);
 
-    Route::resource('expense-record', ExpenseRecordController::class);
-    Route::resource('customers', CustomerController::class);
-    Route::resource('employees', EmployeeController::class);
+    /*
+    |--------------------------------------------------------------------------
+    | People
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('permission:can view customers')->resource('customers', CustomerController::class);
+    Route::middleware('permission:can view employees')->resource('employees', EmployeeController::class);
+    Route::middleware('permission:can view users')->resource('users', UserController::class);
 
-    Route::resource('/pos-installment-orders-sales', POSCreditOrderSalesController::class);
-    Route::post('/pos-installment-orders/record-payment', [POSCreditOrderController::class, 'recordPayment']);
-    Route::post('/pos-installment-orders/{id}/void', [POSCreditOrderController::class, 'void']);
-    Route::post('/pos-installment-orders/{id}/accelerate', [POSCreditOrderController::class, 'accelerate']);
-    Route::post('/pos-installment-orders/{id}/default', [POSCreditOrderController::class, 'default']);
-     Route::put('/pos-installment-orders/rebate', [POSCreditOrderController::class, 'rebate']);
-    Route::resource('/pos-installment-orders', POSCreditOrderController::class);
-    Route::post('/pos-cash-orders/void/{id}', [POSCashOrderController::class, 'voidOrder']);
-    Route::resource('pos-cash-orders', POSCashOrderController::class);
-    Route::resource('pos-cash-order-sales', POSCashOrderSalesController::class);
-
-    Route::resource('roles', RoleController::class);
-    Route::resource('bulk-payments', BulkPaymentController::class);
+    /*
+    |--------------------------------------------------------------------------
+    | Roles
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('roles', RoleController::class)->middleware('permission:can manage roles');
 });
-
-Route::get('/dashboard', [DashboardController::class, 'index']);
-
-Route::middleware(['auth', 'verified'])->group(function () {
-   
-});
-
 
 require __DIR__ . '/settings.php';
