@@ -12,6 +12,7 @@ use App\Http\Controllers\POSCashOrderSalesController;
 use App\Http\Controllers\POSCreditController;
 use App\Http\Controllers\POSCreditOrderController;
 use App\Http\Controllers\POSCreditOrderSalesController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('pos-cash-orders', POSCashOrderController::class);
     Route::resource('pos-cash-order-sales', POSCashOrderSalesController::class);
 
+    Route::resource('roles', RoleController::class);
     Route::resource('bulk-payments', BulkPaymentController::class);
 });
 

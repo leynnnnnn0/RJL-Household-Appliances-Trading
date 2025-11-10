@@ -26,6 +26,7 @@ import {
   List, 
   Map, 
   PersonStandingIcon, 
+  Settings, 
   UserSquare2Icon, 
   UsersRoundIcon 
 } from 'lucide-react';
@@ -43,6 +44,11 @@ const mainNavItems: NavItem[] = [
     title: 'Items',
     href: '/items',
     icon: IconTools,
+  },
+    {
+    title: 'Roles',
+    href: '/roles',
+    icon: Settings,
   },
 ];
 
