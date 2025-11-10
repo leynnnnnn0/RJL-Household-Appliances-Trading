@@ -211,7 +211,7 @@ export default function Index({ transactions, locations, employees }: Props) {
               <TableHead>Items</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Total Price</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
+              {window.can('can view cash order details') && <TableHead className="text-center">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -243,7 +243,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-semibold">{formatCurrency(transaction.total_price)}</TableCell>
-                  <TableCell className="text-center">
+                 {window.can('can view cash order details') &&  <TableCell className="text-center">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -252,7 +252,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                  </TableCell>
+                  </TableCell>}
                 </TableRow>
               ))
             )}

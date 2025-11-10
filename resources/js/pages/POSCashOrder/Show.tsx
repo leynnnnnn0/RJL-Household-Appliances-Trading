@@ -62,12 +62,12 @@ export default function Show({ transaction }: ShowProps) {
     });
   };
 
-  const { data, setData, post, processing, errors } = useForm({
+  const { data, setData, put, processing, errors } = useForm({
     reason_for_cancellation: "",
   });
 
   const voidOrder = () => {
-    post(`/pos-cash-orders/void/${transaction.id}`, {
+    put(`/pos-cash-orders/void/${transaction.id}`, {
       onSuccess: () => {
         toast.success("Order Void");
         setIsDialogOpen(false);
@@ -122,9 +122,10 @@ export default function Show({ transaction }: ShowProps) {
               }}
             >
               <DialogTrigger asChild>
-                <Button size="sm" disabled={transaction.is_void} variant="destructive">
+                {(window.can('can void cash order') || transaction.is_void) &&  <Button size="sm" disabled={transaction.is_void} variant="destructive">
                   {transaction.is_void ? "Order Voided" : "Void Order"}
-                </Button>
+                </Button> }
+               
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
