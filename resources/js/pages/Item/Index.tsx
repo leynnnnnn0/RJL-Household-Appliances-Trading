@@ -41,6 +41,7 @@ interface PageProps {
 
 export default function Index({ items, suppliers, locations }: PageProps) {
   const query = new URLSearchParams(window.location.search);
+  const {auth} = usePage().props as any;
 
   const [searchQuery, setSearchQuery] = useState(query.get('search') || '');
   const [availabilityFilter, setAvailabilityFilter] = useState(query.get('availability') || 'all');
@@ -120,7 +121,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
               <Download className="h-4 w-4 mr-2" /> Export
             </Button>
 
-            <DropdownMenu>
+           {auth.permissions?.includes('can add item') &&  <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer flex gap-2 items-center bg-primary text-white text-sm px-4 py-2 rounded-lg">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
@@ -135,7 +136,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                   Create from Excel
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu>}
           </div>
         </ModuleHeading>
 
@@ -284,15 +285,15 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
-                        <Button
+                        {auth.permissions?.includes('can view item details') && <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
                           onClick={() => router.visit(`/items/${item.id}`)}
                         >
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
+                        </Button>}
+                      {auth.permissions?.includes('can edit item') &&   <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
@@ -300,7 +301,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                           onClick={() => router.visit(`/items/${item.id}/edit`)}
                         >
                           <Pencil className="h-4 w-4" />
-                        </Button>
+                        </Button>}
                       </div>
                     </TableCell>
                   </TableRow>

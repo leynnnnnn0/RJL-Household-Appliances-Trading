@@ -93,7 +93,7 @@ export default function Show({ expense_record }: PageProps) {
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <Button
+         {window.can('can edit expense record') && expense_record.status != "approved" && <Button
             variant="outline"
             onClick={() =>
               router.visit(route("expense-record.edit", expense_record.id))
@@ -101,8 +101,8 @@ export default function Show({ expense_record }: PageProps) {
           >
             <Edit className="h-4 w-4" />
             Edit
-          </Button>
-          <AlertDialog>
+          </Button>}
+        {window.can('can delete expense record') && expense_record.status != "approved" &&  <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
                 <Trash2 className="h-4 w-4" />
@@ -127,7 +127,7 @@ export default function Show({ expense_record }: PageProps) {
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
+          </AlertDialog>}
         </div>
       </ModuleHeading>
 
@@ -135,7 +135,7 @@ export default function Show({ expense_record }: PageProps) {
         {/* Main Information */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status Update Card */}
-        {expense_record.status != "approved" &&   <Card>
+        {expense_record.status != "approved" && window.can('can review expense record') &&  <Card>
             <CardHeader>
               <CardTitle className="text-lg">Update Status</CardTitle>
             </CardHeader>

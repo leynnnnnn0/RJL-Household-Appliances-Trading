@@ -1,6 +1,6 @@
 import ModuleHeading from "@/components/cards/module-heading";
 import AppLayout from "@/layouts/app-layout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, usePage } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ interface PageProps {
 }
 
 export default function Edit({ users, expense_record }: PageProps) {
+    const {auth} = usePage().props as any;
   const [imagePreview, setImagePreview] = useState<string | null>(
     expense_record.receipt_path
       ? `/storage/${expense_record.receipt_path}`
@@ -90,9 +91,10 @@ export default function Edit({ users, expense_record }: PageProps) {
                 {/* Employee */}
                 <div className="space-y-2">
                   <Label htmlFor="user_id">
-                    Employee <span className="text-red-500">*</span>
+                    User <span className="text-red-500">*</span>
                   </Label>
                   <Select
+                    disabled={!auth.roles?.includes('super admin')}
                     value={data.user_id}
                     onValueChange={(value) => setData("user_id", value)}
                   >

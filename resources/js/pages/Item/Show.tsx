@@ -42,7 +42,7 @@ interface PageProps {
   item: ItemWithRelations;
 }
 export default function View({ item } : PageProps) {
-  const {previousUrl} = usePage().props as any;
+  const {previousUrl, auth} = usePage().props as any;
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
@@ -97,7 +97,7 @@ export default function View({ item } : PageProps) {
               </Link>
             </Button>
 
-            {isAvailable &&             <Button variant="outline" asChild>
+            {isAvailable && window.can('can edit item') && <Button variant="outline" asChild>
               <Link href={`/items/${item.id}/edit`}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
@@ -105,7 +105,7 @@ export default function View({ item } : PageProps) {
             </Button>}
 
 
-            {isAvailable &&  <AlertDialog>
+            {isAvailable && window.can('can archive item') && <AlertDialog>
       <AlertDialogTrigger asChild>
                     <Button variant="destructive">
               <Trash2 className="h-4 w-4 mr-2" />

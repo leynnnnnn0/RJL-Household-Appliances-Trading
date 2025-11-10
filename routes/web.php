@@ -109,7 +109,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('expense-record', ExpenseRecordController::class);
     });
 
-    Route::put('/expense-record/{expenseRecord}/update-status', [ExpenseRecordController::class, 'updateStatus'])
+    Route::patch('/expense-record/{expenseRecord}/update-status', [ExpenseRecordController::class, 'updateStatus'])
         ->middleware('permission:can review expense record')
         ->name('expense-record.update-status');
 

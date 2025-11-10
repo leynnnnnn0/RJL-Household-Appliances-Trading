@@ -1,6 +1,6 @@
 import ModuleHeading from "@/components/cards/module-heading";
 import AppLayout from "@/layouts/app-layout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, usePage } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +28,10 @@ interface PageProps {
 
 export default function Create({ users }: PageProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const {auth} = usePage().props as any;
 
   const { data, setData, post, processing, errors, reset } = useForm({
-    user_id: "",
+    user_id: auth.user?.id.toString(),
     amount: "",
     category: "",
     payment_method: "",
@@ -95,14 +96,15 @@ export default function Create({ users }: PageProps) {
                 {/* Employee */}
                 <div className="space-y-2">
                   <Label htmlFor="user_id">
-                    Employee <span className="text-red-500">*</span>
+                    User <span className="text-red-500">*</span>
                   </Label>
                   <Select
+                   disabled={!auth.roles?.includes('super admin')}
                     value={data.user_id}
                     onValueChange={(value) => setData("user_id", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select employee" />
+                      <SelectValue placeholder="Select a user" />
                     </SelectTrigger>
                     <SelectContent>
                       {users.map((user) => (

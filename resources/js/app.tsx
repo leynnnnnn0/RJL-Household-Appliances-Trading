@@ -9,6 +9,12 @@ import { Toaster } from "@/components/ui/sonner"
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+declare global {
+    interface Window {
+        can: (permission: string) => boolean;
+    }
+}
+
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) =>
@@ -17,6 +23,14 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
+        // Set up the can function here where we have access to props
+        const can = (permission: string) => {
+            const auth = (props.initialPage.props as any).auth;
+            return auth.permissions?.includes(permission) || false;
+        };
+        
+        window.can = can;
+
         const root = createRoot(el);
 
         root.render(

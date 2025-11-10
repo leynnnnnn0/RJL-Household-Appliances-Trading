@@ -64,9 +64,9 @@ export default function Index({customers} : PageProps ) {
                             <TableHead className="font-semibold">
                                 Phone Number
                             </TableHead>
-                             <TableHead className="font-semibold text-center">
+                            {window.can('can view customer details') &&  <TableHead className="font-semibold text-center">
                                 Actions
-                            </TableHead>
+                            </TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -77,11 +77,12 @@ export default function Index({customers} : PageProps ) {
                                 <TableCell>{item.full_name}</TableCell>
                                 <TableCell>{item.address}</TableCell>
                                 <TableCell>{item.phone_number}</TableCell>
-                                <TableCell>
+                                   {window.can('can view customer details') &&   <TableCell>
                                     <div className="flex items-center justify-center gap-1">
                                         <ShowButton onClick={() => router.visit(`/customers/${item.id}`) }/>
                                     </div>
-                                </TableCell>
+                                </TableCell>}
+                              
                             </TableBodyRow>
                         ))}
                     </TableBody>

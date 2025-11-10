@@ -127,9 +127,10 @@ export default function Index({ expense_record, users, filters }: PageProps) {
     <AppLayout>
       <Head title="Expense Record" />
       <ModuleHeading title="Expense Record" description="Data of expenses">
-        <Button onClick={() => router.visit(route("expense-record.create"))}>
+      {window.can('can add expense record') &&        <Button onClick={() => router.visit(route("expense-record.create"))}>
           <Plus /> Add Expense Record
         </Button>
+}
       </ModuleHeading>
 
       <div className="mt-6 space-y-4">
@@ -258,7 +259,7 @@ export default function Index({ expense_record, users, filters }: PageProps) {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button
+                          {window.can('can view expense record details') &&   <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
@@ -268,8 +269,8 @@ export default function Index({ expense_record, users, filters }: PageProps) {
                           }
                         >
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
+                        </Button>}
+                      {window.can('can edit expense record') && record.status != "approved" &&   <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
@@ -279,14 +280,14 @@ export default function Index({ expense_record, users, filters }: PageProps) {
                           }
                         >
                           <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
+                        </Button>}
+                        {window.can('can delete expense record') && record.status != "approved" && <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeleteId(record.id)}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        </Button>}
                       </div>
                     </TableCell>
                   </TableRow>

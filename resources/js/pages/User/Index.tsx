@@ -42,9 +42,9 @@ export default function Index({users} : PageProps ) {
                 title="Users List"
                 description="Manage users data"
             >
-                <Button onClick={() => router.get('/users/create')}>
+              {window.can('view add user') &&   <Button onClick={() => router.get('/users/create')}>
                   <Plus/>Add New User
-                    </Button>
+                    </Button>}
             </ModuleHeading>
 
             <SearchBox>
@@ -66,9 +66,9 @@ export default function Index({users} : PageProps ) {
                             <TableHead className="font-semibold">
                                 Email
                             </TableHead>
-                             <TableHead className="font-semibold text-center">
+                          {window.can('can view user details') &&    <TableHead className="font-semibold text-center">
                                 Actions
-                            </TableHead>
+                            </TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -78,11 +78,11 @@ export default function Index({users} : PageProps ) {
                             <TableBodyRow key={item.id}>
                                 <TableCell>{item.full_name}</TableCell>
                                 <TableCell>{item.email}</TableCell>
-                                <TableCell>
+                              {window.can('can view user details') &&   <TableCell>
                                     <div className="flex items-center justify-center gap-1">
                                         <ShowButton onClick={() => router.visit(`/users/${item.id}`) }/>
                                     </div>
-                                </TableCell>
+                                </TableCell>}
                             </TableBodyRow>
                         ))}
                     </TableBody>
