@@ -40,12 +40,12 @@ interface PageProps {
 }
 
 export default function Index({ items, suppliers, locations }: PageProps) {
+  const { auth } = usePage().props as any;
   const query = new URLSearchParams(window.location.search);
-  const {auth} = usePage().props as any;
 
   const [searchQuery, setSearchQuery] = useState(query.get('search') || '');
   const [availabilityFilter, setAvailabilityFilter] = useState(query.get('availability') || 'all');
-  const [categoryFilter, setCategoryFilter] = useState(query.get('supplier') || 'all');
+  const [supplierFilter, setSupplierFilter] = useState(query.get('supplier') || 'all');
   const [itemTypeFilter, setItemTypeFilter] = useState(query.get('item_type') || 'all');
   const [locationFilter, setLocationFilter] = useState(query.get('location') || 'all');
 
@@ -55,7 +55,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
 
       if (searchQuery) params.search = searchQuery;
       if (availabilityFilter !== 'all') params.availability = availabilityFilter;
-      if (categoryFilter !== 'all') params.supplier = categoryFilter;
+      if (supplierFilter !== 'all') params.supplier = supplierFilter;
       if (itemTypeFilter !== 'all') params.item_type = itemTypeFilter;
       if (locationFilter !== 'all') params.location = locationFilter;
 
@@ -66,7 +66,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
     }, 400);
 
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery, availabilityFilter, categoryFilter, itemTypeFilter, locationFilter]);
+  }, [searchQuery, availabilityFilter, supplierFilter, itemTypeFilter, locationFilter]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-PH', {
@@ -86,7 +86,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
   const clearFilters = () => {
     setSearchQuery('');
     setAvailabilityFilter('all');
-    setCategoryFilter('all');
+    setSupplierFilter('all');
     setItemTypeFilter('all');
     setLocationFilter('all');
   };
@@ -94,7 +94,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
   const hasActiveFilters =
     searchQuery ||
     availabilityFilter !== 'all' ||
-    categoryFilter !== 'all' ||
+    supplierFilter !== 'all' ||
     itemTypeFilter !== 'all' ||
     locationFilter !== 'all';
 
@@ -103,7 +103,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
 
     if (searchQuery) params.append('search', searchQuery);
     if (availabilityFilter !== 'all') params.append('availability', availabilityFilter);
-    if (categoryFilter !== 'all') params.append('supplier', categoryFilter);
+    if (supplierFilter !== 'all') params.append('supplier', supplierFilter);
     if (itemTypeFilter !== 'all') params.append('item_type', itemTypeFilter);
     if (locationFilter !== 'all') params.append('location', locationFilter);
 
@@ -114,35 +114,37 @@ export default function Index({ items, suppliers, locations }: PageProps) {
     <AppLayout>
       <Head title="Items" />
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <ModuleHeading title="Items" description="Manage your inventory items">
-          <div className="flex items-center gap-3">
-            <Button className="cursor-pointer" onClick={() => handleExport()}>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <Button className="w-full sm:w-auto" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" /> Export
             </Button>
 
-           {auth.permissions?.includes('can add item') &&  <DropdownMenu>
-              <DropdownMenuTrigger className="cursor-pointer flex gap-2 items-center bg-primary text-white text-sm px-4 py-2 rounded-lg">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Select from options</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={() => router.visit('/items/create')}>
-                  Create Manually
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => router.visit('/items/create-from-import')}>
-                  Create from Excel
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>}
+            {auth.permissions?.includes('can add item') && (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex gap-2 items-center justify-center bg-primary text-white text-sm px-4 py-2 rounded-lg w-full sm:w-auto hover:bg-primary/90 transition-colors">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Select from options</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.visit('/items/create')}>
+                    Create Manually
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.visit('/items/create-from-import')}>
+                    Create from Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </ModuleHeading>
 
         {/* Filters */}
         <Card className="border-muted">
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="flex flex-col gap-4">
               {/* Search */}
               <div className="relative w-full">
@@ -156,16 +158,16 @@ export default function Index({ items, suppliers, locations }: PageProps) {
               </div>
 
               {/* Filter Row */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Filter className="h-4 w-4" />
                   <span>Filters:</span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
                   {/* Item Type */}
                   <Select value={itemTypeFilter} onValueChange={setItemTypeFilter}>
-                    <SelectTrigger className="w-[160px] h-9">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="Item Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -178,7 +180,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
 
                   {/* Availability */}
                   <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
-                    <SelectTrigger className="w-[160px] h-9">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="Availability" />
                     </SelectTrigger>
                     <SelectContent>
@@ -190,7 +192,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
 
                   {/* Location */}
                   <Select value={locationFilter} onValueChange={setLocationFilter}>
-                    <SelectTrigger className="w-[160px] h-9">
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="Location" />
                     </SelectTrigger>
                     <SelectContent>
@@ -204,8 +206,8 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                   </Select>
 
                   {/* Supplier */}
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-[160px] h-9">
+                  <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder="Supplier" />
                     </SelectTrigger>
                     <SelectContent>
@@ -218,8 +220,14 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                     </SelectContent>
                   </Select>
 
+                  {/* Clear Filters */}
                   {hasActiveFilters && (
-                    <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={clearFilters} 
+                      className="h-9 col-span-2 md:col-span-1"
+                    >
                       <X className="h-4 w-4 mr-1" /> Clear
                     </Button>
                   )}
@@ -229,8 +237,8 @@ export default function Index({ items, suppliers, locations }: PageProps) {
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <div className="rounded-lg overflow-hidden border">
+        {/* Table - Desktop */}
+        <div className="hidden lg:block rounded-lg overflow-hidden border">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
@@ -251,7 +259,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Search className="h-8 w-8 mb-2" />
                       <p className="font-medium">No items found</p>
-                    <p className="text-sm">Try adjusting your search or filters</p>
+                      <p className="text-sm">Try adjusting your search or filters</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -285,23 +293,27 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
-                        {auth.permissions?.includes('can view item details') && <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => router.visit(`/items/${item.id}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>}
-                      {auth.permissions?.includes('can edit item') &&   <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          disabled={item.date_out != null}
-                          onClick={() => router.visit(`/items/${item.id}/edit`)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>}
+                        {auth.permissions?.includes('can view item details') && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => router.visit(`/items/${item.id}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {auth.permissions?.includes('can edit item') && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={item.date_out != null}
+                            onClick={() => router.visit(`/items/${item.id}/edit`)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -309,6 +321,95 @@ export default function Index({ items, suppliers, locations }: PageProps) {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Cards - Mobile/Tablet */}
+        <div className="lg:hidden space-y-4">
+          {items.data.length === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <Search className="h-8 w-8 mb-2" />
+                  <p className="font-medium">No items found</p>
+                  <p className="text-sm">Try adjusting your search or filters</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            items.data.map((item) => (
+              <Card key={item.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base truncate">{item.model}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+                      </div>
+                      <Badge
+                        variant={item.date_out ? "secondary" : "default"}
+                        className="shrink-0"
+                      >
+                        {item.date_out ? 'Unavailable' : 'Available'}
+                      </Badge>
+                    </div>
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">Serial</p>
+                        <p className="font-medium">{item.serial}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">Unit Cost</p>
+                        <p className="font-mono">{formatCurrency(item.unit_cost)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">Quantity</p>
+                        <Badge
+                          variant={item.quantity > 5 ? "default" : item.quantity > 0 ? "secondary" : "destructive"}
+                          className="w-fit"
+                        >
+                          {item.quantity}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">Purchase Date</p>
+                        <p>{formatDate(item.date_of_purchase)}</p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      {auth.permissions?.includes('can view item details') && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => router.visit(`/items/${item.id}`)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                      )}
+                      {auth.permissions?.includes('can edit item') && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          disabled={item.date_out != null}
+                          onClick={() => router.visit(`/items/${item.id}/edit`)}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
         <Pagination data={items} />
