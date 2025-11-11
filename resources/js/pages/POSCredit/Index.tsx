@@ -399,12 +399,12 @@ export default function Index({locations, employees, transactions} : PageProps) 
     if (!address) {
       return "Address is required";
     }
-    if (!employment) {
-      return "Employment/Source of income is required";
-    }
-    if (!income) {
-      return "Monthly income is required";
-    }
+    // if (!employment) {
+    //   return "Employment/Source of income is required";
+    // }
+    // if (!income) {
+    //   return "Monthly income is required";
+    // }
     if (!ref1Name || !ref1Contact) {
       return "Reference information is required";
     }
@@ -968,7 +968,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="employment">Employment/Source of Income *</Label>
                 <Input 
                   id="employment" 
@@ -991,7 +991,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
                     onChange={(e) => setIncome(e.target.value)}
                   />
                 </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 

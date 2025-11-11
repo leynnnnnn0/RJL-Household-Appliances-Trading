@@ -62,7 +62,7 @@ class POSCreditController extends Controller
             'lcp_markup_rate' => 'required',
             'lcp_additional_charge' => 'required',
             'down_payment' => 'required',
-            'payment_method' => 'required',
+            'payment_method' => 'nullable|string',
             'reference_number' => 'nullable',
             'promisory_note_value' => 'required',
             'number_of_terms' => 'required',
