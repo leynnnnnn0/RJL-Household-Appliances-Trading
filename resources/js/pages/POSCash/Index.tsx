@@ -742,7 +742,7 @@ const handleSearchCustomer = (query: string) => {
         )}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="customerPhone">Phone Number <span className="text-red-500">*</span></Label>
+        <Label htmlFor="customerPhone">Phone Number</Label>
         <Input
           id="customerPhone"
           placeholder="09XXXXXXXXX"

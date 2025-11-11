@@ -34,7 +34,7 @@ class POSCashController extends Controller
             'last_name' => 'required|string|max:255',
             'address' => 'required|string|max:500',
             'existing_customer_id' => 'nullable|numeric',
-            'phone' => ['required', 'regex:/^09\d{9}$/'],
+            'phone' => ['nullable', 'regex:/^09\d{9}$/'],
             'payment_method' => 'required|string|in:Cash,Gcash,Bank Transfer,Debit/Credit Card,Home Credit/Skyro/Billease',
             'reference_number' => [
                 'nullable',
