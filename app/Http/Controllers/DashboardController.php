@@ -37,7 +37,13 @@ class DashboardController extends Controller
         $marginPercent = $unitCostTotal > 0
             ? (($srpTotal - $unitCostTotal) / $unitCostTotal) * 100
             : 0;
-       
+
+      
+        if (Auth::user()->getRoleNames()->contains('cashier')) {
+           return Inertia::render('Dashboard/CashierDashboard');
+
+        }
+
         if (!Auth::user()->getRoleNames()->contains('super admin')) {
             return Inertia::render('Dashboard/NonAdminDashboard');
         }
