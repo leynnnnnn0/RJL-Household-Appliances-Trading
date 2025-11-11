@@ -182,7 +182,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
     ).length || 0;
 
     const handlePaymentSubmit = () => {
-        if(!window.can('can record installment oder payment')){
+        if(!window.can('can record installment order payment')){
             toast.info("You do not have an access for this action.");
             return;
         }
@@ -261,7 +261,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
     };
 
     const handleRebateSubmit = () => {
-        rebateForm.put(`/pos-installment-orders/rebate`, {
+        rebateForm.patch(`/pos-installment-orders/${transaction.id}/rebate`, {
             onSuccess: () => {
                 setShowRebateDialog(false);
                 setSelectedPayment(null);

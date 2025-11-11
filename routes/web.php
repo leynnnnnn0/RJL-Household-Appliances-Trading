@@ -76,7 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('/pos-installment-orders', POSCreditOrderController::class);
     });
 
-    Route::put('/pos-installment-orders/rebate', [POSCreditOrderController::class, 'rebate'])
+    Route::patch('/pos-installment-orders/{id}/rebate', [POSCreditOrderController::class, 'rebate'])
         ->middleware('permission:can add rebate');
     Route::post('/pos-installment-orders/{id}/accelerate', [POSCreditOrderController::class, 'accelerate'])
         ->middleware('permission:can accelerate');

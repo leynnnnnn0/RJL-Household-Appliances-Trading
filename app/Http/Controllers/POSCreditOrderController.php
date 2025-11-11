@@ -232,6 +232,8 @@ class POSCreditOrderController extends Controller
         'employees' => User::dropdown(),
     ]);
 }
+
+  
     public function show($order_number)
     {
         $transction = InstallmentOrder::with(['customer', 'location', 'user', 'voider', 'installment_order_item.item', 'installment_order_payments.installment_order_payment_history.user'])
