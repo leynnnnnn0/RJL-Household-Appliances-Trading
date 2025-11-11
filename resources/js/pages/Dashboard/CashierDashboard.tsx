@@ -219,7 +219,7 @@ export default function CashierDashboard() {
         </div>
 
         {/* Date Filter */}
-        <Card className="shadow-lg border-slate-200 rounded-2xl">
+        {/* <Card className="shadow-lg border-slate-200 rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex-1">
@@ -236,7 +236,7 @@ export default function CashierDashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Remittance Summary - Featured */}
         <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 rounded-2xl shadow-2xl p-8 text-white">

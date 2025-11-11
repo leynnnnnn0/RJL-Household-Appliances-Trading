@@ -131,7 +131,7 @@ export default function View({ item } : PageProps) {
         </div>
 
         {/* Main Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {window.can('can manage roles') &&      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Quantity Card */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -167,7 +167,7 @@ export default function View({ item } : PageProps) {
               <p className="text-xs text-muted-foreground">unit cost × quantity</p>
             </CardContent>
           </Card>
-        </div>
+        </div>}
 
         {/* Detailed Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -248,9 +248,9 @@ export default function View({ item } : PageProps) {
               <div className="flex items-start gap-3">
                 <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="space-y-1 flex-1">
-                  <p className="text-sm font-medium">Unit Cost</p>
+                  <p className="text-sm font-medium">SRP</p>
                   <p className="text-sm text-muted-foreground">
-                    {formatCurrency(item.unit_cost)}
+                    {formatCurrency(item.srp)}
                   </p>
                 </div>
               </div>
