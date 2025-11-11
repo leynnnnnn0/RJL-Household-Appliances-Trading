@@ -396,7 +396,7 @@ export default function BulkPayments() {
                             className="w-full justify-between h-8 text-xs font-normal"
                           >
                             {payments[index]?.selected_order
-                              ? `${payments[index].selected_order.order_number} - ${payments[index].selected_order.customer}`
+                              ? `${payments[index].selected_order.item_model} - ${payments[index].selected_order.customer}`
                               : "Search order..."}
                             <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                           </Button>
@@ -430,7 +430,7 @@ export default function BulkPayments() {
                                   className="text-xs"
                                 >
                                   <div className="flex flex-col">
-                                    <span className="font-medium">{order.order_number}</span>
+                                    <span className="font-medium">{order.item_model}</span>
                                     <span className="text-muted-foreground">{order.customer}</span>
                                   </div>
                                 </CommandItem>
@@ -461,7 +461,7 @@ export default function BulkPayments() {
                                 className="text-xs"
                                 disabled={isPaid}
                               >
-                                #{idx + 1} - {inst.status} {isPaid ? '(Paid)' : ''}
+                                {inst.due_date} - {inst.status} {isPaid ? '(Paid)' : ''}
                               </SelectItem>
                             );
                           })}

@@ -22,7 +22,7 @@ class InstallmentOrderController extends Controller
         ]);
     }
     
-    $data = InstallmentOrder::with(['installment_order_payments', 'customer'])
+    $data = InstallmentOrder::with(['installment_order_payments', 'customer', 'installment_order_item.item'])
         ->where(function($query) use($search) {
             $query->where('order_number', 'like', "%$search%")
                 ->orWhereHas('customer', function($q) use($search) {
