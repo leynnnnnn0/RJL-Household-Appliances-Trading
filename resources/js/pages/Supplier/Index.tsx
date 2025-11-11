@@ -109,16 +109,17 @@ export default function Index({ suppliers }: PageProps) {
         title="Suppliers" 
         description="Manage the suppliers"
       >
-        <Button onClick={handleCreate}>
+        <Button onClick={handleCreate} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
-          Create New
+          <span className="hidden xs:inline">Create New</span>
+          <span className="xs:hidden">New</span>
         </Button>
       </ModuleHeading>
 
       <div className="space-y-4">
         {/* Search Bar */}
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search suppliers..."
@@ -129,59 +130,69 @@ export default function Index({ suppliers }: PageProps) {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table - Scrollable on mobile */}
         <div className="rounded-lg overflow-hidden border">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Name</TableHead>
-                <TableHead className="font-semibold">Slug</TableHead>
-                <TableHead className="font-semibold">Remarks</TableHead>
-                <TableHead className="font-semibold text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSuppliers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Search className="h-8 w-8 mb-2" />
-                      <p className="font-medium">No suppliers found</p>
-                      <p className="text-sm">Try adjusting your search or create a new supplier</p>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold min-w-[120px]">Name</TableHead>
+                  <TableHead className="font-semibold min-w-[100px] hidden sm:table-cell">Slug</TableHead>
+                  <TableHead className="font-semibold min-w-[150px] hidden md:table-cell">Remarks</TableHead>
+                  <TableHead className="font-semibold text-center min-w-[100px]">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredSuppliers.map((supplier) => (
-                  <TableRow key={supplier.slug} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium">{supplier.name}</TableCell>
-                    <TableCell>{supplier.slug}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{supplier.remarks ?? 'None'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleEdit(supplier)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteClick(supplier.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+              </TableHeader>
+              <TableBody>
+                {filteredSuppliers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <Search className="h-8 w-8 mb-2" />
+                        <p className="font-medium">No suppliers found</p>
+                        <p className="text-sm px-4">Try adjusting your search or create a new supplier</p>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredSuppliers.map((supplier) => (
+                    <TableRow key={supplier.slug} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="font-medium">
+                        <div className="flex flex-col">
+                          <span>{supplier.name}</span>
+                          <span className="text-xs text-muted-foreground sm:hidden">{supplier.slug}</span>
+                          <span className="text-xs text-muted-foreground md:hidden mt-1">{supplier.remarks ?? 'No remarks'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">{supplier.slug}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{supplier.remarks ?? 'None'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(supplier)}
+                            aria-label="Edit supplier"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteClick(supplier.id)}
+                            aria-label="Delete supplier"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         {/* Pagination */}
@@ -190,12 +201,12 @@ export default function Index({ suppliers }: PageProps) {
         />
       </div>
 
-      {/* Create/Edit Dialog */}
+      {/* Create/Edit Dialog - Full screen on mobile */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => {
         setIsDialogOpen(open);
         if (!open) resetForm();
       }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit Supplier' : 'Create New Supplier'}</DialogTitle>
             <DialogDescription>
@@ -226,11 +237,11 @@ export default function Index({ suppliers }: PageProps) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={processing}>
+            <Button onClick={handleSave} disabled={processing} className="w-full sm:w-auto">
               {isEditing ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -239,16 +250,16 @@ export default function Index({ suppliers }: PageProps) {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-[425px]">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the supplier.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90 text-white">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90 text-white w-full sm:w-auto">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
