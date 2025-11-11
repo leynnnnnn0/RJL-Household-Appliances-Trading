@@ -59,6 +59,7 @@ export default function Index({ transactions, locations, employees }: Props) {
       if (selectedLocation !== "all") params.location_id = selectedLocation;
       if (selectedStatus !== "all") params.status = selectedStatus;
       if (selectedItemType !== "all") params.item_type = selectedItemType;
+      if(advancedFilter !== "all") params.advanced_filter = advancedFilter;
 
       router.get("/pos-installment-orders", params, { preserveState: true, replace: true });
     }, 400);

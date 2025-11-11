@@ -360,7 +360,7 @@ export default function BulkPayments() {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="px-2 py-3 text-left font-medium w-8">#</th>
-                  <th className="px-2 py-3 text-left font-medium min-w-[200px]">Order / Customer</th>
+                  <th className="px-2 py-3 text-left font-medium min-w-[200px]">Model / Customer</th>
                   <th className="px-2 py-3 text-left font-medium w-32">Installment</th>
                   <th className="px-2 py-3 text-left font-medium w-28">Amount Due</th>
                   <th className="px-2 py-3 text-left font-medium w-28">Amount Paid *</th>
