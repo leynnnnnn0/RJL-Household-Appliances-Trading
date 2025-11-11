@@ -88,9 +88,14 @@ interface Location  {
 interface PageProps {
   locations: Location[];
   employees: Employee[];
+  transactions: {
+    order_number: string;
+    customer: string;
+    term: string
+  }[]
 }
 
-export default function Index({locations, employees} : PageProps) {
+export default function Index({locations, employees, transactions} : PageProps) {
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -582,33 +587,27 @@ export default function Index({locations, employees} : PageProps) {
             <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>Quick Actions</SheetTitle>
-                <SheetDescription>Manage applications and view history</SheetDescription>
+                <SheetDescription>View transactions history</SheetDescription>
               </SheetHeader>
 
-              <div className="p-5 space-y-4">
+              <div className="p-5 pt-0 space-y-4">
                 <Separator  />
                 
                 <div className="space-y-3">
                   <h3 className="font-semibold text-sm">Today's Applications</h3>
                   <div className="space-y-2">
-                    <Card className="p-3">
+                   {transactions?.map(transaction =>  <Card className="p-3">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium text-sm">Juan Dela Cruz</p>
-                          <p className="text-xs text-muted-foreground">₱25,000 - 6 months</p>
+                          <p className="font-medium text-sm">{transaction.customer}</p>
+                          <p className="text-xs text-muted-foreground">{transaction.term} months</p>
                         </div>
-                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
+                        <a href={`/pos-installment-orders/${transaction.order_number}`} className="cursor-pointer text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+ {transaction.order_number}
+                        </a>
                       </div>
-                    </Card>
-                    <Card className="p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-sm">Maria Santos</p>
-                          <p className="text-xs text-muted-foreground">₱15,000 - 3 months</p>
-                        </div>
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Approved</span>
-                      </div>
-                    </Card>
+                    </Card>)}
+
                   </div>
                 </div>
               </div>

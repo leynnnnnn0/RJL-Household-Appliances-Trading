@@ -21,9 +21,23 @@ class POSCreditController extends Controller
 {
     public function index()
     {
+        $transactions = InstallmentOrder::with('customer')
+        ->when(!Auth::user()->getRoleNames()->contains('super admin'), fn($q) => $q->where('user_id', Auth::id()))
+        ->whereDate('transaction_date', today())
+        ->latest()
+        ->get()
+        ->map(function($tranction){
+            return [
+                'order_number' => $tranction->order_number,
+                'customer' => $tranction->customer->full_name,
+                'term' => $tranction->number_of_terms
+            ];
+        });
+
         return Inertia::render('POSCredit/Index',[
             'employees' => Employee::dropdown(),
-            'locations' => Location::dropdown()
+            'locations' => Location::dropdown(),
+            'transactions' => $transactions
         ]);
     }
 
