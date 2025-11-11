@@ -140,7 +140,7 @@ export default function Index({inventoryData, potentialProfit, marginPercent, sr
                                     <BarChart data={inventoryData} barSize={40}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                                         <XAxis dataKey="category" tick={{ fill: '#64748b' }} />
-                                        <YAxis tick={{ fill: '#64748b' }} />
+                                        <YAxis tick={{ fill: '#64748b', fontSize: '10px' }} />
                                         <Tooltip 
                                             formatter={(value) => `₱${value.toLocaleString()}`}
                                             contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
