@@ -480,7 +480,7 @@ const handleSearchCustomer = (query: string) => {
           <Card>
             <CardHeader>
               <CardTitle>Product Search</CardTitle>
-              <CardDescription>Search by description or serial number</CardDescription>
+              <CardDescription>Search by description, model or serial number</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                        
@@ -502,7 +502,7 @@ const handleSearchCustomer = (query: string) => {
           className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0"
         >
           <div className="font-medium">{product.description}</div>
-          <div className="text-sm text-muted-foreground">{product.serial}</div>
+          <div className="text-sm text-muted-foreground">{product.model}</div>
         </div>
       ))
     ) : (
