@@ -24,36 +24,70 @@ interface PaginationProps {
 }
 
 export default function Pagination({ data }: PaginationProps) {
-  const { links, from, to, total, current_page, last_page } = data;
+  const { from, to, total, current_page, last_page } = data;
 
   if (last_page <= 1) return null;
 
-  const handlePageChange = (url: string | null) => {
-    if (!url) return;
-    router.get(url, {}, { preserveState: true, preserveScroll: true });
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > last_page || page === current_page) return;
+    
+    // Construct URL with page parameter - adjust based on your routing
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', page.toString());
+    
+    router.get(url.toString(), {}, { preserveState: true, preserveScroll: true });
   };
 
-  const pageLinks = links.slice(1, -1);
-  const firstPageUrl = links[0]?.url;
-  const lastPageUrl = links[links.length - 1]?.url;
+  // Generate smart page numbers based on screen size
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    
+    // Always show first page
+    pages.push(1);
+    
+    // Show current page if it's not first or last
+    if (current_page > 2 && current_page < last_page - 1) {
+      if (current_page > 3) {
+        pages.push('...');
+      }
+      if (current_page > 2) {
+        pages.push(current_page);
+      }
+    }
+    
+    // Show ellipsis before last page if needed
+    if (current_page < last_page - 2) {
+      pages.push('...');
+    }
+    
+    // Always show last page if there's more than one page
+    if (last_page > 1) {
+      pages.push(last_page);
+    }
+    
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-2 py-4">
       {/* Results info */}
-      <div className="text-sm text-muted-foreground order-2 sm:order-1">
+      <div className="text-xs sm:text-sm text-muted-foreground order-2 sm:order-1">
         Showing <span className="font-medium">{from}</span> to <span className="font-medium">{to}</span> of{' '}
         <span className="font-medium">{total}</span> results
       </div>
 
       {/* Pagination controls */}
-      <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
+      <div className="flex items-center gap-1 order-1 sm:order-2">
         {/* First page - Hidden on mobile */}
         <Button
           variant="outline"
           size="icon"
           className="h-8 w-8 hidden sm:inline-flex"
-          onClick={() => handlePageChange(firstPageUrl)}
+          onClick={() => handlePageChange(1)}
           disabled={current_page === 1}
+          aria-label="First page"
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
@@ -63,33 +97,42 @@ export default function Pagination({ data }: PaginationProps) {
           variant="outline"
           size="icon"
           className="h-8 w-8"
-          onClick={() => handlePageChange(firstPageUrl)}
+          onClick={() => handlePageChange(current_page - 1)}
           disabled={current_page === 1}
+          aria-label="Previous page"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
         {/* Page numbers */}
         <div className="flex items-center gap-1">
-          {pageLinks.map((link, index) => {
-            if (link.label === '...') {
+          {pageNumbers.map((page, index) => {
+            if (page === '...') {
               return (
-                <span key={`ellipsis-${index}`} className="px-1 sm:px-2 text-muted-foreground text-sm">
+                <span 
+                  key={`ellipsis-${index}`} 
+                  className="px-1 sm:px-2 text-muted-foreground text-sm"
+                >
                   ...
                 </span>
               );
             }
 
+            const pageNum = page as number;
+            const isActive = pageNum === current_page;
+
             return (
               <Button
-                key={index}
-                variant={link.active ? 'default' : 'outline'}
+                key={pageNum}
+                variant={isActive ? 'default' : 'outline'}
                 size="sm"
-                className="h-8 min-w-8 px-2 sm:px-3"
-                onClick={() => handlePageChange(link.url)}
-                disabled={link.active}
+                className="h-8 min-w-[32px] px-2 sm:px-3 text-xs sm:text-sm"
+                onClick={() => handlePageChange(pageNum)}
+                disabled={isActive}
+                aria-label={`Page ${pageNum}`}
+                aria-current={isActive ? 'page' : undefined}
               >
-                {link.label}
+                {pageNum}
               </Button>
             );
           })}
@@ -100,8 +143,9 @@ export default function Pagination({ data }: PaginationProps) {
           variant="outline"
           size="icon"
           className="h-8 w-8"
-          onClick={() => handlePageChange(lastPageUrl)}
+          onClick={() => handlePageChange(current_page + 1)}
           disabled={current_page === last_page}
+          aria-label="Next page"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -111,8 +155,9 @@ export default function Pagination({ data }: PaginationProps) {
           variant="outline"
           size="icon"
           className="h-8 w-8 hidden sm:inline-flex"
-          onClick={() => handlePageChange(lastPageUrl)}
+          onClick={() => handlePageChange(last_page)}
           disabled={current_page === last_page}
+          aria-label="Last page"
         >
           <ChevronsRight className="h-4 w-4" />
         </Button>

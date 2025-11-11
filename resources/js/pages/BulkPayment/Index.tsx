@@ -343,7 +343,7 @@ export default function BulkPayments() {
       <Head title="Bulk Payments"/>
       <ModuleHeading title="Bulk Payments" description="Process multiple installment payments at once"/>
       
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-background">
         <div className="space-y-6">
           {/* Instructions */}
           <Alert>
