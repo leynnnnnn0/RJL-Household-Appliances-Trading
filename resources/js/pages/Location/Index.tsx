@@ -14,11 +14,10 @@ import { Location, Paginated } from '@/types';
 import { toast } from 'sonner';
 import Pagination from '@/components/pagination';
 
-
-
 interface PageProps {
   locations: Paginated<Location>;
 }
+
 export default function Index({locations}: PageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -32,10 +31,10 @@ export default function Index({locations}: PageProps) {
     remarks: ''
   });
 
-  const setEditing= () => {
-          setData('address', '');
-          setData('name', '');
-          setData('remarks', '');
+  const setEditing = () => {
+    setData('address', '');
+    setData('name', '');
+    setData('remarks', '');
   }
 
   // Filter locations based on search
@@ -61,8 +60,6 @@ export default function Index({locations}: PageProps) {
 
   // Save location (create or update)
   const handleSave = () => {
-   
-
     if (isEditing) {
       put(`/locations/${editId}`, {
         onSuccess: () => {
@@ -84,7 +81,6 @@ export default function Index({locations}: PageProps) {
         }
       })
     }
-
   };
 
   // Open delete confirmation
@@ -97,12 +93,12 @@ export default function Index({locations}: PageProps) {
   const handleDeleteConfirm = () => {
     router.delete(`/locations/${deleteId}`, {
       onSuccess: () => {
-          toast.success("Location Deleted Successfully.");
-          setIsDialogOpen(false);
-        },
-        onError: (e:any) => {
-          toast.error(e.error);
-        }
+        toast.success("Location Deleted Successfully.");
+        setIsDialogOpen(false);
+      },
+      onError: (e:any) => {
+        toast.error(e.error);
+      }
     })
     setIsDeleteDialogOpen(false);
     setDeleteId(null);
@@ -115,16 +111,17 @@ export default function Index({locations}: PageProps) {
         title="Locations" 
         description="Manage the locations"
       >
-        <Button onClick={handleCreate}>
+        <Button onClick={handleCreate} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
-          Create New
+          <span className="hidden xs:inline">Create New</span>
+          <span className="xs:hidden">New</span>
         </Button>
       </ModuleHeading>
 
       <div className="space-y-4">
         {/* Search Bar */}
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search locations..."
@@ -137,57 +134,67 @@ export default function Index({locations}: PageProps) {
 
         {/* Table */}
         <div className="rounded-lg overflow-hidden border">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Name</TableHead>
-                <TableHead className="font-semibold">Address</TableHead>
-                <TableHead className="font-semibold">Remarks</TableHead>
-                <TableHead className="font-semibold text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLocations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Search className="h-8 w-8 mb-2" />
-                      <p className="font-medium">No locations found</p>
-                      <p className="text-sm">Try adjusting your search or create a new location</p>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold min-w-[120px]">Name</TableHead>
+                  <TableHead className="font-semibold min-w-[150px] hidden sm:table-cell">Address</TableHead>
+                  <TableHead className="font-semibold min-w-[150px] hidden md:table-cell">Remarks</TableHead>
+                  <TableHead className="font-semibold text-center min-w-[100px]">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredLocations.map((location) => (
-                  <TableRow key={location.id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium">{location.name}</TableCell>
-                    <TableCell>{location.address}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{location.remarks ?? 'None'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleEdit(location)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteClick(location.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+              </TableHeader>
+              <TableBody>
+                {filteredLocations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <Search className="h-8 w-8 mb-2" />
+                        <p className="font-medium">No locations found</p>
+                        <p className="text-sm px-4">Try adjusting your search or create a new location</p>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredLocations.map((location) => (
+                    <TableRow key={location.id} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="font-medium">
+                        <div className="flex flex-col">
+                          <span>{location.name}</span>
+                          <span className="text-xs text-muted-foreground sm:hidden mt-1">{location.address}</span>
+                          <span className="text-xs text-muted-foreground md:hidden mt-1">{location.remarks ?? 'No remarks'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">{location.address}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{location.remarks ?? 'None'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(location)}
+                            aria-label="Edit location"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteClick(location.id)}
+                            aria-label="Delete location"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         <Pagination data={locations}/>
@@ -195,7 +202,7 @@ export default function Index({locations}: PageProps) {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit Location' : 'Create New Location'}</DialogTitle>
             <DialogDescription>
@@ -212,8 +219,8 @@ export default function Index({locations}: PageProps) {
                 onChange={(e) => setData('name', e.target.value)}
               />
               {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name}</p>
-                  )}
+                <p className="text-sm text-destructive">{errors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
@@ -235,11 +242,11 @@ export default function Index({locations}: PageProps) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} disabled={processing} className="w-full sm:w-auto">
               {isEditing ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -248,16 +255,16 @@ export default function Index({locations}: PageProps) {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-[425px]">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the location.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90 text-white">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90 text-white w-full sm:w-auto">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -265,5 +272,4 @@ export default function Index({locations}: PageProps) {
       </AlertDialog>
     </AppLayout>
   );
-} 
-
+}
