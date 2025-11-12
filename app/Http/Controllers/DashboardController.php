@@ -14,6 +14,13 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $number = 1900.54;
+
+$formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+$words = strtoupper($formatter->format($number));
+
+
+
 
         $data = Item::whereNull('date_out')
             ->selectRaw('item_type AS category, SUM(srp) AS srp, SUM(unit_cost) AS unitCost')

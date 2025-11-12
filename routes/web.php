@@ -7,6 +7,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseRecordController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PDFController;
 use App\Http\Controllers\POSCashController;
 use App\Http\Controllers\POSCashOrderController;
 use App\Http\Controllers\POSCashOrderSalesController;
@@ -25,7 +26,11 @@ Route::get('/', fn () => redirect()->route('login'))->name('home');
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-
+     Route::get('/installmentContract', [PDFController::class, 'installmentContract']);
+    Route::get('/demandLetter', [PDFController::class, 'demandLetter']);
+    Route::get('/depositAgreement', [PDFController::class, 'depositAgreement']);
+    Route::get('/download', [PDFController::class, 'download']);
+    Route::resource('pdf', PDFController::class);
     /*
     |--------------------------------------------------------------------------
     | POS Cash

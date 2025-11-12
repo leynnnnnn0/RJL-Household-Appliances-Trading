@@ -36,7 +36,8 @@ import {
   AlertTriangle,
   ArrowLeft,
   Percent,
-  CloudLightning
+  CloudLightning,
+  Download
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -319,6 +320,10 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                         <ArrowLeft className="h-4 w-4 mr-2" />
                                         Back to List
                                     </Link>
+                                </Button>
+                                <Button>
+                                    <Download/>
+                                    Print Contract
                                 </Button>
                                 {transaction.is_voided == true && (
                                     <Badge variant="destructive" className="h-8">
