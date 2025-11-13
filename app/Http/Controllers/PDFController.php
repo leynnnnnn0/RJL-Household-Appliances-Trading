@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InstallmentOrder;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class PDFController extends Controller
 {
@@ -25,21 +27,34 @@ class PDFController extends Controller
         return view('pdf.installment-contract', $data);
     }
 
-    public function installmentContract()
+    public function installmentContract($id)
     {
-                $data = [
+        $order = InstallmentOrder::with(['customer', 'installment_order_item.item'])->findOrFail($id);
+       $dueDay = Carbon::parse($order->transaction_date)->format('jS');
+
+
+$formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+
+// round the value to 2 decimals
+$amount = round($order->monthly_payment, 2);
+
+$words = strtoupper($formatter->format($amount));
+
+
+
+            $data = [
             'mobileNumber' => '09506122101',
-            'date' => 'NOV. 09, 2025',
-            'referenceNumber' => 'REAL ME C71 6/128 W/SIM',
-            'customerName' => 'CRUZ LESTER/ CRUZ LOLITO',
-            'remainingMonths' => '9',
-            'dueDay' => '9TH',
-            'monthlyInstallment' => 'P 925.00',
+            'date' => Carbon::now()->format('F d, Y'),
+            'referenceNumber' => $order->installment_order_item->item->model,
+            'customerName' => strtoupper($order->customer->full_name),
+            'remainingMonths' => $order->number_of_terms,
+            'dueDay' => $dueDay,
+            'monthlyInstallment' => round($order->monthly_payment, 2) ,
             'managerName' => 'JAYSON MANALILI',
             'customerNameCopy' => 'CRUZ LESTER/ CRUZ LOLITO.',
         ];
 
-          $pdf = Pdf::loadView('pdf.installment-contract', $data);
+        $pdf = Pdf::loadView('pdf.installment-contract', $data);
         
         return $pdf->stream('installment-contract.pdf');
 

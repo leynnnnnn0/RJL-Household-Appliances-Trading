@@ -15,7 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { router, useForm } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { Location, User, OrderWithrelations, Customer } from '@/types';
 import { toast } from 'sonner';
@@ -63,9 +63,10 @@ interface PageProps {
 }
 
 export default function Index({locations, employees, transactions} : PageProps) {
+  const {auth} = usePage().props as any;
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedEmployee, setSelectedEmployee] = useState<string>(employees[0].id.toString());
+  const [selectedEmployee, setSelectedEmployee] = useState<string>(auth.user.id.toString());
   const [selectedLocation, setSelectedLocation] = useState<string>(locations[0].id.toString());
   const [saleAmount, setSaleAmount] = useState<string>("");
   const [orders, setOrders] = useState<Order[]>([]);

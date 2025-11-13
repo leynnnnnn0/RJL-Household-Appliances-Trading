@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { all } from 'axios';
 
 // Sample data structure matching your report
 const sampleTransactions = [
@@ -134,7 +135,29 @@ const sampleTransactions = [
   },
 ];
 
-export default function CashierDashboard() {
+interface PageProps {
+  allTransactions: {date: string
+                receipt_number: string
+                customer: string
+                m_i: number
+                d_p: number
+                amount_paid: number
+                payment_method: string
+                reference_number: string
+                is_voided: boolean
+                remarks: string
+  }[];
+  mops: Record<string, number>;
+  miCollection: number;
+  dpCollection: number;
+  cashCollection: number;
+  netCollection: number;
+  totalCashOnHand: number;
+  totalOtherMop: number;
+}
+
+export default function CashierDashboard({totalCashOnHand, totalOtherMop, allTransactions, mops, miCollection, dpCollection, cashCollection, netCollection} : PageProps) {
+  console.log(allTransactions);
      const getTodayDate = () => new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(getTodayDate);
 
@@ -256,7 +279,7 @@ export default function CashierDashboard() {
                 <Banknote className="h-5 w-5 text-indigo-100" />
                 <span className="text-indigo-100 text-sm font-medium">Cash Payment</span>
               </div>
-              <div className="text-3xl font-bold">₱{summary.cashRemittance.toLocaleString()}</div>
+              <div className="text-3xl font-bold">₱{totalCashOnHand.toLocaleString()}</div>
             </div>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-200">
@@ -264,7 +287,7 @@ export default function CashierDashboard() {
                 <CreditCard className="h-5 w-5 text-indigo-100" />
                 <span className="text-indigo-100 text-sm font-medium">Other MOP</span>
               </div>
-              <div className="text-3xl font-bold">₱{summary.otherMopRemittance.toLocaleString()}</div>
+              <div className="text-3xl font-bold">₱{totalOtherMop.toLocaleString()}</div>
             </div>
             
             <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30 shadow-lg hover:bg-white/25 transition-all duration-200">
@@ -272,14 +295,14 @@ export default function CashierDashboard() {
                 <Receipt className="h-5 w-5 text-white" />
                 <span className="text-white text-sm font-semibold">Total Collection</span>
               </div>
-              <div className="text-4xl font-bold">₱{summary.totalRemittance.toLocaleString()}</div>
+              <div className="text-4xl font-bold">₱{netCollection.toLocaleString()}</div>
             </div>
           </div>
           
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
             <div className="flex items-center justify-between text-sm">
               <span className="text-indigo-100">Total Transactions</span>
-              <span className="font-semibold text-lg">{filteredTransactions.filter(t => !t.isExpense).length}</span>
+              <span className="font-semibold text-lg">{allTransactions.length}</span>
             </div>
           </div>
         </div>
@@ -296,7 +319,7 @@ export default function CashierDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900">₱{summary.mi.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-slate-900">₱{miCollection.toLocaleString()}</div>
               <p className="text-xs text-slate-600 mt-1.5 font-medium">Monthly Installment</p>
             </CardContent>
           </Card>
@@ -311,7 +334,7 @@ export default function CashierDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900">₱{summary.dp.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-slate-900">₱{dpCollection.toLocaleString()}</div>
               <p className="text-xs text-slate-600 mt-1.5 font-medium">Down Payment</p>
             </CardContent>
           </Card>
@@ -326,7 +349,7 @@ export default function CashierDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900">₱{summary.cash.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-slate-900">₱{cashCollection.toLocaleString()}</div>
               <p className="text-xs text-slate-600 mt-1.5 font-medium">Cash Payments</p>
             </CardContent>
           </Card>
@@ -354,7 +377,7 @@ export default function CashierDashboard() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(paymentMethodBreakdown).map(([method, amount]) => (
+              {Object.entries(mops).map(([method, amount]) => (
                 <div key={method} className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 border border-slate-200 hover:shadow-md transition-all duration-200">
                   <Badge 
                     variant="outline" 
@@ -378,7 +401,7 @@ export default function CashierDashboard() {
                 Transaction Details
               </CardTitle>
               <Badge variant="secondary" className="text-sm font-semibold px-3 py-1 bg-slate-200 text-slate-700">
-                {filteredTransactions.length} transactions
+                {allTransactions.length} transactions
               </Badge>
             </div>
           </CardHeader>
@@ -398,39 +421,39 @@ export default function CashierDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTransactions.map((txn, index) => (
+                  {allTransactions.map((txn, index) => (
                     <tr
-                      key={txn.id}
+                      key={index}
                       className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-                        txn.isExpense ? 'bg-rose-50' : index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+                        false ? 'bg-rose-50' : index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
                       }`}
                     >
                       <td className="p-4 text-sm text-slate-600 font-medium">{txn.date}</td>
-                      <td className="p-4 font-semibold text-sm text-slate-900">{txn.orCsi}</td>
-                      <td className="p-4 text-sm text-slate-700 font-medium">{txn.customerName}</td>
+                      <td className="p-4 font-semibold text-sm text-slate-900">{txn.receipt_number}</td>
+                      <td className="p-4 text-sm text-slate-700 font-medium">{txn.customer}</td>
                       <td className="p-4 text-right text-sm font-semibold text-slate-900">
-                        {txn.mi > 0 ? `₱${txn.mi.toLocaleString()}` : '-'}
+                        {txn.m_i > 0 ? `₱${txn.m_i.toLocaleString()}` : '-'}
                       </td>
                       <td className="p-4 text-right text-sm font-semibold text-slate-900">
-                        {txn.dp > 0 ? `₱${txn.dp.toLocaleString()}` : '-'}
+                        {txn.d_p > 0 ? `₱${txn.d_p.toLocaleString()}` : '-'}
                       </td>
                       <td className="p-4 text-right text-sm font-semibold text-slate-900">
-                        {txn.cash !== 0
-                          ? `${txn.cash < 0 ? '-' : ''}₱${Math.abs(txn.cash).toLocaleString()}`
+                        {txn.amount_paid >0
+                          ? `${txn.amount_paid < 0 ? '-' : ''}₱${Math.abs(txn.amount_paid).toLocaleString()}`
                           : '-'}
                       </td>
                       <td className="p-4">
                         <Badge
                           variant={
-                            txn.isExpense
+                            false
                               ? 'destructive'
-                              : txn.paymentMethod === 'Cash'
+                              : txn.payment_method === 'cash'
                               ? 'default'
                               : 'secondary'
                           }
                           className="font-semibold"
                         >
-                          {txn.paymentMethod}
+                          {txn.payment_method}
                         </Badge>
                       </td>
                       <td className="p-4 text-sm text-slate-600 max-w-xs truncate">
@@ -438,7 +461,7 @@ export default function CashierDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {filteredTransactions.length === 0 && (
+                  {allTransactions.length === 0 && (
                     <tr>
                       <td colSpan={8} className="text-center py-12 text-slate-500">
                         <div className="flex flex-col items-center gap-3">
@@ -455,7 +478,7 @@ export default function CashierDashboard() {
         </Card>
 
         {/* Collection Summary */}
-        <Card className="shadow-lg border-slate-200 rounded-2xl">
+        {/* <Card className="shadow-lg border-slate-200 rounded-2xl">
           <CardHeader className="border-b border-slate-200 rounded-t-2xl">
             <CardTitle className="text-lg font-bold text-slate-900">Daily Summary</CardTitle>
           </CardHeader>
@@ -463,15 +486,15 @@ export default function CashierDashboard() {
             <div className="space-y-3">
               <div className="flex justify-between items-center py-3 border-b border-slate-200">
                 <span className="font-semibold text-slate-700">Total M.I Collection</span>
-                <span className="text-xl font-bold text-slate-900">₱{summary.mi.toLocaleString()}</span>
+                <span className="text-xl font-bold text-slate-900">₱{miCollection.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-200">
                 <span className="font-semibold text-slate-700">Total D.P Collection</span>
-                <span className="text-xl font-bold text-slate-900">₱{summary.dp.toLocaleString()}</span>
+                <span className="text-xl font-bold text-slate-900">₱{dpCollection.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-200">
                 <span className="font-semibold text-slate-700">Total Cash Collection</span>
-                <span className="text-xl font-bold text-slate-900">₱{summary.cash.toLocaleString()}</span>
+                <span className="text-xl font-bold text-slate-900">₱{cashCollection.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-200">
                 <span className="font-semibold text-slate-700">Less: Direct Expenses</span>
@@ -480,12 +503,12 @@ export default function CashierDashboard() {
               <div className="flex justify-between items-center py-5 bg-gradient-to-r from-indigo-50 to-purple-50 px-6 rounded-xl border-2 border-indigo-200 mt-4 shadow-md">
                 <span className="font-bold text-lg text-slate-900">Net Collection</span>
                 <span className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  ₱{summary.netCollection.toLocaleString()}
+                  ₱{netCollection.toLocaleString()}
                 </span>
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
         </div>
       </div>
     </AppLayout>

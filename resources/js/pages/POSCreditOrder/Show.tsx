@@ -49,7 +49,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ModuleHeading from '@/components/cards/module-heading';
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { IconTopologyStarRing3 } from '@tabler/icons-react';
 
@@ -300,6 +300,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
         return amount > 0 && amount <= nextPaymentRemaining;
     };
 
+
     return (
         <AppLayout>
             <Head title='Installment Order Details'/>
@@ -320,10 +321,6 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                         <ArrowLeft className="h-4 w-4 mr-2" />
                                         Back to List
                                     </Link>
-                                </Button>
-                                <Button>
-                                    <Download/>
-                                    Print Contract
                                 </Button>
                                 {transaction.is_voided == true && (
                                     <Badge variant="destructive" className="h-8">
@@ -360,6 +357,25 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
+                                            <DropdownMenuItem 
+                                                onClick={() => window.open(`/installmentContract/${transaction.id}`, '_blank')}
+                                            >
+                                                <Download className="w-4 h-4 mr-2" />
+                                                Installment Contract
+                                            </DropdownMenuItem>
+                                              <DropdownMenuItem 
+                                                onClick={() => window.open(`/depositAgreement/${transaction.id}`, '_blank')}
+                                            >
+                                                <Download className="w-4 h-4 mr-2" />
+                                                Deposit Agreement
+                                            </DropdownMenuItem>
+                                              <DropdownMenuItem 
+                                                onClick={() => window.open(`/demandLetter/${transaction.id}`, '_blank')}
+                                            >
+                                                <Download className="w-4 h-4 mr-2" />
+                                                Demand Letter
+                                            </DropdownMenuItem>
+                                            
                                               {window.can('can accelerate') &&  <DropdownMenuItem 
                                                 onClick={() => setAcceleratetDialog(true)}
                                                 className="text-green-600 focus:text-green-600"

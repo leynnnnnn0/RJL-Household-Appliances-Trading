@@ -26,9 +26,9 @@ Route::get('/', fn () => redirect()->route('login'))->name('home');
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-     Route::get('/installmentContract', [PDFController::class, 'installmentContract']);
-    Route::get('/demandLetter', [PDFController::class, 'demandLetter']);
-    Route::get('/depositAgreement', [PDFController::class, 'depositAgreement']);
+    Route::get('/installmentContract/{id}', [PDFController::class, 'installmentContract']);
+    Route::get('/demandLetter/{id}', [PDFController::class, 'demandLetter']);
+    Route::get('/depositAgreement/{id}', [PDFController::class, 'depositAgreement']);
     Route::get('/download', [PDFController::class, 'download']);
     Route::resource('pdf', PDFController::class);
     /*

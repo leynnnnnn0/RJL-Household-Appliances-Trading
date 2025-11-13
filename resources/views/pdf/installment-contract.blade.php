@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <title>Installment Contract</title>
     <style>
         @page {
             margin: 40px 60px;
             size: letter;
         }
+        <style>
+
+
         body {
             font-family: 'Times New Roman', Times, serif;
             font-size: 10.5pt;
@@ -161,7 +164,7 @@
     <div class="policy-item">
         <span class="policy-number">1.</span>
         <span class="policy-title">Your Monthly Installment and Due Date.</span>
-        The remaining <span class="red-bold">{{ $remainingMonths }} MONS.</span> monthly installment/s will be due every <span class="red-bold">{{ $dueDay }}</span> day of the month and thereafter until fully paid. Your monthly installment would be <span class="red-bold">{{ $monthlyInstallment }}</span>.
+        The remaining <span class="red-bold">{{ $remainingMonths }} MONS.</span> monthly installment/s will be due every <span class="red-bold">{{ $dueDay }}</span> day of the month and thereafter until fully paid. Your monthly installment would be <span class="red-bold">PHP {{ $monthlyInstallment }}</span>.
     </div>
 
     <div class="policy-item">
@@ -208,7 +211,7 @@
 
     <div class="copy-received">
         <div style="margin-bottom: 10px;">
-            <span class="copy-name">{{ $customerNameCopy }}</span>
+            <span class="copy-name">{{ $customerName }}</span>
         </div>
         <div>Copy received by</div>
     </div>

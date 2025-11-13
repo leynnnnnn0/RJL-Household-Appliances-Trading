@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -23,7 +24,7 @@ class POSCashController extends Controller
         return Inertia::render('POSCash/Index', [
             'locations' => Location::dropdown(),
             'employees' => User::dropdown(),
-            'transactions' => Order::with('order_items.item', 'location')->whereDate('transaction_date', today())->latest()->get()
+            'transactions' => Order::with('order_items.item', 'location')->whereDate('transaction_date', today())->where('employee_id', Auth::id())->latest()->get()
         ]);
     }
 
