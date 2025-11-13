@@ -44,7 +44,7 @@ export default function Show({ expense_record }: PageProps) {
   };
 
   const handleStatusUpdate = () => {
-    patch(route("expense-record.update-status", expense_record.id), {
+    put(route("expense-record.update-status", expense_record.id), {
       preserveScroll: true,
     });
   };

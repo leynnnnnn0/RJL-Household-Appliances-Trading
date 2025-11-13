@@ -262,7 +262,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
     };
 
     const handleRebateSubmit = () => {
-        rebateForm.patch(`/pos-installment-orders/${transaction.id}/rebate`, {
+        rebateForm.put(`/pos-installment-orders/${transaction.id}/rebate`, {
             onSuccess: () => {
                 setShowRebateDialog(false);
                 setSelectedPayment(null);

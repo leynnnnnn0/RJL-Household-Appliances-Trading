@@ -81,7 +81,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('/pos-installment-orders', POSCreditOrderController::class);
     });
 
-    Route::patch('/pos-installment-orders/{id}/rebate', [POSCreditOrderController::class, 'rebate'])
+    Route::put('/pos-installment-orders/{id}/rebate', [POSCreditOrderController::class, 'rebate'])
         ->middleware('permission:can add rebate');
     Route::post('/pos-installment-orders/{id}/accelerate', [POSCreditOrderController::class, 'accelerate'])
         ->middleware('permission:can accelerate');
@@ -114,7 +114,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('expense-record', ExpenseRecordController::class);
     });
 
-    Route::patch('/expense-record/{expenseRecord}/update-status', [ExpenseRecordController::class, 'updateStatus'])
+    Route::put('/expense-record/{expenseRecord}/update-status', [ExpenseRecordController::class, 'updateStatus'])
         ->middleware('permission:can review expense record')
         ->name('expense-record.update-status');
 
