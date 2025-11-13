@@ -15,6 +15,7 @@ class Order extends Model
         'transaction_date',
         'payment_method',
         'reference_number',
+        'receipt_number',
         'is_void',
         'reason_for_cancellation',
         'void_date',

@@ -83,6 +83,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("Cash");
   const [referenceNumber, setReferenceNumber] = useState<string>("");
+  const [receiptNumber, setReceiptNumber] = useState<string>("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isFree, setIsFree] = useState(false);
       const [searchQuery, setSearchQuery] = useState<string>('');
@@ -203,6 +204,7 @@ const [existingCustomerId, setExistingCustomerId] = useState<null | string |numb
       first_name: customerFirstName,
       last_name: customerLastName,
       address: customerAddress,
+      receipt_number: receiptNumber,
       phone: customerPhone,
       payment_method: paymentMethod,
       reference_number: referenceNumber,
@@ -791,6 +793,23 @@ const handleSearchCustomer = (query: string) => {
             ? 'Reference number not needed for cash payments' 
             : 'Required for non-cash payments (Gcash, Bank Transfer, etc.)'}
         </p>
+      </div>
+
+       <div className="space-y-2">
+        <Label htmlFor="receiptNumber">
+          Receipt Number <span className="text-red-500">*</span>
+        </Label>
+        <Input
+          id="receiptNumber"
+          placeholder='#0000000934'
+          value={receiptNumber}
+          
+          onChange={(e) => setReceiptNumber(e.target.value)}
+          className={formErrors.receipt_number ? 'border-red-500' : ''}
+        />
+        {formErrors.receipt_number && (
+          <p className="text-sm text-red-500">{formErrors.receipt_number}</p>
+        )}
       </div>
 
            <div className="grid grid-cols-2 gap-5">

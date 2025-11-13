@@ -49,7 +49,7 @@ class DashboardController extends Controller
                 ->map(function ($order) {
                     return [
                         'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                        'receipt_number' => 'TBD',
+                        'receipt_number' => $order->receipt_number,
                         'customer' => $order->customer->full_name,
                         'm_i' => null,
                         'd_p' => null,
@@ -70,7 +70,7 @@ class DashboardController extends Controller
                 ->map(function ($order) {
                     return [
                         'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                        'receipt_number' => 'TBD',
+                        'receipt_number' => $order->receipt_number,
                         'customer' => $order->customer->full_name,
                         'm_i' => null,
                         'd_p' => $order->down_payment,

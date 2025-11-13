@@ -49,6 +49,7 @@ class POSCashController extends Controller
             'employee_id' => 'required|exists:users,id',
             'orders' => 'required',
             'total_price' => 'required|numeric',
+            'receipt_number' => 'required',
         ]);
    
 
@@ -83,7 +84,8 @@ class POSCashController extends Controller
                 'total_price' => $validated['total_price'],
                 'payment_method' => $validated['payment_method'],
                 'reference_number' => $validated['reference_number'],
-                'transaction_date' => now()
+                'transaction_date' => now(),
+                'receipt_number' => $validated['receipt_number']
             ]);
 
            // Coming on this part

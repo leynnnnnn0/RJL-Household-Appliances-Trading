@@ -148,6 +148,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [referenceNumber, setReferenceNumber] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string>('');
+  const [receiptNumber, setReceiptNumber] = useState<string>('');
 
   
   const handleSearch = (query: string) => {
@@ -428,10 +429,16 @@ export default function Index({locations, employees, transactions} : PageProps) 
   };
 
   const validateDialogForm = () => {
+        if(!receiptNumber){
+      return "Receipt number is required";
+    }
+    
+
     if (!selectedLocation) {
       return "Location is required";
     }
-    
+
+
     const hasDownPayment = downPayment > 0;
     
     if (hasDownPayment) {
@@ -546,7 +553,8 @@ export default function Index({locations, employees, transactions} : PageProps) 
       // Additional information from dialog
       location_id: selectedLocation,
       payment_method: modeOfPayment || null,
-      reference_number: referenceNumber || null
+      reference_number: referenceNumber || null,
+      receipt_number: receiptNumber || null,
     },{
       onSuccess: () => {
         toast.success("Installment Data Created.")
@@ -1170,7 +1178,19 @@ export default function Index({locations, employees, transactions} : PageProps) 
             </Alert>
           )}
 
+          
+
           <div className="space-y-4 py-4">
+                <div className="space-y-2">
+              <Label htmlFor="receiptNumber">Receipt Number *</Label>
+              <Input 
+                  id="receiptNumber" 
+                  placeholder="#000000923" 
+                  value={receiptNumber}
+                  onChange={(e) => setReceiptNumber(e.target.value)}
+                />
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="location">Location *</Label>
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
