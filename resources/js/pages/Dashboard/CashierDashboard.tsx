@@ -302,8 +302,8 @@ export default function CashierDashboard({expenses, totalCashOnHand, totalOtherM
           
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-indigo-100">Total Transactions</span>
-              <span className="font-semibold text-lg">{allTransactions.length}</span>
+              <span className="text-indigo-100">Net Collection after Expenses</span>
+              <span className="font-semibold text-lg">₱{(netCollection - expenses).toLocaleString()}</span>
             </div>
           </div>
         </div>

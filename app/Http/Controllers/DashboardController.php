@@ -163,7 +163,7 @@ class DashboardController extends Controller
                 'miCollection' => $miCollection,
                 'dpCollection' => $dpCollection,
                 'cashCollection' => $cashCollection,
-                'netCollection' => $miCollection + $dpCollection + $cashCollection - $expenses,
+                'netCollection' => $miCollection + $dpCollection + $cashCollection ,
                 'expenses' => $expenses,
                 'totalCashOnHand' => $totalCashOnHand,
                 'totalOtherMop' => $totalOtherMop
