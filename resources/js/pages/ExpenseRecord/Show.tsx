@@ -31,7 +31,7 @@ interface PageProps {
 }
 
 export default function Show({ expense_record }: PageProps) {
-  const { data, setData, patch, processing } = useForm({
+  const { data, setData, put, processing } = useForm({
     status: expense_record.status,
   });
 
