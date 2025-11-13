@@ -675,9 +675,11 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                         const isNext = nextPayment?.id === payment.id;
                                                         const amountPaid = Number(payment.amount_paid || 0);
                                                         const amountDue = Number(payment.amount_due) - payment.rebate_amount;
-                                                        const remaining = (amountDue - amountPaid);
+                                                        let remaining = (amountDue - amountPaid);
                                                         const hasBalance = remaining > 0;
-                                                        
+
+                                                        if(transaction.is_accelerated == true) remaining = 0;
+                                                       
                                                         return (
                                                             <tr 
                                                                 key={payment.id} 
@@ -1187,22 +1189,10 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                     value={accelerationForm.data.acceleration_discount}
                                     onChange={(e) => {
                                         const discount = e.target.value ?  Number(e.target.value) : 0;
-                                        if(discount > remainingBalance) {
-                                            accelerationForm.setError("acceleration_discount", "Discount amount should be less than the remaining balance")
-                                        }      
-                                        else {
-                                            accelerationForm.clearErrors();
-                                        }
                                         accelerationForm.setData('acceleration_discount', discount)
                                         const amountPaid = (Number(transaction.remaining_balance) - discount).toFixed(2);
                                         accelerationForm.setData('amount_paid', amountPaid);
-
-                                        if(Number(amountPaid) < transaction.installment_order_item.item.srp){
-      accelerationForm.setError("acceleration_discount", `The discount given is too high. Item SRP: ${transaction.installment_order_item.item.srp}`)
-                                        }
-
-                                         
-                                        
+                                                        
                                     }}
                                     placeholder="0.00" 
                                     type='number'/>
