@@ -154,9 +154,10 @@ interface PageProps {
   netCollection: number;
   totalCashOnHand: number;
   totalOtherMop: number;
+  expenses: number;
 }
 
-export default function CashierDashboard({totalCashOnHand, totalOtherMop, allTransactions, mops, miCollection, dpCollection, cashCollection, netCollection} : PageProps) {
+export default function CashierDashboard({expenses, totalCashOnHand, totalOtherMop, allTransactions, mops, miCollection, dpCollection, cashCollection, netCollection} : PageProps) {
   console.log(allTransactions);
      const getTodayDate = () => new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(getTodayDate);
@@ -364,7 +365,7 @@ export default function CashierDashboard({totalCashOnHand, totalOtherMop, allTra
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-rose-600">₱{summary.expenses.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-rose-600">₱{expenses.toLocaleString()}</div>
               <p className="text-xs text-slate-600 mt-1.5 font-medium">Total Expenses</p>
             </CardContent>
           </Card>

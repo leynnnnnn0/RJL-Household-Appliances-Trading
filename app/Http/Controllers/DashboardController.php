@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Employee;
+use App\Models\ExpenseRecord;
 use App\Models\InstallmentOrder;
 use App\Models\InstallmentOrderPaymentHistory;
 use App\Models\Item;
@@ -147,7 +148,10 @@ class DashboardController extends Controller
                 ->sum();
 
 
-
+            $expenses = ExpenseRecord::where('user_id', Auth::id())
+            ->where('status', 'approved')
+            ->whereDate('created_at', today())
+            ->sum('amount');
 
 
             $allTransactions = $transactions->sortByDesc('created_at')
@@ -159,7 +163,8 @@ class DashboardController extends Controller
                 'miCollection' => $miCollection,
                 'dpCollection' => $dpCollection,
                 'cashCollection' => $cashCollection,
-                'netCollection' => $miCollection + $dpCollection + $cashCollection,
+                'netCollection' => $miCollection + $dpCollection + $cashCollection - $expenses,
+                'expenses' => $expenses,
                 'totalCashOnHand' => $totalCashOnHand,
                 'totalOtherMop' => $totalOtherMop
             ]);
