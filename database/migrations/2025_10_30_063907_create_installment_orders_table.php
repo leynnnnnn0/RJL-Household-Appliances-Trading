@@ -32,7 +32,7 @@ return new class extends Migration
             $table->text('reason_for_cancellation')->nullable();
             $table->string('payment_method')->nullable();
             $table->string('reference_number')->nullable();
-            $table->dateTime('transaction_date')->useCurrent();
+            $table->dateTime('transaction_date')->nullable();
            $table->dateTime('void_date')->nullable();
            $table->foreignId('voider_id')->nullable()->constrained('users');
            $table->boolean('is_completed')->default(false);

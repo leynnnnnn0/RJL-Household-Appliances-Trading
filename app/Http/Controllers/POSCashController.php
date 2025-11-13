@@ -83,7 +83,10 @@ class POSCashController extends Controller
                 'total_price' => $validated['total_price'],
                 'payment_method' => $validated['payment_method'],
                 'reference_number' => $validated['reference_number'],
+                'transaction_date' => now()
             ]);
+
+           // Coming on this part
 
             foreach ($validated['orders'] as $item) {
 
@@ -98,9 +101,10 @@ class POSCashController extends Controller
                     'discount_amount' => $iventoryItem->srp - $item['sale_amount']
                 ]);
             }
-
             DB::commit();
+
         } catch (Exception $e) {
+
             DB::rollBack();
             return back()->withErrors([
                 'error' => $e->getMessage()

@@ -19,7 +19,7 @@ return new class extends Migration
            $table->foreignId('location_id')->constrained();
            $table->foreignId('employee_id')->constrained('users');
            $table->decimal('total_price', 10, 2);
-           $table->dateTime('transaction_date')->useCurrent();
+           $table->dateTime('transaction_date')->nullable();
            $table->boolean('is_void')->default(false);
            $table->text('reason_for_cancellation')->nullable();
            $table->string('payment_method');

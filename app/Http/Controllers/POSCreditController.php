@@ -112,6 +112,7 @@ class POSCreditController extends Controller
             'number_of_terms' => $validated['number_of_terms'],
             'promisory_note_value_interest' => $validated['promisory_note_value_interest'],
             'promisory_note_value_interest_additional_charge' => $validated['promisory_note_value_interest_additional_charge'],
+            'transaction_date' => now()
         ]);
 
         InstallmentOrderItem::create([
