@@ -68,7 +68,7 @@ class POSCreditController extends Controller
             'number_of_terms' => 'required',
             'promisory_note_value_interest' => 'required',
             'promisory_note_value_interest_additional_charge' => 'required',
-            'receipt_number' => 'required',
+            'receipt_number' => 'required|unique:installment_orders,receipt_number',
         ]);
         try{
             DB::beginTransaction();

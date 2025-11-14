@@ -8,132 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { all } from 'axios';
+import ModuleHeading from '@/components/cards/module-heading';
 
-// Sample data structure matching your report
-const sampleTransactions = [
-  {
-    id: 1,
-    date: '2024-11-08',
-    orCsi: 'C-018537',
-    customerName: 'MACASPAC WALTER',
-    mi: 2028,
-    dp: 0,
-    cash: 0,
-    paymentMethod: 'MI',
-    remarks: 'MI-APPL/ SAMSUNG REF RT-20FARVDSA',
-  },
-  {
-    id: 2,
-    date: '2024-11-08',
-    orCsi: 'C-018538',
-    customerName: 'MALLARI JIMMY',
-    mi: 2123,
-    dp: 0,
-    cash: 0,
-    paymentMethod: 'MI',
-    remarks: 'MI-APPL/ LG REF GR-B202SQBB',
-  },
-  {
-    id: 3,
-    date: '2024-11-08',
-    orCsi: 'C-018540',
-    customerName: 'CRUZ LESTER, CRUZ LOLITO',
-    mi: 0,
-    dp: 1500,
-    cash: 0,
-    paymentMethod: 'DP',
-    remarks: 'DP-REAL ME C71 6/128',
-  },
-  {
-    id: 4,
-    date: '2024-11-08',
-    orCsi: 'C-018541',
-    customerName: 'DELA TORRE KATE PRINCESS',
-    mi: 0,
-    dp: 0,
-    cash: 18500,
-    paymentMethod: 'Cash',
-    remarks: 'PANASONIC REF NR-BQ222VB',
-  },
-  {
-    id: 5,
-    date: '2024-11-08',
-    orCsi: 'C-018542',
-    customerName: 'CITRA MARIA ELAINE MAY',
-    mi: 0,
-    dp: 0,
-    cash: 20000,
-    paymentMethod: 'Cash',
-    remarks: 'OUR HOME SOFA SET L-SHAPED CHRISTIAN',
-  },
-  {
-    id: 6,
-    date: '2024-11-08',
-    orCsi: 'RJL SI000066',
-    customerName: 'PARDILLO JUANCHO',
-    mi: 0,
-    dp: 0,
-    cash: 1880,
-    paymentMethod: 'GCash',
-    remarks: 'ASAHI DOUBLE BURNER GAS STOVE GS-117',
-  },
-  {
-    id: 7,
-    date: '2024-11-08',
-    orCsi: 'RJL SI000067',
-    customerName: 'CABALIC NESETTA',
-    mi: 0,
-    dp: 0,
-    cash: 740,
-    paymentMethod: 'Cash',
-    remarks: 'ASAHI FLAT IRON CI-2605',
-  },
-  {
-    id: 8,
-    date: '2024-11-08',
-    orCsi: 'CSD-018461',
-    customerName: 'CUBACUB ANGELITO',
-    mi: 1543,
-    dp: 0,
-    cash: 0,
-    paymentMethod: 'MI',
-    remarks: 'MI-APPL/ ASTRON LED-4277 TV',
-  },
-  {
-    id: 9,
-    date: '2024-11-08',
-    orCsi: 'EXP-001',
-    customerName: 'Gas Emergency',
-    mi: 0,
-    dp: 0,
-    cash: -500,
-    paymentMethod: 'Expense',
-    remarks: 'Emergency gas payment',
-    isExpense: true,
-  },
-  {
-    id: 10,
-    date: '2024-11-09',
-    orCsi: 'C-018543',
-    customerName: 'SANTOS MARIA',
-    mi: 1850,
-    dp: 0,
-    cash: 0,
-    paymentMethod: 'MI',
-    remarks: 'MI-APPL/ FUJIDENZO REF RDD-70S',
-  },
-  {
-    id: 11,
-    date: '2024-11-09',
-    orCsi: 'C-018544',
-    customerName: 'REYES JUAN',
-    mi: 0,
-    dp: 2000,
-    cash: 0,
-    paymentMethod: 'Card',
-    remarks: 'DP-LAPTOP ACER ASPIRE',
-  },
-];
+
 
 interface PageProps {
   allTransactions: {date: string
@@ -163,54 +40,6 @@ export default function CashierDashboard({expenses, totalCashOnHand, totalOtherM
   const [selectedDate, setSelectedDate] = useState(getTodayDate);
 
 
-  const filteredTransactions = useMemo(() => {
-    return sampleTransactions.filter((txn) => {
-      return txn.date === selectedDate;
-    });
-  }, [selectedDate]);
-
-  const summary = useMemo(() => {
-    const totals = filteredTransactions.reduce(
-      (acc, txn) => {
-        if (txn.isExpense) {
-          acc.expenses += Math.abs(txn.cash);
-        } else {
-          acc.mi += txn.mi;
-          acc.dp += txn.dp;
-          acc.cash += txn.cash;
-          acc.total += txn.mi + txn.dp + txn.cash;
-          
-          if (txn.paymentMethod === 'Cash') {
-            acc.cashRemittance += txn.cash;
-          } else {
-            acc.otherMopRemittance += txn.mi + txn.dp + txn.cash;
-          }
-        }
-        return acc;
-      },
-      { mi: 0, dp: 0, cash: 0, total: 0, expenses: 0, cashRemittance: 0, otherMopRemittance: 0 }
-    );
-
-    totals.netCollection = totals.total - totals.expenses;
-    totals.totalRemittance = totals.cashRemittance + totals.otherMopRemittance;
-
-    return totals;
-  }, [filteredTransactions]);
-
-  const paymentMethodBreakdown = useMemo(() => {
-    const breakdown = {};
-    filteredTransactions
-      .filter((txn) => !txn.isExpense)
-      .forEach((txn) => {
-        const method = txn.paymentMethod;
-        if (!breakdown[method]) {
-          breakdown[method] = 0;
-        }
-        breakdown[method] += txn.mi + txn.dp + txn.cash;
-      });
-    return breakdown;
-  }, [filteredTransactions]);
-
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { 
@@ -226,21 +55,14 @@ export default function CashierDashboard({expenses, totalCashOnHand, totalOtherM
       <Head title="Cashier Dashboard" />
       <div className="min-h-screen ">
         <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-black bg-clip-text">
-                Daily Cash Collection Report
-              </h1>
-              <p className="text-gray-700 mt-2 font-medium text-lg">RJL Household Trading</p>
-            </div>
-            <div className="flex items-center gap-3 bg-gradient-to-r from-slate-700 to-slate-800 text-white px-6 py-3.5 rounded-xl shadow-md">
+          <ModuleHeading title='RJL Household trading' description='   Daily Cash Collection Report'>
+              <div className="flex items-center gap-3 bg-gradient-to-r from-slate-700 to-slate-800 text-white px-6 py-3.5 rounded-xl shadow-md">
               <Calendar className="h-5 w-5" />
               <span className="font-semibold text-sm">{formatDate(selectedDate)}</span>
             </div>
-          </div>
-        </div>
+          </ModuleHeading>
+
+
 
         {/* Date Filter */}
         {/* <Card className="shadow-lg border-slate-200 rounded-2xl">
@@ -263,50 +85,54 @@ export default function CashierDashboard({expenses, totalCashOnHand, totalOtherM
         </Card> */}
 
         {/* Remittance Summary - Featured */}
-        <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 rounded-2xl shadow-2xl p-8 text-white">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
-              <Wallet className="h-7 w-7" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">Cashier Remittance</h2>
-              <p className="text-indigo-100 text-sm">Amount to be remitted today</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Banknote className="h-5 w-5 text-indigo-100" />
-                <span className="text-indigo-100 text-sm font-medium">Cash Payment</span>
-              </div>
-              <div className="text-3xl font-bold">₱{totalCashOnHand.toLocaleString()}</div>
-            </div>
-            
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-200">
-              <div className="flex items-center gap-2 mb-3">
-                <CreditCard className="h-5 w-5 text-indigo-100" />
-                <span className="text-indigo-100 text-sm font-medium">Other MOP</span>
-              </div>
-              <div className="text-3xl font-bold">₱{totalOtherMop.toLocaleString()}</div>
-            </div>
-            
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30 shadow-lg hover:bg-white/25 transition-all duration-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Receipt className="h-5 w-5 text-white" />
-                <span className="text-white text-sm font-semibold">Total Collection</span>
-              </div>
-              <div className="text-4xl font-bold">₱{netCollection.toLocaleString()}</div>
-            </div>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-indigo-100">Net Collection after Expenses</span>
-              <span className="font-semibold text-lg">₱{(netCollection - expenses).toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
+      <div className="rounded-2xl bg-white shadow-xl p-8 border border-gray-200 text-gray-900">
+  <div className="flex items-center gap-3 mb-6">
+    <div className="p-3 rounded-xl bg-white shadow border border-gray-200">
+      <Wallet className="h-7 w-7 text-gray-700" />
+    </div>
+    <div>
+      <h2 className="text-2xl font-bold">Total Collection Summary</h2>
+      <p className="text-sm text-gray-500">Comprehensive sales overview</p>
+    </div>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+    <div className="rounded-xl p-6 bg-white border border-gray-200 shadow hover:shadow-md transition-all">
+      <div className="flex items-center gap-2 mb-3">
+        <Banknote className="h-5 w-5 text-gray-600" />
+        <span className="text-sm font-medium text-gray-600">Cash Payment</span>
+      </div>
+      <div className="text-3xl font-bold">₱{totalCashOnHand.toLocaleString()}</div>
+    </div>
+
+    <div className="rounded-xl p-6 bg-white border border-gray-200 shadow hover:shadow-md transition-all">
+      <div className="flex items-center gap-2 mb-3">
+        <CreditCard className="h-5 w-5 text-gray-600" />
+        <span className="text-sm font-medium text-gray-600">Other MOP</span>
+      </div>
+      <div className="text-3xl font-bold">₱{totalOtherMop.toLocaleString()}</div>
+    </div>
+
+    <div className="rounded-xl p-6 bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all">
+      <div className="flex items-center gap-2 mb-3">
+        <Receipt className="h-5 w-5 text-gray-700" />
+        <span className="text-sm font-semibold">Total Collection</span>
+      </div>
+      <div className="text-4xl font-bold">₱{netCollection.toLocaleString()}</div>
+    </div>
+
+  </div>
+
+  <div className="rounded-xl p-4 bg-white border border-gray-200 shadow">
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-gray-600">Net Collection after Expenses</span>
+      <span className="font-semibold text-lg text-gray-800">
+        ₱{(netCollection - expenses).toLocaleString()}
+      </span>
+    </div>
+  </div>
+</div>
 
         {/* Collection Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">

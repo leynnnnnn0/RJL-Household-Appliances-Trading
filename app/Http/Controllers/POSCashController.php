@@ -49,7 +49,7 @@ class POSCashController extends Controller
             'employee_id' => 'required|exists:users,id',
             'orders' => 'required',
             'total_price' => 'required|numeric',
-            'receipt_number' => 'required',
+            'receipt_number' => 'required|unique:orders,receipt_number',
         ]);
    
 
