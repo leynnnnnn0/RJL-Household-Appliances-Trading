@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, Plus, X, Upload, FileText, Users, Briefcase, Home, CreditCard, Search, AlertCircle } from 'lucide-react';
+import { Menu, Plus, X, Upload, FileText, Users, Briefcase, Home, CreditCard, Search, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -41,7 +41,6 @@ interface Customer {
   reference?: CustomerReference;
   investigation_detail?: InvenstigationDetail;
 }
-
 
 interface UploadedFile {
   id: string;
@@ -107,17 +106,14 @@ export default function Index({locations, employees, transactions} : PageProps) 
   ]);
   const [employmentVerified, setEmploymentVerified] = useState<boolean>(false);
   
-  // Customer search states
-
   const [itemSearch, setItemSearch] = useState<string>('');
-    const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Customer[]>([]);
   const [showResults, setShowResults] = useState<boolean>(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isExistingCustomer, setIsExistingCustomer] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   
-  // Form states
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
   const [contact, setContact] = useState<string>('');
@@ -127,46 +123,48 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   
-  // Reference states
   const [ref1Name, setRef1Name] = useState<string>('');
   const [ref1Contact, setRef1Contact] = useState<string>('');
   
-  // Investigation states
   const [visitDate, setVisitDate] = useState<string>('');
   const [investigatorId, setInvestigatorId] = useState<string>('');
   const [investigationNotes, setInvestigationNotes] = useState<string>('');
   
-  // Product and payment states
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct | null>(null);
   const [downPayment, setDownPayment] = useState<number>(0);
   const [selectedTerm, setSelectedTerm] = useState<number>(3);
   const [noDownPayment, setNoDownPayment] = useState<boolean>(false);
   
-  // Dialog states for final confirmation
   const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [modeOfPayment, setModeOfPayment] = useState<string>('');
   const [referenceNumber, setReferenceNumber] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string>('');
   const [receiptNumber, setReceiptNumber] = useState<string>('');
-
   
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState<boolean>(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (query.length > 1) {
+      setIsLoadingCustomers(true);
       axios.get('/api/customers', {params: {search: query}})
       .then(response => {
         const customers = response.data?.data || [];
         setSearchResults(customers);
         setShowResults(true);
+        setIsLoadingCustomers(false);
       })
       .catch(error => {
         console.error("Error fetching customers:", error);
         setSearchResults([]);
+        setIsLoadingCustomers(false);
       });
     } else {
       setSearchResults([]);
       setShowResults(false);
+      setIsLoadingCustomers(false);
     }
   };
   
@@ -182,7 +180,6 @@ export default function Index({locations, employees, transactions} : PageProps) 
     setSearchQuery(`${customer.first_name} ${customer.last_name}`);
     setShowResults(false);
 
- 
     if (customer.reference?.id) {
       setRef1Name(customer.reference?.full_name);
       setRef1Contact(customer.reference?.phone_number);
@@ -194,7 +191,6 @@ export default function Index({locations, employees, transactions} : PageProps) 
       setEmploymentVerified(customer.investigation_detail?.is_employment_verified);
       setInvestigationNotes(customer.investigation_detail?.investigation_notes);
       setInvestigatorId(customer.investigation_detail?.employee_id?.toString());
-
     }
   };
   
@@ -374,16 +370,21 @@ export default function Index({locations, employees, transactions} : PageProps) 
 
   const handleProductSearch = (value: string) => {
     setSearchTerm(value);
+    if (value.trim().length > 0) {
+      setIsLoadingProducts(true);
+    }
     axios.get('/api/items', { params: { search: value } })
       .then(response => {
         const items = response.data?.data || [];
         setFilteredProducts(items);
-        setShowDropdown(true); 
+        setShowDropdown(true);
+        setIsLoadingProducts(false);
       })
       .catch(error => {
         console.error("Error fetching products:", error);
         setFilteredProducts([]);
         setShowDropdown(false);
+        setIsLoadingProducts(false);
       });
   };
 
@@ -400,12 +401,6 @@ export default function Index({locations, employees, transactions} : PageProps) 
     if (!address) {
       return "Address is required";
     }
-    // if (!employment) {
-    //   return "Employment/Source of income is required";
-    // }
-    // if (!income) {
-    //   return "Monthly income is required";
-    // }
     if (!ref1Name || !ref1Contact) {
       return "Reference information is required";
     }
@@ -429,15 +424,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
   };
 
   const validateDialogForm = () => {
-        if(!receiptNumber){
+    if(!receiptNumber){
       return "Receipt number is required";
     }
     
-
     if (!selectedLocation) {
       return "Location is required";
     }
-
 
     const hasDownPayment = downPayment > 0;
     
@@ -465,48 +458,36 @@ export default function Index({locations, employees, transactions} : PageProps) 
     setValidationError('');
 
     const clearAllFields = () => {
-  // Customer info
-  setSelectedCustomer(null);
-  setIsExistingCustomer(false);
-  setFirstName('');
-  setLastName('');
-  setContact('');
-  setAddress('');
-  setEmployment('');
-  setIncome('');
-  setSearchQuery('');
-  setSearchResults([]);
-  setShowResults(false);
-
-  // Reference info
-  setRef1Name('');
-  setRef1Contact('');
-
-  // Investigation info
-  setVisitDate('');
-  setInvestigatorId('');
-  setEmploymentVerified(false);
-  setInvestigationNotes('');
-
-  // Product and payment info
-  setSelectedProduct(null);
-  setDownPayment(0);
-  setSelectedTerm(3);
-  setNoDownPayment(false);
-  setSearchTerm('');
-  setFilteredProducts([]);
-  setShowDropdown(false);
-
-  // Uploaded files
-  setUploadedFiles([]);
-
-  // Dialog info
-  setSelectedLocation('');
-  setModeOfPayment('');
-  setReferenceNumber('');
-  setValidationError('');
-};
-
+      setSelectedCustomer(null);
+      setIsExistingCustomer(false);
+      setFirstName('');
+      setLastName('');
+      setContact('');
+      setAddress('');
+      setEmployment('');
+      setIncome('');
+      setSearchQuery('');
+      setSearchResults([]);
+      setShowResults(false);
+      setRef1Name('');
+      setRef1Contact('');
+      setVisitDate('');
+      setInvestigatorId('');
+      setEmploymentVerified(false);
+      setInvestigationNotes('');
+      setSelectedProduct(null);
+      setDownPayment(0);
+      setSelectedTerm(3);
+      setNoDownPayment(false);
+      setSearchTerm('');
+      setFilteredProducts([]);
+      setShowDropdown(false);
+      setUploadedFiles([]);
+      setSelectedLocation('');
+      setModeOfPayment('');
+      setReferenceNumber('');
+      setValidationError('');
+    };
 
     const breakdown = calculatePaymentBreakdown();
     if (!breakdown || !selectedProduct) {
@@ -515,9 +496,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
       return;
     }
 
-    
     router.post('/pos-credit', {
-      // Customer information
       customer_id: isExistingCustomer ? selectedCustomer?.id : null,
       customer_first_name: firstName,
       customer_last_name: lastName,
@@ -525,18 +504,12 @@ export default function Index({locations, employees, transactions} : PageProps) 
       customer_address: address,
       customer_source_of_income: employment,
       customer_monthly_income: income,
-
-      // Reference information
       customer_reference_full_name: ref1Name,
       customer_reference_phone_number: ref1Contact,
-
-      // Investigation details
       home_visit_date: visitDate,
       investigator_id: investigatorId,
       is_employment_verified: employmentVerified,
       investigation_notes: investigationNotes,
-
-      // Loan details
       loan_contract_price: breakdown.lcp,
       lcp_markup_rate: 1.1,
       lcp_additional_charge: 300,
@@ -545,12 +518,8 @@ export default function Index({locations, employees, transactions} : PageProps) 
       number_of_terms: selectedTerm,
       promisory_note_value_interest: breakdown.multiplier,
       promisory_note_value_interest_additional_charge: breakdown.fixedCharge,
-
-      // Item information
       item_id: selectedProduct.id,
       serial: selectedProduct.serial,
-
-      // Additional information from dialog
       location_id: selectedLocation,
       payment_method: modeOfPayment || null,
       reference_number: referenceNumber || null,
@@ -566,10 +535,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
         console.log(e);
       },
       onFinish: () => {
-           setIsSubmitting(false);
+        setIsSubmitting(false);
       }
     })
-
   };
 
   return (
@@ -604,18 +572,17 @@ export default function Index({locations, employees, transactions} : PageProps) 
                 <div className="space-y-3">
                   <h3 className="font-semibold text-sm">Today's Applications</h3>
                   <div className="space-y-2">
-                   {transactions?.map(transaction =>  <Card className="p-3">
+                   {transactions?.map(transaction =>  <Card key={transaction.order_number} className="p-3">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium text-sm">{transaction.customer}</p>
                           <p className="text-xs text-muted-foreground">{transaction.term} months</p>
                         </div>
                         <a href={`/pos-installment-orders/${transaction.order_number}`} className="cursor-pointer text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
- {transaction.order_number}
+                          {transaction.order_number}
                         </a>
                       </div>
                     </Card>)}
-
                   </div>
                 </div>
               </div>
@@ -650,6 +617,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
                 <Label>Search Product *</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  {isLoadingProducts && (
+                    <Loader2 className="absolute right-3 top-3 h-4 w-4 text-muted-foreground animate-spin" />
+                  )}
                   <Input
                     placeholder="Search products..."
                     value={searchTerm}
@@ -658,7 +628,12 @@ export default function Index({locations, employees, transactions} : PageProps) 
                   />
                   {showDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">
-                      {filteredProducts.length > 0 ? (
+                      {isLoadingProducts ? (
+                        <div className="p-6 text-center">
+                          <Loader2 className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2 animate-spin" />
+                          <p className="text-sm text-muted-foreground">Searching products...</p>
+                        </div>
+                      ) : filteredProducts.length > 0 ? (
                         filteredProducts.map(product => (
                           <div
                             key={product.serial}
@@ -896,6 +871,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
                     onChange={(e) => handleSearch(e.target.value)}
                     className={isExistingCustomer ? 'border-green-500' : ''}
                   />
+                  {isLoadingCustomers && (
+                    <Loader2 className="absolute right-9 top-3 h-4 w-4 text-muted-foreground animate-spin" />
+                  )}
                   {isExistingCustomer && (
                     <Button
                       variant="ghost"
@@ -906,18 +884,30 @@ export default function Index({locations, employees, transactions} : PageProps) 
                       <X className="h-4 w-4" />
                     </Button>
                   )}
-                  {showResults && searchResults.length > 0 && (
+                  {showResults && (
                     <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
-                      {searchResults.map((customer) => (
-                        <div
-                          key={customer.id}
-                          onClick={() => selectCustomer(customer)}
-                          className="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                        >
-                          <p className="font-medium">{customer.first_name} {customer.last_name}</p>
-                          <p className="text-xs text-muted-foreground">{customer.phone_number}</p>
+                      {isLoadingCustomers ? (
+                        <div className="p-6 text-center">
+                          <Loader2 className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2 animate-spin" />
+                          <p className="text-sm text-muted-foreground">Searching customers...</p>
                         </div>
-                      ))}
+                      ) : searchResults.length > 0 ? (
+                        searchResults.map((customer) => (
+                          <div
+                            key={customer.id}
+                            onClick={() => selectCustomer(customer)}
+                            className="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                          >
+                            <p className="font-medium">{customer.first_name} {customer.last_name}</p>
+                            <p className="text-xs text-muted-foreground">{customer.phone_number}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center">
+                          <Users className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">No customers found</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -975,31 +965,6 @@ export default function Index({locations, employees, transactions} : PageProps) 
                   disabled={isExistingCustomer}
                 />
               </div>
-
-              {/* <div className="space-y-2">
-                <Label htmlFor="employment">Employment/Source of Income *</Label>
-                <Input 
-                  id="employment" 
-                  placeholder="Company name or business" 
-                  value={employment}
-                  onChange={(e) => setEmployment(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="income">Monthly Income *</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-muted-foreground">₱</span>
-                  <Input 
-                    id="income" 
-                    type="number" 
-                    placeholder="15,000" 
-                    className="pl-7" 
-                    value={income}
-                    onChange={(e) => setIncome(e.target.value)}
-                  />
-                </div>
-              </div> */}
             </CardContent>
           </Card>
 
@@ -1178,17 +1143,15 @@ export default function Index({locations, employees, transactions} : PageProps) 
             </Alert>
           )}
 
-          
-
           <div className="space-y-4 py-4">
-                <div className="space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="receiptNumber">Receipt Number *</Label>
               <Input 
-                  id="receiptNumber" 
-                  placeholder="#000000923" 
-                  value={receiptNumber}
-                  onChange={(e) => setReceiptNumber(e.target.value)}
-                />
+                id="receiptNumber" 
+                placeholder="#000000923" 
+                value={receiptNumber}
+                onChange={(e) => setReceiptNumber(e.target.value)}
+              />
             </div>
             
             <div className="space-y-2">

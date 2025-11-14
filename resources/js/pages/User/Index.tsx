@@ -42,7 +42,7 @@ export default function Index({users} : PageProps ) {
                 title="Users List"
                 description="Manage users data"
             >
-              {window.can('view add user') &&   <Button onClick={() => router.get('/users/create')}>
+              {window.can('can add user') &&   <Button onClick={() => router.get('/users/create')}>
                   <Plus/>Add New User
                     </Button>}
             </ModuleHeading>

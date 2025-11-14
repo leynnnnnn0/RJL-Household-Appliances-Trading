@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Search, ShoppingCart, Trash2, Plus, Menu, History, TrendingUp, Users, X } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Menu, History, TrendingUp, Users, X, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -86,32 +86,38 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [receiptNumber, setReceiptNumber] = useState<string>("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isFree, setIsFree] = useState(false);
-      const [searchQuery, setSearchQuery] = useState<string>('');
-    const [searchResults, setSearchResults] = useState<Customer[]>([]);
-    const [showResults, setShowResults] = useState<boolean>(false);
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-    const [isExistingCustomer, setIsExistingCustomer] = useState<boolean>(false);
-const [existingCustomerId, setExistingCustomerId] = useState<null | string |number>();
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<Customer[]>([]);
+  const [showResults, setShowResults] = useState<boolean>(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isExistingCustomer, setIsExistingCustomer] = useState<boolean>(false);
+  const [existingCustomerId, setExistingCustomerId] = useState<null | string |number>();
+  const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState<boolean>(false);
 
   const peformSearch = async (value: string, locationId: string) => {
-  if(value.trim().length === 0) {
-    setFilteredProducts([]);
-    setShowDropdown(false);
-    return;
-  };
-  axios.get('/api/items', { params: { search: value, location: locationId } })
-    .then(response => {
-      console.log(response);
-      const items = response.data?.data || [];
-      setFilteredProducts(items);
-      setShowDropdown(true); 
-    })
-    .catch(error => {
-      console.error("Error fetching products:", error);
+    if(value.trim().length === 0) {
       setFilteredProducts([]);
       setShowDropdown(false);
-    });
-}
+      setIsLoadingProducts(false);
+      return;
+    };
+    setIsLoadingProducts(true);
+    axios.get('/api/items', { params: { search: value, location: locationId } })
+      .then(response => {
+        console.log(response);
+        const items = response.data?.data || [];
+        setFilteredProducts(items);
+        setShowDropdown(true);
+        setIsLoadingProducts(false);
+      })
+      .catch(error => {
+        console.error("Error fetching products:", error);
+        setFilteredProducts([]);
+        setShowDropdown(false);
+        setIsLoadingProducts(false);
+      });
+  }
 
   const debouncedSearch = useCallback(debounce((value: string, locationId: string) => {
     peformSearch(value, locationId);
@@ -119,6 +125,9 @@ const [existingCustomerId, setExistingCustomerId] = useState<null | string |numb
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
+    if (value.trim().length > 0) {
+      setIsLoadingProducts(true);
+    }
     debouncedSearch(value, selectedLocation);   
   };
 
@@ -262,29 +271,34 @@ const selectCustomer = (customer : Customer) => {
   setCustomerLastName(customer.last_name);
   setCustomerAddress(customer.address);
   setCustomerPhone(customer.phone_number);
-setExistingCustomerId(customer.id);
-    setShowResults(false);
-    setSearchQuery("");
-      setSearchResults([]);
-        setIsExistingCustomer(true);
-        setSearchQuery(`${customer.first_name} ${customer.last_name}`);
+  setExistingCustomerId(customer.id);
+  setShowResults(false);
+  setSearchQuery("");
+  setSearchResults([]);
+  setIsExistingCustomer(true);
+  setSearchQuery(`${customer.first_name} ${customer.last_name}`);
 }
 
 const handleSearchCustomer = (query: string) => {
   setSearchQuery(query);
 
   if(query.length > 1) {
+    setIsLoadingCustomers(true);
     axios.get('/api/customers', {params: {search: query}})
     .then(response => {
       const customers = response.data?.data || [];
       setSearchResults(customers);
       setShowResults(true);
-    
+      setIsLoadingCustomers(false);
     })
     .catch(err => {
       console.log(err);
       setSearchResults([]);
+      setIsLoadingCustomers(false);
     })
+  } else {
+    setShowResults(false);
+    setIsLoadingCustomers(false);
   }
 }
 
@@ -489,6 +503,9 @@ const handleSearchCustomer = (query: string) => {
                        
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                {isLoadingProducts && (
+                  <Loader2 className="absolute right-3 top-3 h-4 w-4 text-muted-foreground animate-spin" />
+                )}
                 <Input
                   placeholder="Search products..."
                   value={searchTerm}
@@ -497,7 +514,12 @@ const handleSearchCustomer = (query: string) => {
                 />
                 {showDropdown && (
   <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">
-    {filteredProducts.length > 0 ? (
+    {isLoadingProducts ? (
+      <div className="p-6 text-center">
+        <Loader2 className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2 animate-spin" />
+        <p className="text-sm text-muted-foreground">Searching products...</p>
+      </div>
+    ) : filteredProducts.length > 0 ? (
       filteredProducts.map(product => (
         <div
           key={product.serial}
@@ -671,6 +693,9 @@ const handleSearchCustomer = (query: string) => {
                     onChange={(e) => handleSearchCustomer(e.target.value)}
                     className={isExistingCustomer ? 'border-green-500' : ''}
                   />
+                  {isLoadingCustomers && (
+                    <Loader2 className="absolute right-9 top-3 h-4 w-4 text-muted-foreground animate-spin" />
+                  )}
                   {isExistingCustomer && (
                     <Button
                       variant="ghost"
@@ -681,18 +706,30 @@ const handleSearchCustomer = (query: string) => {
                       <X className="h-4 w-4" />
                     </Button>
                   )}
-                  {showResults && searchResults.length > 0 && (
+                  {showResults && (
                     <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
-                      {searchResults.map((customer) => (
-                        <div
-                          key={customer.id}
-                          onClick={() => selectCustomer(customer)}
-                          className="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                        >
-                          <p className="font-medium">{customer.first_name} {customer.last_name}</p>
-                          <p className="text-xs text-muted-foreground">{customer.phone_number}</p>
+                      {isLoadingCustomers ? (
+                        <div className="p-6 text-center">
+                          <Loader2 className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2 animate-spin" />
+                          <p className="text-sm text-muted-foreground">Searching customers...</p>
                         </div>
-                      ))}
+                      ) : searchResults.length > 0 ? (
+                        searchResults.map((customer) => (
+                          <div
+                            key={customer.id}
+                            onClick={() => selectCustomer(customer)}
+                            className="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                          >
+                            <p className="font-medium">{customer.first_name} {customer.last_name}</p>
+                            <p className="text-xs text-muted-foreground">{customer.phone_number}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center">
+                          <Users className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">No customers found</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
