@@ -83,12 +83,12 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             RoleAndPermissionSeeder::class,
-            SupplierSeeder::class,
-            LocationSeeder::class,
-            ItemSeeder::class,
+            // SupplierSeeder::class,
+            // LocationSeeder::class,
+            // ItemSeeder::class,
             // OrderSeeder::class,
-            EmployeeSeeder::class,
-            InstallmentOrderSeeder::class
+            // EmployeeSeeder::class,
+            // InstallmentOrderSeeder::class
         ]);
 
           $superAdmin = Role::where('name', 'super admin')->first();

@@ -67,7 +67,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string>(auth.user.id.toString());
-  const [selectedLocation, setSelectedLocation] = useState<string>(locations[0].id.toString());
+  const [selectedLocation, setSelectedLocation] = useState<string>(locations[0]?.id.toString());
   const [saleAmount, setSaleAmount] = useState<string>("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [allTransactions, setAllTransactions] = useState<Order[]>([]);
