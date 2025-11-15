@@ -109,7 +109,7 @@ export default function Show({ customer }: Props) {
                                     </span>
                                     <span className="flex items-center gap-1">
                                         <MapPin className="h-3.5 w-3.5" />
-                                        {customer.address}
+                                        {customer.address?.toUpperCase()} {customer.city?.toUpperCase()}, { customer.province?.toUpperCase()}, {customer.country?.toUpperCase()}
                                     </span>
                                 </div>
                             </div>

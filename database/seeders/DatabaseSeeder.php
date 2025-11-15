@@ -89,6 +89,7 @@ class DatabaseSeeder extends Seeder
             // OrderSeeder::class,
             // EmployeeSeeder::class,
             // InstallmentOrderSeeder::class
+            CustomerSeeder::class
         ]);
 
           $superAdmin = Role::where('name', 'super admin')->first();

@@ -67,6 +67,12 @@ export type Customer = {
   address: string;
   phone_number: string;
   full_name: string;
+  email: string | null;
+  zipcode: string | null;
+  country: string | null;
+  province: string | null;
+  city: string | null;
+
 }
 
 export type CustomerReference = {
