@@ -37,7 +37,9 @@ import {
   ArrowLeft,
   Percent,
   CloudLightning,
-  Download
+  Download,
+  AlertCircleIcon,
+  InfoIcon
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -65,6 +67,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
     const [showDefaultDialog, setShowDefaultDialog] = useState(false);
      const [showAccelerateDialog, setAcceleratetDialog] = useState(false);
     const [showRebateDialog, setShowRebateDialog] = useState(false);
+        const [showReactivateDialog, setShowReactivateDialog] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<InstallmentOrderPayment | null>(null);
 
     const formatCurrency = (amount: number) => {
@@ -115,6 +118,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
         installment_order_id: transaction.id,
         default_reason: ''
     });
+
+      // Reactivate transaction form
+    const reactivateForm = useForm({
+        installment_order_id: transaction.id,
+        reactivation_reason: ''
+    });
+
 
     // Rebate form
     const rebateForm = useForm({
@@ -209,6 +219,19 @@ export default function Show({transaction, paymentHistory} : PageProps){
             },
             onError: (e) => {
                 toast.error("An error occurred while voiding transaction");
+                console.log(e);
+            }
+        });
+    };
+
+     const handleReactivateSubmit = () => {
+        reactivateForm.post(`/pos-installment-orders/${transaction.id}/reactivate`, {
+            onSuccess: () => {
+                setShowReactivateDialog(false);
+                toast.success("Transaction reactivated.");
+            },
+            onError: (e) => {
+                toast.error("An error occurred while marking reactivating");
                 console.log(e);
             }
         });
@@ -347,14 +370,14 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 )}
 
                                 {/* Actions Menu */}
-                                {!transaction.is_voided && !transaction.is_completed && !transaction.is_defaulted && (
+                                {!transaction.is_voided && !transaction.is_completed  &&  (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="outline" size="icon">
                                                 <MoreVertical className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
+                                      {!transaction.is_defaulted ?  <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem 
@@ -399,7 +422,18 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                 <Ban className="w-4 h-4 mr-2" />
                                                 Void Transaction
                                             </DropdownMenuItem>}
-                                        </DropdownMenuContent>
+                                        </DropdownMenuContent> :  <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                             <DropdownMenuItem 
+                                                    onClick={() => setShowReactivateDialog(true)}
+                                                    className="text-orange-600 focus:text-orange-600"
+                                                >
+                                                    <AlertCircleIcon className="w-4 h-4 text-orange-600" />
+                                                    Reactivate
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                            }
                                     </DropdownMenu>
                                 )}
                             </div>
@@ -435,9 +469,21 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             </Alert>
                         )}
 
-                        {overduePayments > 0 && !transaction.is_voided && (
-                            <Alert variant="destructive">
+                          {transaction.default_reason != null && (
+                            <Alert>
                                 <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>
+                                    This order was defaulted. | Reason: {transaction.default_reason} | Date: {transaction.default_date}
+                                </AlertDescription>
+                            </Alert>
+                        )}
+
+
+
+
+                        {overduePayments > 0 && !transaction.is_voided && (
+                            <Alert variant="info">
+                                <InfoIcon className="h-4 w-4" />
                                 <AlertDescription>
                                     This account has {overduePayments} overdue payment{overduePayments > 1 ? 's' : ''}. Please settle immediately.
                                 </AlertDescription>
@@ -1106,6 +1152,59 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             disabled={voidForm.processing || !voidForm.data.reason_for_cancellation.trim()}
                         >
                             {voidForm.processing ? 'Processing...' : 'Void Transaction'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+                {/* Reactivate Transaction Dialog */}
+            <Dialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-orange-600">
+                            <AlertTriangle className="w-5 h-5" />
+                            Reactive Installment Account
+                        </DialogTitle>
+                        <DialogDescription>
+                            Mark this installment order as active again.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                <strong>Warning:</strong> This will mark the account as active again.
+                            </AlertDescription>
+                        </Alert>
+                        <div className="space-y-2">
+                            <Label htmlFor="reactivateForm">Reason for Reactivation *</Label>
+                            <Textarea
+                                id="reactivateForm"
+                                placeholder="Please provide a reason for marking as active (e.g., customer paid, etc.)..."
+                                value={reactivateForm.data.reactivation_reason}
+                                onChange={(e) => reactivateForm.setData('reactivation_reason', e.target.value)}
+                                rows={4}
+                                className={reactivateForm.errors.reactivation_reason ? 'border-red-500' : ''}
+                            />
+                            {reactivateForm.errors.reactivation_reason && (
+                                <p className="text-xs text-red-500">{reactivateForm.errors.reactivation_reason}</p>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowReactivateDialog(false)}
+                            disabled={reactivateForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="destructive"
+                            onClick={handleReactivateSubmit}
+                            disabled={reactivateForm.processing || !reactivateForm.data.reactivation_reason.trim()}
+                        >
+                            {reactivateForm.processing ? 'Processing...' : 'Reactivate'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

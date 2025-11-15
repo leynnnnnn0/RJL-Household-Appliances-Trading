@@ -45,7 +45,12 @@ class InstallmentOrder extends Model
         'is_defaulted',
         'default_reason',
         'default_date',
-        'defaulter_id'
+        'defaulter_id',
+
+          'is_reactivated',
+        'reactivation_reason',
+        'reactivation_date',
+        'reactivator_id'
     ];
 
     protected $appends = [

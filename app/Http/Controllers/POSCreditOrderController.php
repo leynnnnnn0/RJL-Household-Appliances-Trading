@@ -407,6 +407,36 @@ class POSCreditOrderController extends Controller
         return back()->with('success', 'Order Voided');
     }
 
+     public function reactivate(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'installment_order_id' => 'required',
+            'reactivation_reason' => 'required|string'
+        ]);
+
+        $transaction = InstallmentOrder::with('installment_order_item.item')->findOrFail($id);
+
+        DB::beginTransaction();
+        $transaction->update([
+            'is_defaulted' => false,
+            'is_reactivated' => true,
+            'reactivation_reason' => $validated['reactivation_reason'],
+            'reactivation_date' => now(),
+            'reactivator_id' => Auth::id()
+        ]);
+
+        $item = $transaction->installment_order_item->item;
+        $item->update([
+            'date_out' => $transaction->transaction_date
+        ]);
+
+        $item->save();
+        DB::commit();
+
+        return back()->with('success', 'Order Reactivated');
+    }
+
+
     public function rebate(Request $request)
     {
         $validated = $request->validate([

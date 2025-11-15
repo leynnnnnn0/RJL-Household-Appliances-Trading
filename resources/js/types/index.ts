@@ -156,6 +156,7 @@ export type InstallmentOrder = {
   is_completed: boolean;
   is_defaulted: boolean;
   default_reason: string | null;
+  default_date: string | null;
   total_rebate_amount: number;
   total_amount_paid: number | 0;
   remaining_balance: number | 0;

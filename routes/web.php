@@ -20,7 +20,7 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', fn () => redirect()->route('login'))->name('home');
+Route::get('/', fn() => redirect()->route('login'))->name('home');
 
 // Dashboard
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -86,6 +86,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/pos-installment-orders/{id}/accelerate', [POSCreditOrderController::class, 'accelerate'])
         ->middleware('permission:can accelerate');
     Route::post('/pos-installment-orders/{id}/default', [POSCreditOrderController::class, 'default'])
+        ->middleware('permission:can default');
+    Route::post('/pos-installment-orders/{id}/reactivate', [POSCreditOrderController::class, 'reactivate'])
         ->middleware('permission:can default');
     Route::post('/pos-installment-orders/{id}/void', [POSCreditOrderController::class, 'void'])
         ->middleware('permission:can void');

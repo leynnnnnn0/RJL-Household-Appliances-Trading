@@ -85,7 +85,7 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
             // SupplierSeeder::class,
             // LocationSeeder::class,
-            // ItemSeeder::class,
+            ItemSeeder::class,
             // OrderSeeder::class,
             // EmployeeSeeder::class,
             // InstallmentOrderSeeder::class

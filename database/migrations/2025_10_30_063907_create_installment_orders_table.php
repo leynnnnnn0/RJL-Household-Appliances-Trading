@@ -47,6 +47,12 @@ return new class extends Migration
            $table->dateTime('default_date')->nullable();
             $table->foreignId('defaulter_id')->nullable()->constrained('users');
            $table->text('default_reason')->nullable();
+
+           $table->boolean('is_reactivated')->default(false);
+           $table->dateTime('reactivation_date')->nullable();
+                $table->foreignId('reactivator_id')->nullable()->constrained('users');
+           $table->text('reactivation_reason')->nullable();
+
             $table->timestamps();
         });
     }

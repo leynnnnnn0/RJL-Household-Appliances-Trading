@@ -12,19 +12,19 @@ class Item extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'supplier',
-        'location_id',
-        'item_type',
-        'dr_no',
-        'description',
-        'model',
-        'serial',
-        'quantity',
-        'srp',
-        'unit_cost',
-        'date_of_purchase',
-        'date_out',
-        'size',
+        'supplier', // nullable
+        'location_id', // nullable
+        'item_type', // furniture or appliances or gadgets 
+        'dr_no', // nullable
+        'description', // required
+        'model', // required
+        'serial', // required
+        'quantity', // 1 
+        'srp', // Unit price
+        'unit_cost', // required
+        'date_of_purchase', // random
+        'date_out', // null
+        'size', // nullable
         'remarks'
     ];
 
