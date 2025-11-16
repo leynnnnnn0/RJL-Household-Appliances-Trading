@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, Plus, X, Upload, FileText, Users, Briefcase, Home, CreditCard, Search, AlertCircle, Loader2 } from 'lucide-react';
+import { Menu, Plus, X, Upload, FileText, Users, Briefcase, Home, CreditCard, Search, AlertCircle, Loader2, Settings } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import axios from 'axios';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
@@ -40,7 +41,7 @@ interface Customer {
   monthly_income?: string;
   reference?: CustomerReference;
   investigation_detail?: InvenstigationDetail;
-    email: string | null;
+  email: string | null;
   zipcode: string | null;
   country: string | null;
   province: string | null;
@@ -82,11 +83,16 @@ interface Employee {
   full_name: string;
 }
 
-interface Location  {
+interface Location {
   id: number;
   name: string;
   address: string;
   remarks: string | null;
+}
+
+interface InterestConfig {
+  multiplier: number;
+  fixedCharge: number;
 }
 
 interface PageProps {
@@ -95,13 +101,14 @@ interface PageProps {
   transactions: {
     order_number: string;
     customer: string;
-    term: string
-  }[]
+    term: string;
+  }[];
 }
 
-export default function Index({locations, employees, transactions} : PageProps) {
+export default function Index({ locations, employees, transactions }: PageProps) {
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [interestConfigOpen, setInterestConfigOpen] = useState<boolean>(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [customPlans] = useState<PaymentPlan[]>([
     { months: 3, interestRate: 0 },
@@ -110,7 +117,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
     { months: 12, interestRate: 0 }
   ]);
   const [employmentVerified, setEmploymentVerified] = useState<boolean>(false);
-  
+
   const [itemSearch, setItemSearch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Customer[]>([]);
@@ -118,7 +125,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isExistingCustomer, setIsExistingCustomer] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  
+
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
   const [contact, setContact] = useState<string>('');
@@ -127,26 +134,26 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [income, setIncome] = useState<string>('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
-  
+
   const [ref1Name, setRef1Name] = useState<string>('');
   const [ref1Contact, setRef1Contact] = useState<string>('');
-  
+
   const [visitDate, setVisitDate] = useState<string>('');
   const [investigatorId, setInvestigatorId] = useState<string>('');
   const [investigationNotes, setInvestigationNotes] = useState<string>('');
-  
+
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct | null>(null);
   const [downPayment, setDownPayment] = useState<number>(0);
   const [selectedTerm, setSelectedTerm] = useState<number>(3);
   const [noDownPayment, setNoDownPayment] = useState<boolean>(false);
-  
+
   const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [modeOfPayment, setModeOfPayment] = useState<string>('');
   const [referenceNumber, setReferenceNumber] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string>('');
   const [receiptNumber, setReceiptNumber] = useState<string>('');
-  
+
   const [isLoadingCustomers, setIsLoadingCustomers] = useState<boolean>(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
 
@@ -156,9 +163,38 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [customerZipcode, setCustomerZipcode] = useState<string>('');
   const [customerCountry, setCustomerCountry] = useState<string>('PHILIPPINES');
 
-    const getTodayDate = () => new Date().toISOString().split("T")[0];
-  const [transactionDate, setTransactionDate] = useState<string>(getTodayDate)
+  const getTodayDate = () => new Date().toISOString().split("T")[0];
+  const [transactionDate, setTransactionDate] = useState<string>(getTodayDate());
 
+  // LCP Configuration state
+  const [lcpMarkupRate, setLcpMarkupRate] = useState<number>(1.1);
+  const [lcpAdditionalCharge, setLcpAdditionalCharge] = useState<number>(300);
+
+  // Interest configuration state
+  const [interestConfigs, setInterestConfigs] = useState<Record<string, Record<number, InterestConfig>>>({
+    furniture: {
+      3: { multiplier: 1.12, fixedCharge: 0 },
+      6: { multiplier: 1.18, fixedCharge: 300 },
+      9: { multiplier: 1.21, fixedCharge: 450 },
+      12: { multiplier: 1.27, fixedCharge: 600 }
+    },
+    gadgets: {
+      3: { multiplier: 1.10, fixedCharge: 0 },
+      6: { multiplier: 1.27, fixedCharge: 300 },
+      9: { multiplier: 1.3, fixedCharge: 450 },
+      12: { multiplier: 1.33, fixedCharge: 600 }
+    },
+    appliances: {
+      3: { multiplier: 1.12, fixedCharge: 0 },
+      6: { multiplier: 1.18, fixedCharge: 300 },
+      9: { multiplier: 1.21, fixedCharge: 450 },
+      12: { multiplier: 1.27, fixedCharge: 600 }
+    }
+  });
+
+  const [tempInterestConfigs, setTempInterestConfigs] = useState(interestConfigs);
+  const [tempLcpMarkupRate, setTempLcpMarkupRate] = useState(lcpMarkupRate);
+  const [tempLcpAdditionalCharge, setTempLcpAdditionalCharge] = useState(lcpAdditionalCharge);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -182,7 +218,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
       setIsLoadingCustomers(false);
     }
   };
-  
+
   const selectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsExistingCustomer(true);
@@ -193,11 +229,11 @@ export default function Index({locations, employees, transactions} : PageProps) 
     setEmployment(customer.source_of_income || '');
     setIncome(customer.monthly_income || '');
     setSearchQuery(`${customer.first_name} ${customer.last_name}`);
-      setCustomerEmail(customer.email ?? '');
-  setCustomerCity(customer.city ?? '');
-  setCustomerProvince(customer.province ?? '');
-  setCustomerZipcode(customer.zipcode ?? '');
-  setCustomerCountry(customer.country ?? '');
+    setCustomerEmail(customer.email ?? '');
+    setCustomerCity(customer.city ?? '');
+    setCustomerProvince(customer.province ?? '');
+    setCustomerZipcode(customer.zipcode ?? '');
+    setCustomerCountry(customer.country ?? '');
     setShowResults(false);
 
     if (customer.reference?.id) {
@@ -206,14 +242,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
     }
 
     if (customer.investigation_detail?.id) {
-      console.log(customer.investigation_detail)
       setVisitDate(customer.investigation_detail?.home_visit_date);
       setEmploymentVerified(customer.investigation_detail?.is_employment_verified);
       setInvestigationNotes(customer.investigation_detail?.investigation_notes);
       setInvestigatorId(customer.investigation_detail?.employee_id?.toString());
     }
   };
-  
+
   const clearCustomer = () => {
     setSelectedCustomer(null);
     setIsExistingCustomer(false);
@@ -228,13 +263,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
     setRef1Contact('');
     setVisitDate('');
     setInvestigatorId('');
-    setEmploymentVerified(false); 
+    setEmploymentVerified(false);
     setInvestigationNotes('');
-            setCustomerEmail("");
-  setCustomerCity("");
-  setCustomerProvince("");
-  setCustomerZipcode("");
-  setCustomerCountry("");
+    setCustomerEmail("");
+    setCustomerCity("");
+    setCustomerProvince("");
+    setCustomerZipcode("");
+    setCustomerCountry("");
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -260,7 +295,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   };
 
   const calculateLCP = (srp: number) => {
-    return srp * 1.1 + 300;
+    return srp * lcpMarkupRate + lcpAdditionalCharge;
   };
 
   const getDefaultDownPaymentPercent = (itemType?: string) => {
@@ -272,28 +307,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
 
   const getInterestConfig = (itemType: string | undefined, months: number) => {
     const type = itemType || 'furniture';
-    const configs: Record<string, Record<number, { multiplier: number; fixedCharge: number }>> = {
-      furniture: {
-        3: { multiplier: 1.12, fixedCharge: 0 },
-        6: { multiplier: 1.18, fixedCharge: 300 },
-        9: { multiplier: 1.21, fixedCharge: 450 },
-        12: { multiplier: 1.27, fixedCharge: 600 }
-      },
-      gadgets: {
-        3: { multiplier: 1.10, fixedCharge: 0 },
-        6: { multiplier: 1.27, fixedCharge: 300 },
-        9: { multiplier: 1.3, fixedCharge: 450 },
-        12: { multiplier: 1.33, fixedCharge: 600 }
-      },
-      appliances: {
-        3: { multiplier: 1.12, fixedCharge: 0 },
-        6: { multiplier: 1.18, fixedCharge: 300 },
-        9: { multiplier: 1.21, fixedCharge: 450 },
-        12: { multiplier: 1.27, fixedCharge: 600 }
-      }
-    };
-
-    return configs[type]?.[months] || { multiplier: 1.12, fixedCharge: 0 };
+    return interestConfigs[type]?.[months] || { multiplier: 1.12, fixedCharge: 0 };
   };
 
   const calculatePaymentBreakdown = () => {
@@ -302,9 +316,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
     const lcp = calculateLCP(selectedProduct.srp);
     const downPaymentAmount = noDownPayment ? 0 : downPayment;
     const pnv = lcp - downPaymentAmount;
-    
+
     const { multiplier, fixedCharge } = getInterestConfig(selectedProduct.item_type, selectedTerm);
-    
+
     let finalPNV: number;
     if (noDownPayment) {
       finalPNV = lcp * 1.33 + 600;
@@ -333,7 +347,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
     const lcp = calculateLCP(product.srp);
     const downPaymentPercent = getDefaultDownPaymentPercent(product.item_type);
     const defaultDownPayment = Math.round(lcp * downPaymentPercent);
-    
+
     setSelectedProduct({
       ...product,
       downPayment: defaultDownPayment,
@@ -420,7 +434,6 @@ export default function Index({locations, employees, transactions} : PageProps) 
     if (!firstName || !lastName) {
       return "Customer name is required";
     }
-
     if (!address) {
       return "Address is required";
     }
@@ -433,15 +446,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
     if (!investigatorId) {
       return "Investigator must be selected";
     }
-    if(!customerCity) {
+    if (!customerCity) {
       return "City is required";
     }
-
-      if(!customerProvince) {
+    if (!customerProvince) {
       return "Province is required";
     }
-
-     if(!customerCountry) {
+    if (!customerCountry) {
       return "Country is required";
     }
     return null;
@@ -458,16 +469,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
   };
 
   const validateDialogForm = () => {
-    if(!receiptNumber){
+    if (!receiptNumber) {
       return "Receipt number is required";
     }
-    
     if (!selectedLocation) {
       return "Location is required";
     }
-
     const hasDownPayment = downPayment > 0;
-    
     if (hasDownPayment) {
       if (!modeOfPayment) {
         return "Mode of payment is required when there is a down payment";
@@ -476,7 +484,6 @@ export default function Index({locations, employees, transactions} : PageProps) 
         return "Reference number is required for non-cash payments";
       }
     }
-    
     return null;
   };
 
@@ -484,7 +491,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
     const dialogError = validateDialogForm();
     if (dialogError) {
       setValidationError(dialogError);
-      toast.success("Please make sure all the information needed is filled.")
+      alert("Please make sure all the information needed is filled.");
       return;
     }
 
@@ -521,11 +528,12 @@ export default function Index({locations, employees, transactions} : PageProps) 
       setModeOfPayment('');
       setReferenceNumber('');
       setValidationError('');
-         setCustomerEmail("");
-  setCustomerCity("");
-  setCustomerProvince("");
-  setCustomerZipcode("");
-  setCustomerCountry("");
+      setCustomerEmail("");
+      setCustomerCity("");
+      setCustomerProvince("");
+      setCustomerZipcode("");
+      setCustomerCountry("");
+      setReceiptNumber('');
     };
 
     const breakdown = calculatePaymentBreakdown();
@@ -541,7 +549,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
       customer_last_name: lastName,
       customer_phone_number: contact,
       customer_address: address,
-        email: customerEmail,
+      email: customerEmail,
       city: customerCity,
       province: customerProvince,
       zipcode: customerZipcode,
@@ -555,8 +563,8 @@ export default function Index({locations, employees, transactions} : PageProps) 
       is_employment_verified: employmentVerified,
       investigation_notes: investigationNotes,
       loan_contract_price: breakdown.lcp,
-      lcp_markup_rate: 1.1,
-      lcp_additional_charge: 300,
+      lcp_markup_rate: lcpMarkupRate,
+      lcp_additional_charge: lcpAdditionalCharge,
       down_payment: breakdown.downPaymentAmount,
       promisory_note_value: breakdown.pnv,
       number_of_terms: selectedTerm,
@@ -569,9 +577,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
       reference_number: referenceNumber || null,
       receipt_number: receiptNumber || null,  
       transaction_date: transactionDate
-    },{
+    }, {
       onSuccess: () => {
-        toast.success("Installment Data Created.")
+        toast.success("Installment Data Created.");
         setDialogOpen(false);
         clearAllFields();
       },
@@ -582,7 +590,55 @@ export default function Index({locations, employees, transactions} : PageProps) 
       onFinish: () => {
         setIsSubmitting(false);
       }
-    })
+    });
+  };
+
+  const updateInterestConfig = (itemType: string, term: number, field: 'multiplier' | 'fixedCharge', value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setTempInterestConfigs(prev => ({
+      ...prev,
+      [itemType]: {
+        ...prev[itemType],
+        [term]: {
+          ...prev[itemType][term],
+          [field]: numValue
+        }
+      }
+    }));
+  };
+
+  const saveInterestConfigs = () => {
+    setInterestConfigs(tempInterestConfigs);
+    setLcpMarkupRate(tempLcpMarkupRate);
+    setLcpAdditionalCharge(tempLcpAdditionalCharge);
+    setInterestConfigOpen(false);
+    toast.success('Interest configurations saved successfully!');
+  };
+
+  const resetInterestConfigs = () => {
+    const defaultConfigs = {
+      furniture: {
+        3: { multiplier: 1.12, fixedCharge: 0 },
+        6: { multiplier: 1.18, fixedCharge: 300 },
+        9: { multiplier: 1.21, fixedCharge: 450 },
+        12: { multiplier: 1.27, fixedCharge: 600 }
+      },
+      gadgets: {
+        3: { multiplier: 1.10, fixedCharge: 0 },
+        6: { multiplier: 1.27, fixedCharge: 300 },
+        9: { multiplier: 1.3, fixedCharge: 450 },
+        12: { multiplier: 1.33, fixedCharge: 600 }
+      },
+      appliances: {
+        3: { multiplier: 1.12, fixedCharge: 0 },
+        6: { multiplier: 1.18, fixedCharge: 300 },
+        9: { multiplier: 1.21, fixedCharge: 450 },
+        12: { multiplier: 1.27, fixedCharge: 600 }
+      }
+    };
+    setTempInterestConfigs(defaultConfigs);
+    setTempLcpMarkupRate(1.1);
+    setTempLcpAdditionalCharge(300);
   };
 
   return (
@@ -598,41 +654,46 @@ export default function Index({locations, employees, transactions} : PageProps) 
               <p className="text-muted-foreground text-xs">Installment Setup</p>
             </div>
           </a>
-          
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Quick Actions</SheetTitle>
-                <SheetDescription>View transactions history</SheetDescription>
-              </SheetHeader>
 
-              <div className="p-5 pt-0 space-y-4">
-                <Separator  />
-                
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-sm">Today's Applications</h3>
-                  <div className="space-y-2">
-                   {transactions?.map(transaction =>  <Card key={transaction.order_number} className="p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-sm">{transaction.customer}</p>
-                          <p className="text-xs text-muted-foreground">{transaction.term} months</p>
-                        </div>
-                        <a href={`/pos-installment-orders/${transaction.order_number}`} className="cursor-pointer text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                          {transaction.order_number}
-                        </a>
-                      </div>
-                    </Card>)}
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" onClick={() => setInterestConfigOpen(true)}>
+              <Settings className="h-5 w-5" />
+            </Button>
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Quick Actions</SheetTitle>
+                  <SheetDescription>View transactions history</SheetDescription>
+                </SheetHeader>
+                <div className="p-5 pt-0 space-y-4">
+                  <Separator />
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm">Today's Applications</h3>
+                    <div className="space-y-2">
+                      {transactions?.map(transaction => (
+                        <Card key={transaction.order_number} className="p-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-sm">{transaction.customer}</p>
+                              <p className="text-xs text-muted-foreground">{transaction.term} months</p>
+                            </div>
+                            <a href={`/pos-installment-orders/${transaction.order_number}`} className="cursor-pointer text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                              {transaction.order_number}
+                            </a>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
 
@@ -709,7 +770,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
               {selectedProduct && (
                 <>
                   <Separator />
-                  
+
                   <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                     <h3 className="font-semibold text-sm">Selected Product</h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -769,11 +830,10 @@ export default function Index({locations, employees, transactions} : PageProps) 
                       <Label>Payment Term *</Label>
                       <div className="grid grid-cols-4 gap-3 mt-2">
                         {customPlans.map((plan) => (
-                          <Card 
-                            key={plan.months} 
-                            className={`p-3 cursor-pointer hover:border-primary transition-colors ${
-                              selectedTerm === plan.months ? 'border-primary bg-primary/5' : ''
-                            }`}
+                          <Card
+                            key={plan.months}
+                            className={`p-3 cursor-pointer hover:border-primary transition-colors ${selectedTerm === plan.months ? 'border-primary bg-primary/5' : ''
+                              }`}
                             onClick={() => handleTermSelect(plan.months)}
                           >
                             <div className="text-center space-y-1">
@@ -786,13 +846,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
                     </div>
 
                     <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <Checkbox 
-                        id="noDownPayment" 
+                      <Checkbox
+                        id="noDownPayment"
                         checked={noDownPayment}
                         onCheckedChange={handleNoDownPaymentToggle}
                       />
-                      <Label 
-                        htmlFor="noDownPayment" 
+                      <Label
+                        htmlFor="noDownPayment"
                         className="text-sm font-medium cursor-pointer"
                       >
                         No Down Payment (Special Option)
@@ -804,11 +864,11 @@ export default function Index({locations, employees, transactions} : PageProps) 
                         <Label htmlFor="downPayment">Down Payment *</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-2.5 text-muted-foreground">₱</span>
-                          <Input 
-                            id="downPayment" 
-                            type="number" 
-                            placeholder="0" 
-                            className="pl-7" 
+                          <Input
+                            id="downPayment"
+                            type="number"
+                            placeholder="0"
+                            className="pl-7"
                             value={downPayment}
                             onChange={(e) => handleDownPaymentChange(e.target.value)}
                             disabled={noDownPayment}
@@ -909,9 +969,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
               <div className="space-y-2">
                 <Label htmlFor="searchCustomer">Search Existing Customer</Label>
                 <div className="relative">
-                  <Input 
-                    id="searchCustomer" 
-                    placeholder="Type customer name..." 
+                  <Input
+                    id="searchCustomer"
+                    placeholder="Type customer name..."
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     className={isExistingCustomer ? 'border-green-500' : ''}
@@ -968,101 +1028,96 @@ export default function Index({locations, employees, transactions} : PageProps) 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name *</Label>
-                  <Input 
-                    id="firstName" 
-                    placeholder="Juan" 
+                  <Input
+                    id="firstName"
+                    placeholder="Juan"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                  
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name *</Label>
-                  <Input 
-                    id="lastName" 
-                    placeholder="Dela Cruz" 
+                  <Input
+                    id="lastName"
+                    placeholder="Dela Cruz"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                  
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact">Contact Number</Label>
-                <Input 
-                  id="contact" 
-                  placeholder="0912 345 6789" 
+                <Input
+                  id="contact"
+                  placeholder="0912 345 6789"
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
-                
                 />
               </div>
 
-                <div className="space-y-2">
-        <Label htmlFor="customerAddress">Email</Label>
-        <Input
-          id="email"
-          placeholder="Enter customer's email"
-          value={customerEmail}
-          onChange={(e) => setCustomerEmail(e.target.value)}
-        />
-      </div>
+              <div className="space-y-2">
+                <Label htmlFor="customerAddress">Email</Label>
+                <Input
+                  id="email"
+                  placeholder="Enter customer's email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                />
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="address">Complete Address *</Label>
-                <Textarea 
-                  id="address" 
+                <Textarea
+                  id="address"
                   placeholder="Street, Barangay, City, Province"
                   rows={3}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                
                 />
               </div>
 
-                       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-        <Label htmlFor="city">City *</Label>
-        <Input
-          id="city"
-          placeholder="Enter city"
-          value={customerCity}
-          onChange={(e) => setCustomerCity(e.target.value)}
-        />
-      </div>
-       <div className="space-y-2">
-        <Label htmlFor="province">Province *</Label>
-        <Input
-          id="province"
-          placeholder="Enter province"
-          value={customerProvince}
-          onChange={(e) => setCustomerProvince(e.target.value)}
-        />
-      </div>
-      </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City *</Label>
+                  <Input
+                    id="city"
+                    placeholder="Enter city"
+                    value={customerCity}
+                    onChange={(e) => setCustomerCity(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="province">Province *</Label>
+                  <Input
+                    id="province"
+                    placeholder="Enter province"
+                    value={customerProvince}
+                    onChange={(e) => setCustomerProvince(e.target.value)}
+                  />
+                </div>
+              </div>
 
-             <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-        <Label htmlFor="zipcode">Zipcode</Label>
-        <Input
-          id="zipcode"
-          placeholder="Enter zipcode"
-          value={customerZipcode}
-          onChange={(e) => setCustomerZipcode(e.target.value)}
-        />
-      </div>
-       <div className="space-y-2">
-        <Label htmlFor="country">Country *</Label>
-        <Input
-          id="country"
-          placeholder="Enter country"
-          value={customerCountry}
-          onChange={(e) => setCustomerCountry(e.target.value)}
-        />
-
-      </div>
-      </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="zipcode">Zipcode</Label>
+                  <Input
+                    id="zipcode"
+                    placeholder="Enter zipcode"
+                    value={customerZipcode}
+                    onChange={(e) => setCustomerZipcode(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country *</Label>
+                  <Input
+                    id="country"
+                    placeholder="Enter country"
+                    value={customerCountry}
+                    onChange={(e) => setCustomerCountry(e.target.value)}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -1078,18 +1133,18 @@ export default function Index({locations, employees, transactions} : PageProps) 
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="ref1Name">Name *</Label>
-                    <Input 
-                      id="ref1Name" 
-                      placeholder="Full name" 
+                    <Input
+                      id="ref1Name"
+                      placeholder="Full name"
                       value={ref1Name}
                       onChange={(e) => setRef1Name(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="ref1Contact">Contact *</Label>
-                    <Input 
-                      id="ref1Contact" 
-                      placeholder="0912 345 6789" 
+                    <Input
+                      id="ref1Contact"
+                      placeholder="0912 345 6789"
                       value={ref1Contact}
                       onChange={(e) => setRef1Contact(e.target.value)}
                     />
@@ -1108,9 +1163,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="visitDate">Home Visit Date *</Label>
-                  <Input 
-                    id="visitDate" 
-                    type="date" 
+                  <Input
+                    id="visitDate"
+                    type="date"
                     value={visitDate}
                     onChange={(e) => setVisitDate(e.target.value)}
                   />
@@ -1133,13 +1188,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="verified" 
+                  <Checkbox
+                    id="verified"
                     checked={employmentVerified}
                     onCheckedChange={(checked) => setEmploymentVerified(checked as boolean)}
                   />
-                  <Label 
-                    htmlFor="verified" 
+                  <Label
+                    htmlFor="verified"
                     className="text-sm font-normal cursor-pointer"
                   >
                     Employment Verified
@@ -1148,8 +1203,8 @@ export default function Index({locations, employees, transactions} : PageProps) 
 
                 <div className="space-y-2">
                   <Label htmlFor="notes">Investigation Notes</Label>
-                  <Textarea 
-                    id="notes" 
+                  <Textarea
+                    id="notes"
                     placeholder="Add notes about the customer, home visit, references verification, etc."
                     rows={4}
                     value={investigationNotes}
@@ -1225,6 +1280,159 @@ export default function Index({locations, employees, transactions} : PageProps) 
         </div>
       </div>
 
+      {/* Interest Configuration Dialog */}
+      <Dialog open={interestConfigOpen} onOpenChange={setInterestConfigOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Interest Rate & LCP Configuration
+            </DialogTitle>
+            <DialogDescription>
+              Configure LCP markup, interest multipliers and fixed charges for different item types and terms
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">LCP (Loan Contract Price) Configuration</CardTitle>
+                <CardDescription>Configure how the Loan Contract Price is calculated from SRP</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="lcpMarkupRate">
+                    LCP Markup Rate
+                  </Label>
+                  <Input
+                    id="lcpMarkupRate"
+                    type="number"
+                    step="0.01"
+                    value={tempLcpMarkupRate}
+                    onChange={(e) => setTempLcpMarkupRate(parseFloat(e.target.value) || 1.0)}
+                    placeholder="e.g., 1.1"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    SRP will be multiplied by this value
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lcpAdditionalCharge">
+                    LCP Additional Charge (₱)
+                  </Label>
+                  <Input
+                    id="lcpAdditionalCharge"
+                    type="number"
+                    step="50"
+                    value={tempLcpAdditionalCharge}
+                    onChange={(e) => setTempLcpAdditionalCharge(parseFloat(e.target.value) || 0)}
+                    placeholder="e.g., 300"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Additional fixed amount added to marked-up SRP
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Separator />
+
+            <Tabs defaultValue="furniture" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="furniture">Furniture</TabsTrigger>
+                <TabsTrigger value="gadgets">Gadgets</TabsTrigger>
+                <TabsTrigger value="appliances">Appliances</TabsTrigger>
+              </TabsList>
+
+            {['furniture', 'gadgets', 'appliances'].map(itemType => (
+              <TabsContent key={itemType} value={itemType} className="space-y-4">
+                <div className="grid gap-4">
+                  {[3, 6, 9, 12].map(term => (
+                    <Card key={term}>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">{term} Months Term</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`${itemType}-${term}-multiplier`}>
+                            Interest Multiplier
+                          </Label>
+                          <Input
+                            id={`${itemType}-${term}-multiplier`}
+                            type="number"
+                            step="0.01"
+                            value={tempInterestConfigs[itemType][term].multiplier}
+                            onChange={(e) => updateInterestConfig(itemType, term, 'multiplier', e.target.value)}
+                            placeholder="e.g., 1.12"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            PNV will be multiplied by this value
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`${itemType}-${term}-fixed`}>
+                            Fixed Charge (₱)
+                          </Label>
+                          <Input
+                            id={`${itemType}-${term}-fixed`}
+                            type="number"
+                            step="50"
+                            value={tempInterestConfigs[itemType][term].fixedCharge}
+                            onChange={(e) => updateInterestConfig(itemType, term, 'fixedCharge', e.target.value)}
+                            placeholder="e.g., 300"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Additional fixed amount added to PNV
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    <strong>LCP Formula:</strong> LCP = (SRP × {tempLcpMarkupRate}) + ₱{tempLcpAdditionalCharge}
+                    <br />
+                    <strong>PNV Formula:</strong> Final PNV = (PNV × Multiplier) + Fixed Charge
+                    <br />
+                    <strong>Example:</strong> If PNV is ₱10,000, multiplier is 1.12, and fixed charge is ₱300:
+                    <br />
+                    Final PNV = (₱10,000 × 1.12) + ₱300 = ₱11,500
+                  </AlertDescription>
+                </Alert>
+              </TabsContent>
+            ))}
+          </Tabs>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={resetInterestConfigs}
+            >
+              Reset to Defaults
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTempInterestConfigs(interestConfigs);
+                setTempLcpMarkupRate(lcpMarkupRate);
+                setTempLcpAdditionalCharge(lcpAdditionalCharge);
+                setInterestConfigOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveInterestConfigs}>
+              Save Configuration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -1244,26 +1452,24 @@ export default function Index({locations, employees, transactions} : PageProps) 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="receiptNumber">Receipt Number *</Label>
-              <Input 
-                id="receiptNumber" 
-                placeholder="#000000923" 
+              <Input
+                id="receiptNumber"
+                placeholder="#000000923"
                 value={receiptNumber}
                 onChange={(e) => setReceiptNumber(e.target.value)}
               />
             </div>
 
-             <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="transactionDate">Transaction Date *</Label>
-              <Input 
-              type='date'
-                id="transactionDate" 
+              <Input
+                type='date'
+                id="transactionDate"
                 value={transactionDate}
                 onChange={(e) => setTransactionDate(e.target.value)}
               />
             </div>
-            </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="location">Location *</Label>
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
@@ -1304,9 +1510,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
                 {modeOfPayment && modeOfPayment !== 'Cash' && (
                   <div className="space-y-2">
                     <Label htmlFor="referenceNumber">Reference Number *</Label>
-                    <Input 
-                      id="referenceNumber" 
-                      placeholder="Enter reference/transaction number" 
+                    <Input
+                      id="referenceNumber"
+                      placeholder="Enter reference/transaction number"
                       value={referenceNumber}
                       onChange={(e) => setReferenceNumber(e.target.value)}
                     />
@@ -1326,8 +1532,8 @@ export default function Index({locations, employees, transactions} : PageProps) 
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setDialogOpen(false);
                 setValidationError('');
@@ -1336,7 +1542,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
             >
