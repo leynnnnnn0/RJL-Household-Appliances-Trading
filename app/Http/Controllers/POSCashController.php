@@ -34,6 +34,11 @@ class POSCashController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'address' => 'required|string|max:500',
+            'city' => 'required|string',
+            'province' => 'required|string',
+            'zipcode' => 'nullable|string',
+            'country' => 'required|string',
+            'email' => 'nullable|string',
             'existing_customer_id' => 'nullable|numeric',
             'phone' => ['nullable', 'regex:/^09\d{9}$/'],
             'payment_method' => 'required|string|in:Cash,Gcash,Bank Transfer,Debit/Credit Card,Home Credit/Skyro/Billease',
@@ -51,7 +56,6 @@ class POSCashController extends Controller
             'total_price' => 'required|numeric',
             'receipt_number' => 'required|unique:orders,receipt_number',
         ]);
-   
 
 
         $validated['order_number'] = $this->generateOrderNumber();
@@ -65,14 +69,24 @@ class POSCashController extends Controller
                     'first_name' => $validated['first_name'],
                     'last_name' => $validated['last_name'],
                     'address' => $validated['address'],
-                    'phone_number' => $validated['phone']
+                    'phone_number' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'city' => $validated['city'],
+                    'province' => $validated['province'],
+                    'zipcode' => $validated['zipcode'],
+                    'country' => $validated['country'],
                 ]);
             } else {
                 $customer = Customer::create([
                     'first_name' => $validated['first_name'],
                     'last_name' => $validated['last_name'],
                     'address' => $validated['address'],
-                    'phone_number' => $validated['phone']
+                    'phone_number' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'city' => $validated['city'],
+                    'province' => $validated['province'],
+                    'zipcode' => $validated['zipcode'],
+                    'country' => $validated['country'],
                 ]);
             }
 
@@ -88,7 +102,7 @@ class POSCashController extends Controller
                 'receipt_number' => $validated['receipt_number']
             ]);
 
-           // Coming on this part
+            // Coming on this part
 
             foreach ($validated['orders'] as $item) {
 
@@ -104,7 +118,6 @@ class POSCashController extends Controller
                 ]);
             }
             DB::commit();
-
         } catch (Exception $e) {
 
             DB::rollBack();

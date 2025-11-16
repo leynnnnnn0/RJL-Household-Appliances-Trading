@@ -20,6 +20,11 @@ class CustomerResource extends JsonResource
             'last_name' => $this->last_name,
             'phone_number' => $this->phone_number,
             'address' => $this->address,
+            'email' => $this->email,
+            'city' => $this->city,
+            'province' => $this->province,
+            'zipcode' => $this->zipcode,
+            'country' => $this->country,
             'reference' => [
                 'id' => $this->customer_reference?->id,
                 'full_name' => $this->customer_reference?->full_name,

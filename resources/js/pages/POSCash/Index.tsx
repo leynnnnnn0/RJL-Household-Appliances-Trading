@@ -94,6 +94,12 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [existingCustomerId, setExistingCustomerId] = useState<null | string |number>();
   const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState<boolean>(false);
+  const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [customerCity, setCustomerCity] = useState<string>('');
+  const [customerProvince, setCustomerProvince] = useState<string>('');
+  const [customerZipcode, setCustomerZipcode] = useState<string>('');
+  const [customerCountry, setCustomerCountry] = useState<string>('PHILIPPINES');
+
 
   const peformSearch = async (value: string, locationId: string) => {
     if(value.trim().length === 0) {
@@ -215,6 +221,11 @@ export default function Index({locations, employees, transactions} : PageProps) 
       address: customerAddress,
       receipt_number: receiptNumber,
       phone: customerPhone,
+      email: customerEmail,
+      city: customerCity,
+      province: customerProvince,
+      zipcode: customerZipcode,
+      country: customerCountry,
       payment_method: paymentMethod,
       reference_number: referenceNumber,
       existing_customer_id: existingCustomerId,
@@ -238,6 +249,11 @@ export default function Index({locations, employees, transactions} : PageProps) 
         setReferenceNumber("");
         setFormErrors({});
         setIsDialogOpen(false);
+        setCustomerEmail("");
+  setCustomerCity("");
+  setCustomerProvince("");
+  setCustomerZipcode("");
+  setCustomerCountry("");
 
         setSelectedProduct(null);
         setSaleAmount("");
@@ -264,6 +280,11 @@ const clearCustomer = () => {
   setExistingCustomerId(null);
   setIsExistingCustomer(false);
   setSearchQuery("");
+         setCustomerEmail("");
+  setCustomerCity("");
+  setCustomerProvince("");
+  setCustomerZipcode("");
+  setCustomerCountry("");
 }
 
 const selectCustomer = (customer : Customer) => {
@@ -272,6 +293,12 @@ const selectCustomer = (customer : Customer) => {
   setCustomerAddress(customer.address);
   setCustomerPhone(customer.phone_number);
   setExistingCustomerId(customer.id);
+  setCustomerEmail(customer.email ?? '');
+  setCustomerCity(customer.city ?? '');
+  setCustomerProvince(customer.province ?? '');
+  setCustomerZipcode(customer.zipcode ?? '');
+  setCustomerCountry(customer.country ?? '');
+
   setShowResults(false);
   setSearchQuery("");
   setSearchResults([]);
@@ -779,6 +806,79 @@ const handleSearchCustomer = (query: string) => {
         />
         {formErrors.address && (
           <p className="text-sm text-red-500">{formErrors.address}</p>
+        )}
+      </div>
+
+            <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+        <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+        <Input
+          id="city"
+          placeholder="Enter city"
+          value={customerCity}
+          onChange={(e) => setCustomerCity(e.target.value)}
+          className={formErrors.city ? 'border-red-500' : ''}
+        />
+        {formErrors.city && (
+          <p className="text-sm text-red-500">{formErrors.city}</p>
+        )}
+      </div>
+       <div className="space-y-2">
+        <Label htmlFor="province">Province <span className="text-red-500">*</span></Label>
+        <Input
+          id="province"
+          placeholder="Enter province"
+          value={customerProvince}
+          onChange={(e) => setCustomerProvince(e.target.value)}
+          className={formErrors.province ? 'border-red-500' : ''}
+        />
+        {formErrors.province && (
+          <p className="text-sm text-red-500">{formErrors.province}</p>
+        )}
+      </div>
+      </div>
+
+             <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+        <Label htmlFor="zipcode">Zipcode</Label>
+        <Input
+          id="zipcode"
+          placeholder="Enter zipcode"
+          value={customerZipcode}
+          onChange={(e) => setCustomerZipcode(e.target.value)}
+          className={formErrors.zipcode ? 'border-red-500' : ''}
+        />
+        {formErrors.zipcode && (
+          <p className="text-sm text-red-500">{formErrors.zipcode}</p>
+        )}
+      </div>
+       <div className="space-y-2">
+        <Label htmlFor="country">Country <span className="text-red-500">*</span></Label>
+        <Input
+          id="country"
+          placeholder="Enter country"
+          value={customerCountry}
+          onChange={(e) => setCustomerCountry(e.target.value)}
+          className={formErrors.province ? 'border-red-500' : ''}
+        />
+        {formErrors.country && (
+          <p className="text-sm text-red-500">{formErrors.country}</p>
+        )}
+      </div>
+      </div>
+
+
+        <div className="space-y-2">
+        <Label htmlFor="customerAddress">Email</Label>
+        <Input
+          id="email"
+          placeholder="Enter customer's email"
+          value={customerEmail}
+          onChange={(e) => setCustomerEmail(e.target.value)}
+          className={formErrors.address ? 'border-red-500' : ''}
+        />
+        {formErrors.email && (
+          <p className="text-sm text-red-500">{formErrors.email}</p>
         )}
       </div>
       <div className="space-y-2">
