@@ -59,7 +59,7 @@ class POSCreditController extends Controller
             'investigator_id' => 'required|exists:employees,id',
             'home_visit_date' => 'required',
             'is_employment_verified' => 'required',
-            'investigation_notes' => 'required|string',
+            'investigation_notes' => 'nullable|string',
             'location_id' => 'required|exists:locations,id',
             'item_id' => 'required|exists:items,id',
             'serial' => 'required',
