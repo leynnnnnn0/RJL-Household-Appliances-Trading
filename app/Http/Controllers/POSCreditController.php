@@ -49,6 +49,11 @@ class POSCreditController extends Controller
             'customer_last_name' => 'required',
             'customer_address' => 'required|string',
             'customer_phone_number' => 'required|string',
+                'city' => 'required|string',
+            'province' => 'required|string',
+            'zipcode' => 'nullable|string',
+            'country' => 'required|string',
+            'email' => 'nullable|string',
             'customer_reference_full_name' => 'required|string',
             'customer_reference_phone_number' => 'required|string',
             'investigator_id' => 'required|exists:employees,id',
@@ -70,6 +75,7 @@ class POSCreditController extends Controller
             'promisory_note_value_interest_additional_charge' => 'required',
             'receipt_number' => 'required|unique:installment_orders,receipt_number',
         ]);
+
         try{
             DB::beginTransaction();
 
@@ -79,10 +85,26 @@ class POSCreditController extends Controller
                 'first_name' => $validated['customer_first_name'],
                 'last_name' => $validated['customer_last_name'],
                 'address' => $validated['customer_address'],
-                'phone_number' => $validated['customer_phone_number']
+                'phone_number' => $validated['customer_phone_number'],
+                 'email' => $validated['email'],
+                    'city' => $validated['city'],
+                    'province' => $validated['province'],
+                    'zipcode' => $validated['zipcode'],
+                    'country' => $validated['country'],
             ]);
         }else {
             $customer = Customer::findOrFail($validated['customer_id']);
+            $customer->update([
+                'first_name' => $validated['customer_first_name'],
+                'last_name' => $validated['customer_last_name'],
+                'address' => $validated['customer_address'],
+                'phone_number' => $validated['customer_phone_number'],
+                 'email' => $validated['email'],
+                    'city' => $validated['city'],
+                    'province' => $validated['province'],
+                    'zipcode' => $validated['zipcode'],
+                    'country' => $validated['country'],
+            ]);
         }
 
         $customer->customer_reference()->updateOrCreate([

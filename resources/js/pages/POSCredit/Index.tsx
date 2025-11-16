@@ -40,6 +40,11 @@ interface Customer {
   monthly_income?: string;
   reference?: CustomerReference;
   investigation_detail?: InvenstigationDetail;
+    email: string | null;
+  zipcode: string | null;
+  country: string | null;
+  province: string | null;
+  city: string | null;
 }
 
 interface UploadedFile {
@@ -145,6 +150,13 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [isLoadingCustomers, setIsLoadingCustomers] = useState<boolean>(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
 
+  const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [customerCity, setCustomerCity] = useState<string>('');
+  const [customerProvince, setCustomerProvince] = useState<string>('');
+  const [customerZipcode, setCustomerZipcode] = useState<string>('');
+  const [customerCountry, setCustomerCountry] = useState<string>('PHILIPPINES');
+
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (query.length > 1) {
@@ -178,6 +190,11 @@ export default function Index({locations, employees, transactions} : PageProps) 
     setEmployment(customer.source_of_income || '');
     setIncome(customer.monthly_income || '');
     setSearchQuery(`${customer.first_name} ${customer.last_name}`);
+      setCustomerEmail(customer.email ?? '');
+  setCustomerCity(customer.city ?? '');
+  setCustomerProvince(customer.province ?? '');
+  setCustomerZipcode(customer.zipcode ?? '');
+  setCustomerCountry(customer.country ?? '');
     setShowResults(false);
 
     if (customer.reference?.id) {
@@ -210,6 +227,11 @@ export default function Index({locations, employees, transactions} : PageProps) 
     setInvestigatorId('');
     setEmploymentVerified(false); 
     setInvestigationNotes('');
+            setCustomerEmail("");
+  setCustomerCity("");
+  setCustomerProvince("");
+  setCustomerZipcode("");
+  setCustomerCountry("");
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -410,6 +432,17 @@ export default function Index({locations, employees, transactions} : PageProps) 
     if (!investigatorId) {
       return "Investigator must be selected";
     }
+    if(!customerCity) {
+      return "City is required";
+    }
+
+      if(!customerProvince) {
+      return "Province is required";
+    }
+
+     if(!customerCountry) {
+      return "Country is required";
+    }
     return null;
   };
 
@@ -487,6 +520,11 @@ export default function Index({locations, employees, transactions} : PageProps) 
       setModeOfPayment('');
       setReferenceNumber('');
       setValidationError('');
+         setCustomerEmail("");
+  setCustomerCity("");
+  setCustomerProvince("");
+  setCustomerZipcode("");
+  setCustomerCountry("");
     };
 
     const breakdown = calculatePaymentBreakdown();
@@ -502,6 +540,11 @@ export default function Index({locations, employees, transactions} : PageProps) 
       customer_last_name: lastName,
       customer_phone_number: contact,
       customer_address: address,
+        email: customerEmail,
+      city: customerCity,
+      province: customerProvince,
+      zipcode: customerZipcode,
+      country: customerCountry,
       customer_source_of_income: employment,
       customer_monthly_income: income,
       customer_reference_full_name: ref1Name,
@@ -954,6 +997,16 @@ export default function Index({locations, employees, transactions} : PageProps) 
                 />
               </div>
 
+                <div className="space-y-2">
+        <Label htmlFor="customerAddress">Email</Label>
+        <Input
+          id="email"
+          placeholder="Enter customer's email"
+          value={customerEmail}
+          onChange={(e) => setCustomerEmail(e.target.value)}
+        />
+      </div>
+
               <div className="space-y-2">
                 <Label htmlFor="address">Complete Address *</Label>
                 <Textarea 
@@ -965,6 +1018,49 @@ export default function Index({locations, employees, transactions} : PageProps) 
                   disabled={isExistingCustomer}
                 />
               </div>
+
+                       <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+        <Label htmlFor="city">City *</Label>
+        <Input
+          id="city"
+          placeholder="Enter city"
+          value={customerCity}
+          onChange={(e) => setCustomerCity(e.target.value)}
+        />
+      </div>
+       <div className="space-y-2">
+        <Label htmlFor="province">Province *</Label>
+        <Input
+          id="province"
+          placeholder="Enter province"
+          value={customerProvince}
+          onChange={(e) => setCustomerProvince(e.target.value)}
+        />
+      </div>
+      </div>
+
+             <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+        <Label htmlFor="zipcode">Zipcode</Label>
+        <Input
+          id="zipcode"
+          placeholder="Enter zipcode"
+          value={customerZipcode}
+          onChange={(e) => setCustomerZipcode(e.target.value)}
+        />
+      </div>
+       <div className="space-y-2">
+        <Label htmlFor="country">Country *</Label>
+        <Input
+          id="country"
+          placeholder="Enter country"
+          value={customerCountry}
+          onChange={(e) => setCustomerCountry(e.target.value)}
+        />
+
+      </div>
+      </div>
             </CardContent>
           </Card>
 

@@ -875,7 +875,7 @@ const handleSearchCustomer = (query: string) => {
           placeholder="Enter customer's email"
           value={customerEmail}
           onChange={(e) => setCustomerEmail(e.target.value)}
-          className={formErrors.address ? 'border-red-500' : ''}
+          className={formErrors.email ? 'border-red-500' : ''}
         />
         {formErrors.email && (
           <p className="text-sm text-red-500">{formErrors.email}</p>
