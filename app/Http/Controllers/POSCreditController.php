@@ -48,7 +48,7 @@ class POSCreditController extends Controller
             'customer_first_name' => 'required|string',
             'customer_last_name' => 'required',
             'customer_address' => 'required|string',
-            'customer_phone_number' => 'required|string',
+            'customer_phone_number' => 'nullable|string',
                 'city' => 'required|string',
             'province' => 'required|string',
             'zipcode' => 'nullable|string',

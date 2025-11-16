@@ -420,9 +420,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
     if (!firstName || !lastName) {
       return "Customer name is required";
     }
-    if (!contact) {
-      return "Contact number is required";
-    }
+
     if (!address) {
       return "Address is required";
     }
@@ -569,7 +567,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
       location_id: selectedLocation,
       payment_method: modeOfPayment || null,
       reference_number: referenceNumber || null,
-      receipt_number: receiptNumber || null,
+      receipt_number: receiptNumber || null,  
       transaction_date: transactionDate
     },{
       onSuccess: () => {
@@ -975,7 +973,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
                     placeholder="Juan" 
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    disabled={isExistingCustomer}
+                  
                   />
                 </div>
                 <div className="space-y-2">
@@ -985,19 +983,19 @@ export default function Index({locations, employees, transactions} : PageProps) 
                     placeholder="Dela Cruz" 
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    disabled={isExistingCustomer}
+                  
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contact">Contact Number *</Label>
+                <Label htmlFor="contact">Contact Number</Label>
                 <Input 
                   id="contact" 
                   placeholder="0912 345 6789" 
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
-                  disabled={isExistingCustomer}
+                
                 />
               </div>
 
@@ -1019,7 +1017,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
                   rows={3}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  disabled={isExistingCustomer}
+                
                 />
               </div>
 
