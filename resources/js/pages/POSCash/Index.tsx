@@ -859,7 +859,7 @@ const handleSearchCustomer = (query: string) => {
           placeholder="Enter country"
           value={customerCountry}
           onChange={(e) => setCustomerCountry(e.target.value)}
-          className={formErrors.province ? 'border-red-500' : ''}
+          className={formErrors.country ? 'border-red-500' : ''}
         />
         {formErrors.country && (
           <p className="text-sm text-red-500">{formErrors.country}</p>

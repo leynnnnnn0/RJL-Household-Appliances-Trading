@@ -156,6 +156,9 @@ export default function Index({locations, employees, transactions} : PageProps) 
   const [customerZipcode, setCustomerZipcode] = useState<string>('');
   const [customerCountry, setCustomerCountry] = useState<string>('PHILIPPINES');
 
+    const getTodayDate = () => new Date().toISOString().split("T")[0];
+  const [transactionDate, setTransactionDate] = useState<string>(getTodayDate)
+
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -567,6 +570,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
       payment_method: modeOfPayment || null,
       reference_number: referenceNumber || null,
       receipt_number: receiptNumber || null,
+      transaction_date: transactionDate
     },{
       onSuccess: () => {
         toast.success("Installment Data Created.")
@@ -1248,6 +1252,18 @@ export default function Index({locations, employees, transactions} : PageProps) 
                 value={receiptNumber}
                 onChange={(e) => setReceiptNumber(e.target.value)}
               />
+            </div>
+
+             <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="transactionDate">Transaction Date *</Label>
+              <Input 
+              type='date'
+                id="transactionDate" 
+                value={transactionDate}
+                onChange={(e) => setTransactionDate(e.target.value)}
+              />
+            </div>
             </div>
             
             <div className="space-y-2">

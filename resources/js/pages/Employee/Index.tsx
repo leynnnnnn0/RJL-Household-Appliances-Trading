@@ -101,6 +101,11 @@ export default function Index({ employees }: PageProps) {
         setSelectedEmployee(null);
          toast.success("Deleted Successfully.")
       },
+      onError: (e) => {
+          setIsDeleteOpen(false);
+        setSelectedEmployee(null);
+        toast.success("This user cannot be deleted. Please contact your administrator");
+      }
     });
   };
 

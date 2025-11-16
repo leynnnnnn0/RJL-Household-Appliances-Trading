@@ -74,6 +74,7 @@ class POSCreditController extends Controller
             'promisory_note_value_interest' => 'required',
             'promisory_note_value_interest_additional_charge' => 'required',
             'receipt_number' => 'required|unique:installment_orders,receipt_number',
+            'transaction_date' => 'required',
         ]);
 
         try{
@@ -135,7 +136,7 @@ class POSCreditController extends Controller
             'number_of_terms' => $validated['number_of_terms'],
             'promisory_note_value_interest' => $validated['promisory_note_value_interest'],
             'promisory_note_value_interest_additional_charge' => $validated['promisory_note_value_interest_additional_charge'],
-            'transaction_date' => now(),
+            'transaction_date' => $validated['transaction_date'],
             'receipt_number' => $validated['receipt_number'],
         ]);
 

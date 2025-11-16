@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class EmployeeController extends Controller
@@ -60,10 +63,19 @@ class EmployeeController extends Controller
         return redirect()->back()->with('success', 'Employee updated successfully.');
     }
 
-    public function destroy(Employee $employee)
-    {
-        $employee->delete();
 
-        return redirect()->back()->with('success', 'Employee deleted successfully.');
+public function destroy(Employee $employee)
+{
+    try {
+        $employee->delete();
+    } catch (QueryException $e) {
+
+        throw ValidationException::withMessages([
+            'error' => 'Cannot delete employee because it is referenced somewhere.',
+        ]);
     }
+
+    return back()->with('success', 'Employee deleted successfully.');
+}
+
 }
