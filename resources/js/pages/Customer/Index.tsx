@@ -5,11 +5,13 @@ import SearchBox from '@/components/cards/search-box';
 import TableBodyRow from '@/components/cards/table-body-row';
 import TableContainer from '@/components/cards/table-container';
 import Pagination from '@/components/pagination';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Customer, Paginated } from '@/types';
 import { Head, router } from '@inertiajs/react';
+import { Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 
@@ -80,7 +82,18 @@ export default function Index({customers} : PageProps ) {
                                    {window.can('can view customer details') &&   <TableCell>
                                     <div className="flex items-center justify-center gap-1">
                                         <ShowButton onClick={() => router.visit(`/customers/${item.id}`) }/>
+
+
+                                           <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => router.visit(`/customers/${item.id}/edit`)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>   
                                     </div>
+                                    
                                 </TableCell>}
                               
                             </TableBodyRow>
