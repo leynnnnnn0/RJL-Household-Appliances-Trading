@@ -7,6 +7,7 @@ use App\Imports\ItemsImport;
 use App\Models\Supplier;
 use App\Models\Item;
 use App\Models\Location;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -97,8 +98,35 @@ class ItemController extends Controller
     }
 
     public function show($id){
-        $item = Item::with(['supplier', 'location'])->findOrFail($id);
-        return Inertia::render('Item/Show', ['item' => $item]);
+        $item = Item::with(['supplier', 'location', 'installment_orders.customer','installment_orders.user', 'orders.customer', 'orders.user'])
+        ->findOrFail($id);
+
+        $installmentOrders = $item->installment_orders->map(function($order){
+            return [
+                'order_number' => $order->order_number,
+                'customer' => $order->customer->full_name,
+                'transaction_date' =>  Carbon::parse($order->transaction_date)->format('F d, Y'),
+                'transaction_by' => $order->user->full_name,
+                'created_at' => Carbon::parse($order->created_at)->format('F d, Y')
+            ];
+        });
+
+         $orders = $item->orders->map(function($order){
+            return [
+                'order_number' => $order->order_number,
+                'customer' => $order->customer->full_name,
+                'transaction_date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
+                'transaction_by' => $order->user->full_name,
+                'created_at' => Carbon::parse($order->created_at)->format('F d, Y')
+            ];
+        });
+
+        $purchaseHistory = collect()
+        ->concat($installmentOrders)
+        ->concat($orders);
+
+
+        return Inertia::render('Item/Show', ['item' => $item, 'purchaseHistory' => $purchaseHistory]);
     }
 
     public function edit($id){

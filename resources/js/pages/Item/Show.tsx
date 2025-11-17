@@ -37,11 +37,20 @@ import {
 } from 'lucide-react';
 import {ItemWithRelations} from '@/types';
 import { toast } from 'sonner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import NoResult from '@/components/cards/no-result';
 
 interface PageProps {
   item: ItemWithRelations;
+  purchaseHistory: {
+    order_number: string;
+    customer: string;
+    transaction_date: string;
+    transaction_by: string;
+    created_at: string;
+  }[]
 }
-export default function View({ item } : PageProps) {
+export default function View({ item, purchaseHistory } : PageProps) {
   const {previousUrl, auth} = usePage().props as any;
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-PH', {
@@ -72,6 +81,7 @@ export default function View({ item } : PageProps) {
 
   const isAvailable = !item.date_out;
   const totalValue = item.quantity * item.unit_cost;
+
 
   return (
     <AppLayout>
@@ -294,6 +304,55 @@ export default function View({ item } : PageProps) {
             </CardContent>
           </Card>
         </div>
+
+          {/* Purchase History */}
+        {item.remarks && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Purchase History</CardTitle>
+              <CardDescription>Additional information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+               <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    Order Number
+                  </TableHead>
+                    <TableHead>
+                    Customer
+                  </TableHead>
+                    <TableHead>
+                    Transaction By
+                  </TableHead>
+                    <TableHead>
+                    Transaction Date
+                  </TableHead>
+                    <TableHead>
+                    Created at
+                  </TableHead>
+                </TableRow>
+               </TableHeader>
+               <TableBody>
+                  {purchaseHistory.length == 0 ? (
+                    <NoResult count={5}/>
+                  ) : (
+                    purchaseHistory.map(item => (
+                      <TableRow>
+                        <TableCell>{item.order_number}</TableCell>
+                         <TableCell>{item.customer}</TableCell>
+                          <TableCell>{item.transaction_by}</TableCell>
+                           <TableCell>{item.transaction_date}</TableCell>
+                            <TableCell>{item.created_at}</TableCell>
+                      </TableRow>
+                    ))
+                  )
+                  }
+               </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Remarks */}
         {item.remarks && (

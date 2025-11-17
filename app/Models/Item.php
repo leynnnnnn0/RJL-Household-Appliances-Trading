@@ -37,9 +37,38 @@ class Item extends Model
         return $this->belongsTo(Location::class);
     }
 
+    public function installment_orders()
+    {
+        return $this->hasManyThrough(
+            InstallmentOrder::class,
+            InstallmentOrderItem::class,
+            'item_id',                  // InstallmentOrderItem.item_id → Item.id
+            'id',                       // InstallmentOrder.id
+            'id',                       // Item.id
+            'installment_order_id'      // InstallmentOrderItem.installment_order_id
+        );
+    }
+
+    public function orders()
+    {
+        return $this->hasManyThrough(
+            Order::class,
+            OrderItem::class,
+            'item_id',
+            'id',
+            'id',
+            'order_id',
+        );
+    }
+
+    public function installment_order_item()
+    {
+        return $this->hasMany(InstallmentOrderItem::class);
+    }
+
+
     public function order_item()
     {
-        $this->has(OrderItem::class);
+        return $this->hasMany(OrderItem::class);
     }
-    
 }
