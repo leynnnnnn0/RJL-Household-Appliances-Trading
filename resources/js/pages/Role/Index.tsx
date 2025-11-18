@@ -132,34 +132,22 @@ export default function Index({ roles, filters }: Props) {
                                                 {new Date(role.created_at).toLocaleDateString()}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <div className="flex items-center justify-center gap-2">
+                                                <div className="flex items-center justify-center gap-5">
                                                     <Link href={route('roles.show', role.id)}>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="border-black hover:bg-gray-100"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                        </Button>
+                                                       
+                                                            <Eye className="w-4 h-4 cursor-pointer" />
+                                                
                                                     </Link>
                                                     <Link href={route('roles.edit', role.id)}>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="border-black hover:bg-gray-100"
-                                                        >
-                                                            <Pencil className="w-4 h-4" />
-                                                        </Button>
+
+                                                            <Pencil className="w-4 h-4 cursor-pointer" />
+
                                                     </Link>
                                                     <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="border-black hover:bg-red-50 hover:text-red-600 hover:border-red-600"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
+                                                        <AlertDialogTrigger>
+
+                                                                <Trash2 className="w-4 h-4 cursor-pointer text-red-500" />
+  
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent className="border-black">
                                                             <AlertDialogHeader>
