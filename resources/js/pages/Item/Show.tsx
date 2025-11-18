@@ -87,7 +87,7 @@ export default function View({ item, purchaseHistory } : PageProps) {
     <AppLayout>
       <Head title={`View Item - ${item.description}`} />
 
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="space-y-1">
