@@ -385,186 +385,191 @@ class DashboardController extends Controller
 
     public function downloadTransactionsPdf(Request $request)
     {
-            // Get filter parameters
-            $fromDate = $request->input('from_date', today()->toDateString());
-            $toDate = $request->input('to_date', today()->toDateString());
-            $employeeId = $request->input('employee_id');
+        // Get filter parameters
+        $fromDate = $request->input('from_date', today()->toDateString());
+        $toDate = $request->input('to_date', today()->toDateString());
+        $employeeId = $request->input('employee_id');
 
-            // Build base queries with date range filter
-            $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
-                ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
+        if (Auth::user()->getRoleNames()->contains('cashier')) {
+            $employeeId = Auth::id();
+        }
 
-              
-            $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user'])
-                ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
 
-            $installmentPaymentsQuery = InstallmentOrderPaymentHistory::with([
-                'installment_order_payment.installment_order.customer',
-                'user'
-            ])
-                ->whereBetween(DB::raw('DATE(created_at)'), [$fromDate, $toDate]);
+        // Build base queries with date range filter
+        $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
+            ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
 
-            // Apply employee filter if specified
-            if ($employeeId && $employeeId != 'all') {
-                $cashOrdersQuery->where('employee_id', $employeeId);
-                $installmentOrdersQuery->where('user_id', $employeeId);
-                $installmentPaymentsQuery->where('user_id', $employeeId);
-            }
 
-       
+        $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user'])
+            ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
 
-            // Get cash orders
-            $cashOrders = $cashOrdersQuery->get()
-                ->map(function ($order) {
-                    return [
-                        'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                        'receipt_number' => $order->receipt_number,
-                        'customer' => $order->customer->full_name,
-                        'm_i' => null,
-                        'd_p' => null,
-                        'amount_paid' => $order->total_price,
-                        'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
-                        'reference_number' => $order->reference_number,
-                        'is_voided' => $order->is_void,
-                        'created_at' => $order->created_at,
-                        'employee_name' => $order->employee->full_name ?? 'N/A',
-                        'remarks' => $order->order_items
-                            ->map(fn($item) => $item->item->model)
-                            ->implode(', ')
-                    ];
+        $installmentPaymentsQuery = InstallmentOrderPaymentHistory::with([
+            'installment_order_payment.installment_order.customer',
+            'user'
+        ])
+            ->whereBetween(DB::raw('DATE(created_at)'), [$fromDate, $toDate]);
+
+        // Apply employee filter if specified
+        if ($employeeId && $employeeId != 'all') {
+            $cashOrdersQuery->where('employee_id', $employeeId);
+            $installmentOrdersQuery->where('user_id', $employeeId);
+            $installmentPaymentsQuery->where('user_id', $employeeId);
+        }
+
+
+
+
+        // Get cash orders
+        $cashOrders = $cashOrdersQuery->get()
+            ->map(function ($order) {
+                return [
+                    'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
+                    'receipt_number' => $order->receipt_number,
+                    'customer' => $order->customer->full_name,
+                    'm_i' => null,
+                    'd_p' => null,
+                    'amount_paid' => $order->total_price,
+                    'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
+                    'reference_number' => $order->reference_number,
+                    'is_voided' => $order->is_void,
+                    'created_at' => $order->created_at,
+                    'employee_name' => $order->employee->full_name ?? 'N/A',
+                    'remarks' => $order->order_items
+                        ->map(fn($item) => $item->item->model)
+                        ->implode(', ')
+                ];
+            });
+
+
+
+        // Get installment orders
+        $installmentOrders = $installmentOrdersQuery->get()
+            ->map(function ($order) {
+                return [
+                    'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
+                    'receipt_number' => $order->receipt_number,
+                    'customer' => $order->customer->full_name,
+                    'm_i' => null,
+                    'd_p' => $order->down_payment,
+                    'amount_paid' => null,
+                    'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
+                    'reference_number' => $order->reference_number,
+                    'is_voided' => $order->is_voided,
+                    'created_at' => $order->created_at,
+                    'employee_name' => $order->user->full_name ?? 'N/A',
+                    'remarks' => $order->installment_order_item->item->model
+                ];
+            });
+
+        // Get installment payments
+        $installmentPayments = $installmentPaymentsQuery->get()
+            ->map(function ($order) {
+                return [
+                    'date' => Carbon::parse($order->created_at)->format('F d, Y'),
+                    'receipt_number' => $order->collection_receipt_number,
+                    'customer' => $order->installment_order_payment->installment_order->customer->full_name,
+                    'm_i' => $order->amount,
+                    'd_p' => null,
+                    'amount_paid' => null,
+                    'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
+                    'reference_number' => $order->reference_number,
+                    'is_voided' => false,
+                    'created_at' => $order->created_at,
+                    'employee_name' => $order->user->full_name ?? 'N/A',
+                    'remarks' => $order->installment_order_payment->installment_order->installment_order_item->item->model
+                ];
+            })
+            ->groupBy('receipt_number')
+            ->map(function ($group) {
+                return [
+                    'date' => $group->first()['date'],
+                    'receipt_number' => $group->first()['receipt_number'],
+                    'customer' => $group->first()['customer'],
+                    'm_i' => $group->sum('m_i'),
+                    'd_p' => null,
+                    'amount_paid' => null,
+                    'payment_method' => $group->first()['payment_method'],
+                    'reference_number' => $group->first()['reference_number'],
+                    'is_voided' => false,
+                    'employee_name' => $group->first()['employee_name'],
+                    'remarks' => $group->first()['remarks'],
+                ];
+            })
+            ->values();
+
+        // Combine all transactions
+        $transactions = collect()
+            ->concat($cashOrders)
+            ->concat($installmentOrders)
+            ->concat($installmentPayments);
+
+        // Calculate totals
+        $miCollection = $transactions->where('m_i', '!=', null)->sum('m_i') ?? 0;
+        $dpCollection = $transactions->where('d_p', '!=', null)->sum('d_p') ?? 0;
+        $cashCollection = $transactions->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
+
+        // Group by payment method
+        $mops = $transactions
+            ->groupBy('payment_method')
+            ->map(function ($group) {
+                return $group->sum(function ($t) {
+                    return ($t['m_i'] ?? 0) + ($t['d_p'] ?? 0) + ($t['amount_paid'] ?? 0);
                 });
+            });
 
-          
+        $totalCashOnHand = $mops->get('cash', 0);
+        $totalOtherMop = $mops->except(['cash'])->sum();
 
-            // Get installment orders
-            $installmentOrders = $installmentOrdersQuery->get()
-                ->map(function ($order) {
-                    return [
-                        'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                        'receipt_number' => $order->receipt_number,
-                        'customer' => $order->customer->full_name,
-                        'm_i' => null,
-                        'd_p' => $order->down_payment,
-                        'amount_paid' => null,
-                        'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
-                        'reference_number' => $order->reference_number,
-                        'is_voided' => $order->is_voided,
-                        'created_at' => $order->created_at,
-                        'employee_name' => $order->user->full_name ?? 'N/A',
-                        'remarks' => $order->installment_order_item->item->model
-                    ];
-                });
+        // Get expenses within date range
+        $expensesQuery = ExpenseRecord::where('status', 'approved')
+            ->whereBetween('created_at', [$fromDate, $toDate]);
 
-            // Get installment payments
-            $installmentPayments = $installmentPaymentsQuery->get()
-                ->map(function ($order) {
-                    return [
-                        'date' => Carbon::parse($order->created_at)->format('F d, Y'),
-                        'receipt_number' => $order->collection_receipt_number,
-                        'customer' => $order->installment_order_payment->installment_order->customer->full_name,
-                        'm_i' => $order->amount,
-                        'd_p' => null,
-                        'amount_paid' => null,
-                        'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
-                        'reference_number' => $order->reference_number,
-                        'is_voided' => false,
-                        'created_at' => $order->created_at,
-                        'employee_name' => $order->user->full_name ?? 'N/A',
-                        'remarks' => $order->installment_order_payment->installment_order->installment_order_item->item->model
-                    ];
-                })
-                ->groupBy('receipt_number')
-                ->map(function ($group) {
-                    return [
-                        'date' => $group->first()['date'],
-                        'receipt_number' => $group->first()['receipt_number'],
-                        'customer' => $group->first()['customer'],
-                        'm_i' => $group->sum('m_i'),
-                        'd_p' => null,
-                        'amount_paid' => null,
-                        'payment_method' => $group->first()['payment_method'],
-                        'reference_number' => $group->first()['reference_number'],
-                        'is_voided' => false,
-                        'employee_name' => $group->first()['employee_name'],
-                        'remarks' => $group->first()['remarks'],
-                    ];
-                })
-                ->values();
+        if ($employeeId) {
+            $expensesQuery->where('user_id', $employeeId);
+        }
 
-            // Combine all transactions
-            $transactions = collect()
-                ->concat($cashOrders)
-                ->concat($installmentOrders)
-                ->concat($installmentPayments);
+        $expenses = $expensesQuery->sum('amount');
 
-            // Calculate totals
-            $miCollection = $transactions->where('m_i', '!=', null)->sum('m_i') ?? 0;
-            $dpCollection = $transactions->where('d_p', '!=', null)->sum('d_p') ?? 0;
-            $cashCollection = $transactions->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
+        // Sort transactions by date
+        $allTransactions = $transactions->sortByDesc('created_at')->values();
 
-            // Group by payment method
-            $mops = $transactions
-                ->groupBy('payment_method')
-                ->map(function ($group) {
-                    return $group->sum(function ($t) {
-                        return ($t['m_i'] ?? 0) + ($t['d_p'] ?? 0) + ($t['amount_paid'] ?? 0);
-                    });
-                });
+        // Get employee name if filtered
+        $employeeName = null;
+        if ($employeeId) {
+            $employee = User::find($employeeId);
+            $employeeName = $employee ? $employee->full_name : 'N/A';
+        }
 
-            $totalCashOnHand = $mops->get('cash', 0);
-            $totalOtherMop = $mops->except(['cash'])->sum();
+        // Prepare data for PDF
+        $data = [
+            'allTransactions' => $allTransactions,
+            'mops' => $mops,
+            'miCollection' => $miCollection,
+            'dpCollection' => $dpCollection,
+            'cashCollection' => $cashCollection,
+            'netCollection' => $miCollection + $dpCollection + $cashCollection,
+            'expenses' => $expenses,
+            'totalCashOnHand' => $totalCashOnHand,
+            'totalOtherMop' => $totalOtherMop,
+            'fromDate' => Carbon::parse($fromDate)->format('F d, Y'),
+            'toDate' => Carbon::parse($toDate)->format('F d, Y'),
+            'employeeName' => $employeeName,
+            'generatedAt' => now()->format('F d, Y h:i A')
+        ];
 
-            // Get expenses within date range
-            $expensesQuery = ExpenseRecord::where('status', 'approved')
-                ->whereBetween('created_at', [$fromDate, $toDate]);
 
-            if ($employeeId) {
-                $expensesQuery->where('user_id', $employeeId);
-            }
 
-            $expenses = $expensesQuery->sum('amount');
+        // Generate PDF
+        $pdf = Pdf::loadView('pdf.transactions', $data)
+            ->setPaper('a4', 'landscape')
+            ->setOption('margin-top', 10)
+            ->setOption('margin-bottom', 10)
+            ->setOption('margin-left', 10)
+            ->setOption('margin-right', 10);
 
-            // Sort transactions by date
-            $allTransactions = $transactions->sortByDesc('created_at')->values();
+        // Generate filename
+        $filename = 'transactions_' . $fromDate . '_to_' . $toDate . '.pdf';
 
-            // Get employee name if filtered
-            $employeeName = null;
-            if ($employeeId) {
-                $employee = User::find($employeeId);
-                $employeeName = $employee ? $employee->full_name : 'N/A';
-            }
-
-            // Prepare data for PDF
-            $data = [
-                'allTransactions' => $allTransactions,
-                'mops' => $mops,
-                'miCollection' => $miCollection,
-                'dpCollection' => $dpCollection,
-                'cashCollection' => $cashCollection,
-                'netCollection' => $miCollection + $dpCollection + $cashCollection,
-                'expenses' => $expenses,
-                'totalCashOnHand' => $totalCashOnHand,
-                'totalOtherMop' => $totalOtherMop,
-                'fromDate' => Carbon::parse($fromDate)->format('F d, Y'),
-                'toDate' => Carbon::parse($toDate)->format('F d, Y'),
-                'employeeName' => $employeeName,
-                'generatedAt' => now()->format('F d, Y h:i A')
-            ];
-
-     
-
-            // Generate PDF
-            $pdf = Pdf::loadView('pdf.transactions', $data)
-                ->setPaper('a4', 'landscape')
-                ->setOption('margin-top', 10)
-                ->setOption('margin-bottom', 10)
-                ->setOption('margin-left', 10)
-                ->setOption('margin-right', 10);
-
-            // Generate filename
-            $filename = 'transactions_' . $fromDate . '_to_' . $toDate . '.pdf';
-
-            return $pdf->stream($filename);
-
+        return $pdf->stream($filename);
     }
 }

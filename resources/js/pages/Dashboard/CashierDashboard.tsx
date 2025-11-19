@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { all } from 'axios';
 import ModuleHeading from '@/components/cards/module-heading';
+import { IconFileExport } from '@tabler/icons-react';
 
 
 
@@ -227,9 +228,13 @@ export default function CashierDashboard({expenses, totalCashOnHand, totalOtherM
                 <FileText className="h-5 w-5" />
                 Transaction Details
               </CardTitle>
-              <Badge variant="secondary" className="text-sm font-semibold px-3 py-1 bg-slate-200 text-slate-700">
-                {allTransactions.length} transactions
-              </Badge>
+              <Button variant='link'>
+                  <IconFileExport/>
+                    <a href={`/transactions/download-pdf`}
+   className="btn btn-primary" target='_blank'>
+    Download PDF
+</a>
+                </Button>
             </div>
           </CardHeader>
           <CardContent className="p-0">
