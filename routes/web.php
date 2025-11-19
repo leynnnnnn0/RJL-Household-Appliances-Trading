@@ -158,6 +158,15 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::resource('roles', RoleController::class)->middleware('permission:can manage roles');
+
+
+
+    /*
+    TODO
+    */
+
+    Route::get('/transactions/download-pdf', [DashboardController::class, 'downloadTransactionsPdf'])
+    ->name('transactions.download.pdf');
 });
 
 require __DIR__ . '/settings.php';
