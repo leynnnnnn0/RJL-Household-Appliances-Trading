@@ -570,6 +570,6 @@ class DashboardController extends Controller
         // Generate filename
         $filename = 'transactions_' . $fromDate . '_to_' . $toDate . '.pdf';
 
-        return $pdf->stream($filename);
+        return $pdf->download($filename);
     }
 }
