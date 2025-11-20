@@ -157,13 +157,19 @@ class DashboardController extends Controller
             // Calculate totals
             $miCollection = $transactions
                 ->where('m_i', '!=', null)
+                ->where('is_voided', false)
                 ->sum('m_i') ?? 0;
 
-            $dpCollection = $transactions->where('d_p', '!=', null)->sum('d_p') ?? 0;
-            $cashCollection = $transactions->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
+            $dpCollection = $transactions->where('d_p', '!=', null)
+                ->where('is_voided', false)
+                ->sum('d_p') ?? 0;
+            $cashCollection = $transactions->where('amount_paid', '!=', null)
+                ->where('is_voided', false)
+                ->sum('amount_paid') ?? 0;
 
             // Group by payment method
             $mops = $transactions
+                ->where('is_voided', false)
                 ->groupBy('payment_method')
                 ->map(function ($group) {
                     return $group->sum(function ($t) {
@@ -171,8 +177,9 @@ class DashboardController extends Controller
                     });
                 });
 
-            $totalCashOnHand = $mops->get('cash', 0);
+            $totalCashOnHand = $mops->where('is_voided', false)->get('cash', 0);
             $totalOtherMop = $mops
+                ->where('is_voided', false)
                 ->except(['cash'])
                 ->sum();
 
@@ -307,14 +314,16 @@ class DashboardController extends Controller
                 ->concat($installmentPayments);
 
             $miCollection = $transactions
+                ->where('is_voided', false)
                 ->where('m_i', '!=', null)
                 ->sum('m_i') ?? 0;
 
 
-            $dpCollection = $transactions->where('d_p', '!=', null)->sum('d_p') ?? 0;
-            $cashCollection = $transactions->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
+            $dpCollection = $transactions->where('is_voided', false)->where('d_p', '!=', null)->sum('d_p') ?? 0;
+            $cashCollection = $transactions->where('is_voided', false)->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
 
             $mops = $transactions
+                ->where('is_voided', false)
                 ->groupBy('payment_method')
                 ->map(function ($group) {
                     return $group->sum(function ($t) {
@@ -322,8 +331,9 @@ class DashboardController extends Controller
                     });
                 });
 
-            $totalCashOnHand = $mops->get('cash', 0);
+            $totalCashOnHand = $mops->where('is_voided', false)->get('cash', 0);
             $totalOtherMop = $mops
+                ->where('is_voided', false)
                 ->except(['cash'])
                 ->sum();
 
@@ -504,12 +514,13 @@ class DashboardController extends Controller
             ->concat($installmentPayments);
 
         // Calculate totals
-        $miCollection = $transactions->where('m_i', '!=', null)->sum('m_i') ?? 0;
-        $dpCollection = $transactions->where('d_p', '!=', null)->sum('d_p') ?? 0;
-        $cashCollection = $transactions->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
+        $miCollection = $transactions->where('is_voided', false)->where('m_i', '!=', null)->sum('m_i') ?? 0;
+        $dpCollection = $transactions->where('is_voided', false)->where('d_p', '!=', null)->sum('d_p') ?? 0;
+        $cashCollection = $transactions->where('is_voided', false)->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
 
         // Group by payment method
         $mops = $transactions
+            ->where('is_voided', false)
             ->groupBy('payment_method')
             ->map(function ($group) {
                 return $group->sum(function ($t) {
@@ -517,8 +528,8 @@ class DashboardController extends Controller
                 });
             });
 
-        $totalCashOnHand = $mops->get('cash', 0);
-        $totalOtherMop = $mops->except(['cash'])->sum();
+        $totalCashOnHand = $mops->where('is_voided', false)->get('cash', 0);
+        $totalOtherMop = $mops->where('is_voided', false)->except(['cash'])->sum();
 
         // Get expenses within date range
         $expensesQuery = ExpenseRecord::where('status', 'approved')
