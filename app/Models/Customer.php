@@ -52,4 +52,9 @@ class Customer extends Model
         return $this->hasOne(InvestigationDetail::class);
     }
 
+    public function additional_documents()
+    {
+        return $this->hasMany(AdditionalDocument::class);
+    }
+
 }

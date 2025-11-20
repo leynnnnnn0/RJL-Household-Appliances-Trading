@@ -167,6 +167,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/transactions/download-pdf', [DashboardController::class, 'downloadTransactionsPdf'])
     ->name('transactions.download.pdf');
+
+    Route::delete('/customers/{customer}/documents/{document}', [CustomerController::class, 'destroyDocument'])
+    ->name('customers.documents.destroy');
 });
 
 require __DIR__ . '/settings.php';

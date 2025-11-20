@@ -52,6 +52,7 @@ interface UploadedFile {
   id: string;
   name: string;
   size: number;
+  file: File;  
 }
 
 interface PaymentPlan {
@@ -272,17 +273,18 @@ export default function Index({ locations, employees, transactions }: PageProps)
     setCustomerCountry("");
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const newFiles = Array.from(files).map(file => ({
-        id: Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        size: file.size
-      }));
-      setUploadedFiles([...uploadedFiles, ...newFiles]);
-    }
-  };
+const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (files) {
+    const newFiles = Array.from(files).map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      size: file.size,
+      file: file 
+    }));
+    setUploadedFiles([...uploadedFiles, ...newFiles]);
+  }
+};
 
   const removeFile = (id: string) => {
     setUploadedFiles(uploadedFiles.filter(file => file.id !== id));
@@ -576,8 +578,10 @@ export default function Index({ locations, employees, transactions }: PageProps)
       payment_method: modeOfPayment || null,
       reference_number: referenceNumber || null,
       receipt_number: receiptNumber || null,  
-      transaction_date: transactionDate
+      transaction_date: transactionDate,
+      documents: uploadedFiles.map(f => f.file),
     }, {
+      forceFormData: true,
       onSuccess: () => {
         toast.success("Installment Data Created.");
         setDialogOpen(false);

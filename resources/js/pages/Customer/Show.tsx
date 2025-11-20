@@ -24,12 +24,28 @@ import {
     ShoppingCart,
     TrendingUp,
     Clock,
-    Ban
+    Ban,
+    Download,
+    Eye,
+    File
 } from 'lucide-react';
 import { CustomerWithRelation } from '@/types';
+import { Button } from '@/components/ui/button';
+
+interface AdditionalDocument {
+    id: number;
+    customer_id: number;
+    file_name: string;
+    file_path: string;
+    file_size: number;
+    mime_type: string;
+    created_at: string;
+}
 
 interface Props {
-    customer: CustomerWithRelation;
+    customer: CustomerWithRelation & {
+        additional_documents?: AdditionalDocument[];
+    };
 }
 
 export default function Show({ customer }: Props) {
@@ -52,6 +68,18 @@ export default function Show({ customer }: Props) {
             month: 'short',
             day: 'numeric'
         });
+    };
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    };
+
+    const getFileIcon = (mimeType: string) => {
+        if (mimeType.includes('pdf')) return '📄';
+        if (mimeType.includes('image')) return '🖼️';
+        return '📎';
     };
 
     const getPaymentStatusColor = (status: string) => {
@@ -115,26 +143,7 @@ export default function Show({ customer }: Props) {
                             </div>
 
                             <div className="grid grid-cols-4 gap-3">
-                                {/* <div className="text-center p-2 bg-gray-50 rounded">
-                                    <Package className="h-4 w-4 mx-auto mb-1 text-gray-600" />
-                                    <p className="text-xl font-bold text-gray-900">{activeOrders}</p>
-                                    <p className="text-[10px] text-gray-500">Orders</p>
-                                </div>
-                                <div className="text-center p-2 bg-gray-50 rounded">
-                                    <CreditCard className="h-4 w-4 mx-auto mb-1 text-gray-600" />
-                                    <p className="text-xl font-bold text-gray-900">{activeInstallments}</p>
-                                    <p className="text-[10px] text-gray-500">Active</p>
-                                </div>
-                                <div className="text-center p-2 bg-gray-50 rounded">
-                                    <TrendingUp className="h-4 w-4 mx-auto mb-1 text-gray-600" />
-                                    <p className="text-xl font-bold text-gray-900">{totalOrders + totalInstallmentOrders}</p>
-                                    <p className="text-[10px] text-gray-500">Total</p>
-                                </div> */}
-                                {/* <div className="text-center p-2 bg-black text-white rounded">
-                                    <DollarSign className="h-4 w-4 mx-auto mb-1" />
-                                    <p className="text-lg font-bold">{formatCurrency(totalRevenue).replace('PHP', '₱')}</p>
-                                    <p className="text-[10px] opacity-80">Revenue</p>
-                                </div> */}
+                                {/* Stats removed as per original */}
                             </div>
                         </div>
                     </CardContent>
@@ -142,7 +151,7 @@ export default function Show({ customer }: Props) {
 
                 {/* Tabs Section */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 bg-gray-100 h-9">
+                    <TabsList className="grid w-full grid-cols-5 bg-gray-100 h-9">
                         <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-black data-[state=active]:text-white">
                             Overview
                         </TabsTrigger>
@@ -154,6 +163,9 @@ export default function Show({ customer }: Props) {
                         </TabsTrigger>
                         <TabsTrigger value="investigation" className="text-sm data-[state=active]:bg-black data-[state=active]:text-white">
                             Investigation
+                        </TabsTrigger>
+                        <TabsTrigger value="documents" className="text-sm data-[state=active]:bg-black data-[state=active]:text-white">
+                            Documents ({customer.additional_documents?.length || 0})
                         </TabsTrigger>
                     </TabsList>
 
@@ -226,8 +238,6 @@ export default function Show({ customer }: Props) {
                                 </CardContent>
                             </Card>
                         </div>
-
-
                     </TabsContent>
 
                     {/* Orders Tab */}
@@ -452,6 +462,88 @@ export default function Show({ customer }: Props) {
                                     <div className="text-center py-8">
                                         <AlertCircle className="h-10 w-10 mx-auto text-gray-300 mb-2" />
                                         <p className="text-sm text-gray-500">No investigation details available</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* Documents Tab */}
+                    <TabsContent value="documents" className="mt-4">
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <FileText className="h-4 w-4" />
+                                    Additional Documents
+                                </CardTitle>
+                                <CardDescription>
+                                    Supporting documents uploaded for this customer
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {customer.additional_documents && customer.additional_documents.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {customer.additional_documents.map((doc) => (
+                                            <div 
+                                                key={doc.id} 
+                                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <div className="text-2xl">
+                                                        {getFileIcon(doc.mime_type)}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium truncate">
+                                                            {doc.file_name}
+                                                        </p>
+                                                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                                            <span>{formatFileSize(doc.file_size)}</span>
+                                                            <span>•</span>
+                                                            <span>{formatDate(doc.created_at)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        asChild
+                                                        className="h-8"
+                                                    >
+                                                        <a 
+                                                            href={`/storage/${doc.file_path}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <Eye className="h-3.5 w-3.5 mr-1" />
+                                                            View
+                                                        </a>
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        asChild
+                                                        className="h-8"
+                                                    >
+                                                        <a 
+                                                            href={`/storage/${doc.file_path}`}
+                                                            download={doc.file_name}
+                                                        >
+                                                            <Download className="h-3.5 w-3.5 mr-1" />
+                                                            Download
+                                                        </a>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <File className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                                        <p className="text-sm text-gray-500 font-medium">No documents uploaded</p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            Documents will appear here once uploaded
+                                        </p>
                                     </div>
                                 )}
                             </CardContent>

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdditionalDocument;
 use App\Models\Customer;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class CustomerController extends Controller
@@ -26,7 +29,7 @@ class CustomerController extends Controller
 
     public function show($id)
     {
-        $customer = Customer::with(['orders.order_items.item', 'installment_orders.installment_order_item.item', 'customer_reference', 'investigation_detail'])->findOrFail($id);
+        $customer = Customer::with(['additional_documents','orders.order_items.item', 'installment_orders.installment_order_item.item', 'customer_reference', 'investigation_detail'])->findOrFail($id);
 
         return Inertia::render('Customer/Show', [
             'customer' => $customer
@@ -35,7 +38,7 @@ class CustomerController extends Controller
 
     public function edit($id)
     {
-        $customer = Customer::with(['customer_reference', 'investigation_detail'])->findOrFail($id);
+        $customer = Customer::with(['additional_documents','customer_reference', 'investigation_detail'])->findOrFail($id);
 
         return Inertia::render('Customer/Edit', [
             'customer' => $customer,
@@ -43,29 +46,33 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
-    {
-        $customer = Customer::findOrFail($id);
+   public function update(Request $request, $id)
+{
+    $customer = Customer::findOrFail($id);
+    
+    // Validate the request
+    $validated = $request->validate([
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'email' => 'nullable|email|max:255|unique:customers,email,' . $customer->id,
+        'address' => 'required|string|max:500',
+        'city' => 'required|string|max:255',
+        'province' => 'required|string|max:255',
+        'zipcode' => 'nullable|string|max:20',
+        'country' => 'required|string|max:255',
+        'phone_number' => 'nullable|string|max:20',
+        'reference_full_name' => 'required|string|max:255',
+        'reference_phone_number' => 'required|string|max:20',
+        'employee_id' => 'required|string|max:255',
+        'home_visit_date' => 'required|date',
+        'is_employment_verified' => 'required|boolean',
+        'investigation_notes' => 'required|string',
+        'new_documents.*' => 'nullable|file|mimes:png,jpg,jpeg,pdf|max:10240',
+    ]);
 
-        // Validate the request
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255|unique:customers,email,' . $customer->id,
-            'address' => 'required|string|max:500',
-            'city' => 'required|string|max:255',
-            'province' => 'required|string|max:255',
-            'zipcode' => 'nullable|string|max:20',
-            'country' => 'required|string|max:255',
-            'phone_number' => 'nullable|string|max:20',
-            'reference_full_name' => 'required|string|max:255',
-            'reference_phone_number' => 'required|string|max:20',
-            'employee_id' => 'required|string|max:255',
-            'home_visit_date' => 'required|date',
-            'is_employment_verified' => 'required|boolean',
-            'investigation_notes' => 'required|string',
-        ]);
-
+    DB::beginTransaction();
+    
+    try {
         // Update customer
         $customer->update([
             'first_name' => $validated['first_name'],
@@ -99,6 +106,48 @@ class CustomerController extends Controller
             ]
         );
 
-        return redirect()->route('customers.index')->with('success', 'Customer updated successfully!');
+        // Handle new document uploads
+        if ($request->hasFile('new_documents')) {
+              foreach ($request->file('documents') as $file) {
+                    $path = $file->store('customer-documents', 'public');
+
+                    $customer->additional_documents()->create([
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'file_size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType(),
+                    ]);
+                }
+        }
+
+        DB::commit();
+
+        return redirect()->route('customers.show', $customer->id)
+            ->with('success', 'Customer updated successfully!');
+            
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        return redirect()->back()
+            ->withErrors(['error' => 'Failed to update customer: ' . $e->getMessage()])
+            ->withInput();
     }
+}
+
+// Add this method for deleting documents
+public function destroyDocument($customerId, $documentId)
+{
+    $customer = Customer::findOrFail($customerId);
+    $document = AdditionalDocument::where('customer_id', $customer->id)
+        ->where('id', $documentId)
+        ->firstOrFail();
+    
+    // Delete the file from storage
+    Storage::disk('public')->delete($document->file_path);
+    
+    // Delete the database record
+    $document->delete();
+    
+    return redirect()->back()->with('success', 'Document deleted successfully!');
+}
 }

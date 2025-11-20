@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('additional_documents', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('customer_id')->constrained('customers')->cascadeOnDelete();
+            $table->string('file_name');
+            $table->string('file_path');
+            $table->string('file_size');
+            $table->string('mime_type');
             $table->timestamps();
         });
     }
