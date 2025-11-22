@@ -98,7 +98,8 @@ class ItemController extends Controller
     }
 
     public function show($id){
-        $item = Item::with(['supplier', 'location', 'installment_orders.customer','installment_orders.user', 'orders.customer', 'orders.user'])
+        
+        $item = Item::with(['supplier', 'location', 'installment_orders.customer','installment_orders.user', 'orders.customer', 'orders.employee'])
         ->findOrFail($id);
 
         $installmentOrders = $item->installment_orders->map(function($order){
@@ -116,7 +117,7 @@ class ItemController extends Controller
                 'order_number' => $order->order_number,
                 'customer' => $order->customer->full_name,
                 'transaction_date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                'transaction_by' => $order->user->full_name,
+                'transaction_by' => $order->employee->full_name,
                 'created_at' => Carbon::parse($order->created_at)->format('F d, Y')
             ];
         });

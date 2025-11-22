@@ -26,6 +26,8 @@ interface Transaction {
   employee_name?: string;
 }
 
+
+
 interface PageProps {
   allTransactions: Transaction[];
   mops: Record<string, number>;
@@ -62,6 +64,7 @@ export default function OwnerDashboard({
   const [fromDate, setFromDate] = useState(filters.from_date || getTodayDate());
   const [toDate, setToDate] = useState(filters.to_date || getTodayDate());
   const [selectedEmployee, setSelectedEmployee] = useState(filters.employee_id || 'all');
+
 
   const handleFilter = () => {
     router.get('/dashboard', {
