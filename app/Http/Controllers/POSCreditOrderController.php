@@ -285,6 +285,7 @@ class POSCreditOrderController extends Controller
                 $currentAmountPaid = $payment->amount_paid ?? 0;
                 $remainingDue = ($payment->amount_due - $payment->rebate_amount) - $currentAmountPaid;
 
+
                 if ($remainingPayment >= $remainingDue) {
                     // Fully pay this installment
                     $payment->update([
@@ -308,6 +309,7 @@ class POSCreditOrderController extends Controller
 
                     $remainingPayment -= $remainingDue;
                 } else {
+
                     // Partial payment for this installment
                     $newTotalPaid = $currentAmountPaid + $remainingPayment;
                     $status = $newTotalPaid >= $payment->amount_due - $payment->rebate_amount ? 'paid' : 'partial';
