@@ -49,7 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:can access credit pos')->group(function () {
         Route::resource('pos-credit', POSCreditController::class)->only(['index', 'store']);
     });
-//
+
     /*
     |--------------------------------------------------------------------------
     | Cash Orders

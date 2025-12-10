@@ -92,7 +92,7 @@ class ExpenseRecordController extends Controller
         }
 
         // Set default status
-        $validated['status'] = 'pending';
+        $validated['status'] = 'approved';
 
         ExpenseRecord::create($validated);
 
