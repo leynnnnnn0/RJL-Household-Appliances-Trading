@@ -5,6 +5,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseRecordController;
+use App\Http\Controllers\InstallmentOrderRemarkController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PDFController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\POSCreditOrderSalesController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
+use App\Models\InstallmentOrderRemark;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -26,6 +28,7 @@ Route::get('/', fn() => redirect()->route('login'))->name('home');
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+
     Route::get('/installmentContract/{id}', [PDFController::class, 'installmentContract']);
     Route::get('/demandLetter/{id}', [PDFController::class, 'demandLetter']);
     Route::get('/depositAgreement/{id}', [PDFController::class, 'depositAgreement']);
@@ -79,6 +82,9 @@ Route::middleware('auth')->group(function () {
     */
     Route::middleware('permission:can view installment orders')->group(function () {
         Route::resource('/pos-installment-orders', POSCreditOrderController::class);
+
+        Route::post('/pos-installment-orders/remarks', [InstallmentOrderRemarkController::class, 'store']);
+        Route::delete('/pos-installment-orders/remarks/{id}', [InstallmentOrderRemarkController::class, 'destroy']);
     });
 
     Route::put('/pos-installment-orders/{id}/rebate', [POSCreditOrderController::class, 'rebate'])

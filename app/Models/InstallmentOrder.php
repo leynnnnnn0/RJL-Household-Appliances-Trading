@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Http\Controllers\InstallmentOrderRemark;
+use App\Models\InstallmentOrderRemark as ModelsInstallmentOrderRemark;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -187,5 +189,10 @@ class InstallmentOrder extends Model
     public function installment_order_payments()
     {
         return $this->hasMany(InstallmentOrderPayment::class);
+    }
+
+    public function remarks()
+    {
+        return $this->hasMany(ModelsInstallmentOrderRemark::class);
     }
 }

@@ -54,10 +54,27 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { IconTopologyStarRing3 } from '@tabler/icons-react';
+import InstallmentOrderRemarksSection from './InstallmentOrderRemarkSection';
+
+
+interface InstallmentOrderRemark {
+  id: number;
+  installment_order_id: number;
+  user_id: number;
+  remarks: string;
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: number;
+    full_name: string;
+  };
+}
+
 
 interface PageProps {
     transaction: InstallmentOrderWithRelations,
-    paymentHistory: InstallmentOrderPaymentHistory[]
+    paymentHistory: InstallmentOrderPaymentHistory[],
+    remarks: InstallmentOrderRemark[],
 }
 
 export default function Show({transaction, paymentHistory} : PageProps){
@@ -773,6 +790,8 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                 )}
                             </CardContent>
                         </Card>
+
+                 
                     </div>
 
                     {/* Payment Form - Right Side (Sticky) */}
@@ -951,6 +970,8 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                     </CardContent>
                                 </Card>
                             )}
+
+                                   <InstallmentOrderRemarksSection transactionId={transaction.id} remarks={transaction.remarks}/>
 
                             {/* Complete Payment History */}
                             {paymentHistory && paymentHistory.length > 0 && (

@@ -425,7 +425,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 cursor-pointer"
                           onClick={() => router.visit(`/pos-installment-orders/${transaction.order_number}`)}
                         >
                           <Eye className="h-4 w-4" />

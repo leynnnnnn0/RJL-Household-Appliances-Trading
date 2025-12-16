@@ -12,6 +12,20 @@ export interface Paginated<T> {
   to: number;
 }
 
+
+interface InstallmentOrderRemark {
+  id: number;
+  installment_order_id: number;
+  user_id: number;
+  remarks: string;
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: number;
+    full_name: string;
+  };
+}
+
 export interface PaginationLink {
   url: string | null;
   label: string;
@@ -172,6 +186,8 @@ export type InstallmentOrder = {
   reason_for_acceleration: string | null;
   acceleration_discount: number; 
   acceleration_date: string;
+
+  remarks: InstallmentOrderRemark[]
 
 }
 
