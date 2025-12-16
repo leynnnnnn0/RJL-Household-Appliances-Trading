@@ -794,7 +794,7 @@ export default function Show({transaction, paymentHistory} : PageProps){
                  
                     </div>
 
-                    {/* Payment Form - Right Side (Sticky) */}
+                    {/* Payment Form - Right Side (Sticky)s */}
                     <div className="lg:col-span-1">
                         <div className="sticky top-6 space-y-6">
                             {!transaction.is_voided && !transaction.is_completed && !transaction.is_defaulted && nextPayment ? (
