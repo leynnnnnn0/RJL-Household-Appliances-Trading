@@ -125,7 +125,7 @@
 
        <div class="date-section">
         <div style="display: inline-block; text-align: center;">
-            <div class="date-line">{{ strtoupper($date) }}</div>
+            <div class="date-line"></div>
             <div class="date-label">Date</div>
         </div>
     </div>
