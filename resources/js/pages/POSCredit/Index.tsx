@@ -1033,6 +1033,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input
+                    disabled={isExistingCustomer}
                     id="firstName"
                     placeholder="Juan"
                     value={firstName}
@@ -1042,6 +1043,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name *</Label>
                   <Input
+                    disabled={isExistingCustomer}
                     id="lastName"
                     placeholder="Dela Cruz"
                     value={lastName}
@@ -1053,6 +1055,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
               <div className="space-y-2">
                 <Label htmlFor="contact">Contact Number</Label>
                 <Input
+                  disabled={isExistingCustomer}
                   id="contact"
                   placeholder="0912 345 6789"
                   value={contact}
@@ -1063,6 +1066,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
               <div className="space-y-2">
                 <Label htmlFor="customerAddress">Email</Label>
                 <Input
+                  disabled={isExistingCustomer}
                   id="email"
                   placeholder="Enter customer's email"
                   value={customerEmail}
@@ -1073,6 +1077,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
               <div className="space-y-2">
                 <Label htmlFor="address">Complete Address *</Label>
                 <Textarea
+                          disabled={isExistingCustomer}
                   id="address"
                   placeholder="Street, Barangay, City, Province"
                   rows={3}
@@ -1085,6 +1090,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <div className="space-y-2">
                   <Label htmlFor="city">City *</Label>
                   <Input
+                            disabled={isExistingCustomer}
                     id="city"
                     placeholder="Enter city"
                     value={customerCity}
@@ -1094,6 +1100,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <div className="space-y-2">
                   <Label htmlFor="province">Province *</Label>
                   <Input
+                            disabled={isExistingCustomer}
                     id="province"
                     placeholder="Enter province"
                     value={customerProvince}
@@ -1106,6 +1113,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <div className="space-y-2">
                   <Label htmlFor="zipcode">Zipcode</Label>
                   <Input
+                            disabled={isExistingCustomer}
                     id="zipcode"
                     placeholder="Enter zipcode"
                     value={customerZipcode}
@@ -1115,6 +1123,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <div className="space-y-2">
                   <Label htmlFor="country">Country *</Label>
                   <Input
+                            disabled={isExistingCustomer}
                     id="country"
                     placeholder="Enter country"
                     value={customerCountry}
