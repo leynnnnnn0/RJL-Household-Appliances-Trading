@@ -62,7 +62,7 @@ class DashboardController extends Controller
                 'installment_order_payment.installment_order.customer',
                 'user'
             ])
-                ->whereBetween(DB::raw('DATE(created_at)'), [$fromDate, $toDate]);
+                ->whereBetween(DB::raw('DATE(paid_date)'), [$fromDate, $toDate]);
 
 
             // Apply employee filter if specified
@@ -111,12 +111,13 @@ class DashboardController extends Controller
                         'remarks' => $order->installment_order_item->item->model
                     ];
                 });
+               
 
             // Get installment payments
             $installmentPayments = $installmentPaymentsQuery->get()
                 ->map(function ($order) {
                     return [
-                        'date' => Carbon::parse($order->created_at)->format('F d, Y'),
+                        'date' => Carbon::parse($order->paid_date)->format('F d, Y'),
                         'receipt_number' => $order->collection_receipt_number,
                         'customer' => $order->installment_order_payment->installment_order->customer->full_name,
                         'm_i' => $order->amount,
@@ -148,6 +149,7 @@ class DashboardController extends Controller
                 })
                 ->values();
 
+           
             // Combine all transactions
             $transactions = collect()
                 ->concat($cashOrders)
@@ -272,12 +274,12 @@ class DashboardController extends Controller
 
 
             $installmentPayments = InstallmentOrderPaymentHistory::with('installment_order_payment.installment_order.customer', 'installment_order_payment.installment_order.installment_order_item.item')
-                ->whereDate('created_at', today())
+                ->whereDate('paid_date', today())
                 ->where('user_id', Auth::id())
                 ->get()
                 ->map(function ($order) {
                     return [
-                        'date' => Carbon::parse($order->created_at)->format('F d, Y'),
+                        'date' => Carbon::parse($order->paid_date)->format('F d, Y'),
                         'receipt_number' => $order->collection_receipt_number,
                         'customer' => $order->installment_order_payment->installment_order->customer->full_name,
                         'm_i' => $order->amount,
