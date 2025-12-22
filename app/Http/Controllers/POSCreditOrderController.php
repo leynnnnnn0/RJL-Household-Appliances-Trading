@@ -371,15 +371,15 @@ class POSCreditOrderController extends Controller
             'voider_id' => Auth::id()
         ]);
 
-       $transaction->installment_order_items->map(function($item){
-        $item->item->update([
-            'date_out' => null
-        ]);
-       });
+        $transaction->installment_order_items->map(function ($item) {
+            $item->item->update([
+                'date_out' => null
+            ]);
+        });
 
-        
-        
-      
+
+
+
         DB::commit();
 
         return back()->with('success', 'Order Voided');
@@ -391,7 +391,7 @@ class POSCreditOrderController extends Controller
             'installment_order_id' => 'required',
             'default_reason' => 'required|string'
         ]);
-        $transaction = InstallmentOrder::with('installment_order_item.item')->findOrFail($id);
+        $transaction = InstallmentOrder::with('installment_order_items.item')->findOrFail($id);
 
         DB::beginTransaction();
         $transaction->update([
@@ -401,12 +401,13 @@ class POSCreditOrderController extends Controller
             'defaulter_id' => Auth::id()
         ]);
 
-        $item = $transaction->installment_order_item->item;
-        $item->update([
-            'date_out' => null
-        ]);
+        $transaction->installment_order_items->map(function ($item) {
+            $item->item->update([
+                'date_out' => null
+            ]);
+        });
 
-        $item->save();
+
         DB::commit();
 
         return back()->with('success', 'Order Voided');
