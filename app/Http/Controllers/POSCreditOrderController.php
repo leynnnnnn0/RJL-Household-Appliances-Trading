@@ -420,7 +420,7 @@ class POSCreditOrderController extends Controller
             'reactivation_reason' => 'required|string'
         ]);
 
-        $transaction = InstallmentOrder::with('installment_order_item.item')->findOrFail($id);
+        $transaction = InstallmentOrder::with('installment_order_items.item')->findOrFail($id);
 
         DB::beginTransaction();
         $transaction->update([
@@ -431,12 +431,14 @@ class POSCreditOrderController extends Controller
             'reactivator_id' => Auth::id()
         ]);
 
-        $item = $transaction->installment_order_item->item;
-        $item->update([
-            'date_out' => $transaction->transaction_date
-        ]);
 
-        $item->save();
+          $transaction->installment_order_items->map(function ($item) use($transaction) {
+            $item->item->update([
+               'date_out' => $transaction->transaction_date
+            ]);
+        });
+
+
         DB::commit();
 
         return back()->with('success', 'Order Reactivated');
