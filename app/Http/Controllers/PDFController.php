@@ -29,35 +29,35 @@ class PDFController extends Controller
 
     public function installmentContract($id)
     {
-        $order = InstallmentOrder::with(['customer', 'installment_order_item.item'])->findOrFail($id);
-       $dueDay = Carbon::parse($order->transaction_date)->format('jS');
+        $order = InstallmentOrder::with(['customer', 'installment_order_items.item'])->findOrFail($id);
+        $dueDay = Carbon::parse($order->transaction_date)->format('jS');
 
 
-$formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
 
-// round the value to 2 decimals
-$amount = round($order->monthly_payment, 2);
+        // round the value to 2 decimals
+        $amount = round($order->monthly_payment, 2);
 
-$words = strtoupper($formatter->format($amount));
+        $words = strtoupper($formatter->format($amount));
 
 
 
-            $data = [
+        $data = [
             'mobileNumber' => '09506122101',
             'date' => Carbon::now()->format('F d, Y'),
-            'referenceNumber' => $order->installment_order_item->item->model,
+            'referenceNumber' => $order->installment_order_items->map(fn($item) => $item->item->model)
+                            ->implode(', '),
             'customerName' => strtoupper($order->customer->full_name),
             'remainingMonths' => $order->number_of_terms,
             'dueDay' => $dueDay,
-            'monthlyInstallment' => round($order->monthly_payment, 2) ,
+            'monthlyInstallment' => round($order->monthly_payment, 2),
             'managerName' => 'JAYSON MANALILI',
             'customerNameCopy' => 'CRUZ LESTER/ CRUZ LOLITO.',
         ];
 
         $pdf = Pdf::loadView('pdf.installment-contract', $data);
-        
-        return $pdf->stream('installment-contract.pdf');
 
+        return $pdf->stream('installment-contract.pdf');
     }
 
     public function download()
@@ -76,7 +76,7 @@ $words = strtoupper($formatter->format($amount));
         ];
 
         $pdf = Pdf::loadView('pdf.installment-contract', $data);
-        
+
         return $pdf->download('installment-contract.pdf');
     }
 
@@ -96,7 +96,7 @@ $words = strtoupper($formatter->format($amount));
         ];
 
         $pdf = Pdf::loadView('pdf.installment-contract', $data);
-        
+
         return $pdf->stream('installment-contract.pdf');
     }
 
@@ -141,7 +141,7 @@ $words = strtoupper($formatter->format($amount));
 
 
         $pdf = Pdf::loadView('pdf.deposit-agreement', $data);
-        
+
         return $pdf->stream('deposit-agreement.pdf');
     }
 
@@ -160,9 +160,8 @@ $words = strtoupper($formatter->format($amount));
             'managerName' => 'JAYSON P. MANALILI',
         ];
 
-          $pdf = Pdf::loadView('pdf.demand-letter', $data);
-        
-        return $pdf->stream('demand-letter.pdf');
+        $pdf = Pdf::loadView('pdf.demand-letter', $data);
 
+        return $pdf->stream('demand-letter.pdf');
     }
 }
