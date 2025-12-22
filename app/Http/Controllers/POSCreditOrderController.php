@@ -361,7 +361,7 @@ class POSCreditOrderController extends Controller
             'installment_order_id' => 'required',
             'reason_for_cancellation' => 'required|string'
         ]);
-        $transaction = InstallmentOrder::with('installment_order_item.item')->findOrFail($id);
+        $transaction = InstallmentOrder::with('installment_order_items.item')->findOrFail($id);
 
         DB::beginTransaction();
         $transaction->update([
@@ -371,12 +371,15 @@ class POSCreditOrderController extends Controller
             'voider_id' => Auth::id()
         ]);
 
-        $item = $transaction->installment_order_item->item;
-        $item->update([
+       $transaction->installment_order_items->map(function($item){
+        $item->item->update([
             'date_out' => null
         ]);
+       });
 
-        $item->save();
+        
+        
+      
         DB::commit();
 
         return back()->with('success', 'Order Voided');
