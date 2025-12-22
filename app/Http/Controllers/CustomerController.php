@@ -29,7 +29,7 @@ class CustomerController extends Controller
 
     public function show($id)
     {
-        $customer = Customer::with(['additional_documents','orders.order_items.item', 'installment_orders.installment_order_item.item', 'customer_reference', 'investigation_detail'])->findOrFail($id);
+        $customer = Customer::with(['additional_documents','orders.order_items.item', 'installment_orders.installment_order_items.item', 'customer_reference', 'investigation_detail'])->findOrFail($id);
 
         return Inertia::render('Customer/Show', [
             'customer' => $customer
