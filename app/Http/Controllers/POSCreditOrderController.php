@@ -78,7 +78,7 @@ class POSCreditOrderController extends Controller
          * Filters by product category: appliances, furniture, gadgets
          */
         if ($request->filled('item_type') && $request->item_type !== 'all') {
-            $query->whereHas('installment_order_item.item', function ($q) use ($request) {
+            $query->whereHas('installment_order_items.item', function ($q) use ($request) {
                 $q->where('item_type', $request->item_type);
             });
         }

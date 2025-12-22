@@ -108,7 +108,8 @@ class DashboardController extends Controller
                         'is_voided' => $order->is_voided,
                         'created_at' => $order->created_at,
                         'employee_name' => $order->user->full_name ?? 'N/A',
-                        'remarks' => $order->installment_order_item->item->model
+                        'remarks' => $order->installment_order_items->map(fn($item) => $item->item->model)
+                            ->implode(', ')
                     ];
                 });
                
@@ -128,7 +129,8 @@ class DashboardController extends Controller
                         'is_voided' => false,
                         'created_at' => $order->created_at,
                         'employee_name' => $order->user->full_name ?? 'N/A',
-                        'remarks' => $order->installment_order_payment->installment_order->installment_order_item->item->model
+                        'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)
+                            ->implode(', ')
                     ];
                 })
                 ->groupBy('receipt_number')
@@ -253,7 +255,7 @@ class DashboardController extends Controller
                     ];
                 });
 
-            $installmentOrders = InstallmentOrder::with(['customer', 'installment_order_item.item'])->whereDate('transaction_date', today())
+            $installmentOrders = InstallmentOrder::with(['customer', 'installment_order_items.item'])->whereDate('transaction_date', today())
                 ->where('user_id', Auth::id())
                 ->get()
                 ->map(function ($order) {
@@ -268,12 +270,13 @@ class DashboardController extends Controller
                         'reference_number' => $order->reference_number,
                         'is_voided' => $order->is_voided,
                         'created_at' => $order->created_at,
-                        'remarks' => $order->installment_order_item->item->model
+                        'remarks' => $order->installment_order_items->map(fn($item) => $item->item->model)
+                            ->implode(', ')
                     ];
                 });
 
 
-            $installmentPayments = InstallmentOrderPaymentHistory::with('installment_order_payment.installment_order.customer', 'installment_order_payment.installment_order.installment_order_item.item')
+            $installmentPayments = InstallmentOrderPaymentHistory::with('installment_order_payment.installment_order.customer', 'installment_order_payment.installment_order.installment_order_items.item')
                 ->whereDate('paid_date', today())
                 ->where('user_id', Auth::id())
                 ->get()
@@ -289,7 +292,8 @@ class DashboardController extends Controller
                         'reference_number' => $order->reference_number,
                         'is_voided' => false,
                         'created_at' => $order->created_at,
-                        'remarks' => $order->installment_order_payment->installment_order->installment_order_item->item->model
+                        'remarks' => $order->installment_order_payment->installment_order->$order->installment_order_items->map(fn($item) => $item->item->model)
+                            ->implode(', ')
                     ];
                 })
                 ->groupBy('receipt_number')
@@ -469,7 +473,8 @@ class DashboardController extends Controller
                     'is_voided' => $order->is_voided,
                     'created_at' => $order->created_at,
                     'employee_name' => $order->user->full_name ?? 'N/A',
-                    'remarks' => $order->installment_order_item->item->model
+                    'remarks' => $order->installment_order_items->map(fn($item) => $item->item->model)
+                            ->implode(', ')
                 ];
             });
 
@@ -488,7 +493,8 @@ class DashboardController extends Controller
                     'is_voided' => false,
                     'created_at' => $order->created_at,
                     'employee_name' => $order->user->full_name ?? 'N/A',
-                    'remarks' => $order->installment_order_payment->installment_order->installment_order_item->item->model
+                    'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)
+                            ->implode(', ')
                 ];
             })
             ->groupBy('receipt_number')
