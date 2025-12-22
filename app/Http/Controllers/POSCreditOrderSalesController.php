@@ -38,7 +38,7 @@ class POSCreditOrderSalesController extends Controller
         }
   
 
-        $orders = $query->with(['installment_order_payments', 'installment_order_item.item'])->get();
+        $orders = $query->with(['installment_order_payments', 'installment_order_items.item'])->get();
 
         $today = now();
 

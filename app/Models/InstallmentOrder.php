@@ -181,9 +181,9 @@ class InstallmentOrder extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function installment_order_item()
+    public function installment_order_items()
     {
-        return $this->hasOne(InstallmentOrderItem::class);
+        return $this->hasMany(InstallmentOrderItem::class);
     }
 
     public function installment_order_payments()

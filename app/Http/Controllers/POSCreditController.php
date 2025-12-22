@@ -42,158 +42,210 @@ class POSCreditController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'customer_id' => 'nullable|exists:customers,id',
-            'customer_first_name' => 'required|string',
-            'customer_last_name' => 'required',
-            'customer_address' => 'required|string',
-            'customer_phone_number' => 'nullable|string',
-            'city' => 'required|string',
-            'province' => 'required|string',
-            'zipcode' => 'nullable|string',
-            'country' => 'required|string',
-            'email' => 'nullable|string',
-            'customer_reference_full_name' => 'required|string',
-            'customer_reference_phone_number' => 'required|string',
-            'investigator_id' => 'required|exists:employees,id',
-            'home_visit_date' => 'required',
-            'is_employment_verified' => 'required',
-            'investigation_notes' => 'nullable|string',
-            'location_id' => 'required|exists:locations,id',
-            'item_id' => 'required|exists:items,id',
-            'serial' => 'required',
-            'loan_contract_price' => 'required',
-            'lcp_markup_rate' => 'required',
-            'lcp_additional_charge' => 'required',
-            'down_payment' => 'required',
-            'payment_method' => 'nullable|string',
-            'reference_number' => 'nullable',
-            'promisory_note_value' => 'required',
-            'number_of_terms' => 'required',
-            'promisory_note_value_interest' => 'required',
-            'promisory_note_value_interest_additional_charge' => 'required',
-            'receipt_number' => 'required|unique:installment_orders,receipt_number',
-            'transaction_date' => 'required',
-            'documents' => 'nullable'
-        ]);
+   public function store(Request $request)
+{
+    $validated = $request->validate([
+        'customer_id' => 'nullable|exists:customers,id',
+        'customer_first_name' => 'required|string',
+        'customer_last_name' => 'required',
+        'customer_address' => 'required|string',
+        'customer_phone_number' => 'nullable|string',
+        'city' => 'required|string',
+        'province' => 'required|string',
+        'zipcode' => 'nullable|string',
+        'country' => 'required|string',
+        'email' => 'nullable|string',
+        'customer_reference_full_name' => 'required|string',
+        'customer_reference_phone_number' => 'required|string',
+        'investigator_id' => 'required|exists:employees,id',
+        'home_visit_date' => 'required',
+        'is_employment_verified' => 'required',
+        'investigation_notes' => 'nullable|string',
+        'location_id' => 'required|exists:locations,id',
+        'items' => 'required|array', // Array of paid items
+        'items.*.item_id' => 'required|exists:items,id',
+        'items.*.serial' => 'required|string',
+        'items.*.description' => 'required|string',
+        'items.*.model' => 'required|string',
+        'items.*.srp' => 'required|numeric',
+        'items.*.item_type' => 'required|string',
+        'free_items' => 'nullable|array', // Array of free items
+        'free_items.*.item_id' => 'required|exists:items,id',
+        'free_items.*.serial' => 'required|string',
+        'free_items.*.description' => 'required|string',
+        'free_items.*.model' => 'required|string',
+        'free_items.*.item_type' => 'required|string',
+        'loan_contract_price' => 'required',
+        'lcp_markup_rate' => 'required',
+        'lcp_additional_charge' => 'required',
+        'down_payment' => 'required',
+        'payment_method' => 'nullable|string',
+        'reference_number' => 'nullable',
+        'promisory_note_value' => 'required',
+        'number_of_terms' => 'required',
+        'promisory_note_value_interest' => 'required',
+        'promisory_note_value_interest_additional_charge' => 'required',
+        'receipt_number' => 'required|unique:installment_orders,receipt_number',
+        'transaction_date' => 'required',
+        'documents' => 'nullable'
+    ]);
 
 
-        try {
-            DB::beginTransaction();
+    try {
+        DB::beginTransaction();
 
-            $customer = null;
-            if ($validated['customer_id'] == null) {
-                $customer = Customer::create([
-                    'first_name' => $validated['customer_first_name'],
-                    'last_name' => $validated['customer_last_name'],
-                    'address' => $validated['customer_address'],
-                    'phone_number' => $validated['customer_phone_number'],
-                    'email' => $validated['email'],
-                    'city' => $validated['city'],
-                    'province' => $validated['province'],
-                    'zipcode' => $validated['zipcode'],
-                    'country' => $validated['country'],
-                ]);
-            } else {
-                $customer = Customer::findOrFail($validated['customer_id']);
-                $customer->update([
-                    'first_name' => $validated['customer_first_name'],
-                    'last_name' => $validated['customer_last_name'],
-                    'address' => $validated['customer_address'],
-                    'phone_number' => $validated['customer_phone_number'],
-                    'email' => $validated['email'],
-                    'city' => $validated['city'],
-                    'province' => $validated['province'],
-                    'zipcode' => $validated['zipcode'],
-                    'country' => $validated['country'],
+        // Get items arrays
+        $items = $validated['items'];
+        $freeItems = $validated['free_items'] ?? [];
+
+        if (empty($items)) {
+            throw new Exception('At least one paid item is required');
+        }
+
+        // Create or update customer
+        $customer = null;
+        if ($validated['customer_id'] == null) {
+            $customer = Customer::create([
+                'first_name' => $validated['customer_first_name'],
+                'last_name' => $validated['customer_last_name'],
+                'address' => $validated['customer_address'],
+                'phone_number' => $validated['customer_phone_number'],
+                'email' => $validated['email'],
+                'city' => $validated['city'],
+                'province' => $validated['province'],
+                'zipcode' => $validated['zipcode'],
+                'country' => $validated['country'],
+            ]);
+        } else {
+            $customer = Customer::findOrFail($validated['customer_id']);
+            $customer->update([
+                'first_name' => $validated['customer_first_name'],
+                'last_name' => $validated['customer_last_name'],
+                'address' => $validated['customer_address'],
+                'phone_number' => $validated['customer_phone_number'],
+                'email' => $validated['email'],
+                'city' => $validated['city'],
+                'province' => $validated['province'],
+                'zipcode' => $validated['zipcode'],
+                'country' => $validated['country'],
+            ]);
+        }
+
+        // Handle document uploads
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                $path = $file->store('customer-documents', 'public');
+
+                $customer->additional_documents()->create([
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'file_size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
                 ]);
             }
+        }
 
-            if ($request->hasFile('documents')) {
-                foreach ($request->file('documents') as $file) {
-                    $path = $file->store('customer-documents', 'public');
-
-                    $customer->additional_documents()->create([
-                        'file_name' => $file->getClientOriginalName(),
-                        'file_path' => $path,
-                        'file_size' => $file->getSize(),
-                        'mime_type' => $file->getMimeType(),
-                    ]);
-                }
-            }
-
-
-            $customer->customer_reference()->updateOrCreate([
+        // Update or create customer reference
+        $customer->customer_reference()->updateOrCreate(
+            ['customer_id' => $customer->id],
+            [
                 'full_name' => $validated['customer_reference_full_name'],
                 'phone_number' => $validated['customer_reference_phone_number']
-            ]);
+            ]
+        );
 
-
-            $customer->investigation_detail()->updateOrCreate([
+        // Update or create investigation detail
+        $customer->investigation_detail()->updateOrCreate(
+            ['customer_id' => $customer->id],
+            [
                 'employee_id' => $validated['investigator_id'],
                 'home_visit_date' => $validated['home_visit_date'],
                 'is_employment_verified' => $validated['is_employment_verified'],
                 'investigation_notes' => $validated['investigation_notes']
-            ]);
+            ]
+        );
 
-            $order = InstallmentOrder::create([
-                'customer_id' => $customer->id,
-                'location_id' => $validated['location_id'],
-                'user_id' => Auth::id(),
-                'order_number' => $this->generateOrderNumber(),
-                'loan_contract_price' => $validated['loan_contract_price'],
-                'lcp_markup_rate' => $validated['lcp_markup_rate'],
-                'lcp_additional_charge' => $validated['lcp_additional_charge'],
-                'down_payment' => $validated['down_payment'],
-                'payment_method' => $validated['payment_method'],
-                'reference_number' => $validated['reference_number'],
-                'promisory_note_value' => $validated['promisory_note_value'],
-                'number_of_terms' => $validated['number_of_terms'],
-                'promisory_note_value_interest' => $validated['promisory_note_value_interest'],
-                'promisory_note_value_interest_additional_charge' => $validated['promisory_note_value_interest_additional_charge'],
-                'transaction_date' => $validated['transaction_date'],
-                'receipt_number' => $validated['receipt_number'],
-            ]);
+        // Create installment order
+        $order = InstallmentOrder::create([
+            'customer_id' => $customer->id,
+            'location_id' => $validated['location_id'],
+            'user_id' => Auth::id(),
+            'order_number' => $this->generateOrderNumber(),
+            'loan_contract_price' => $validated['loan_contract_price'],
+            'lcp_markup_rate' => $validated['lcp_markup_rate'],
+            'lcp_additional_charge' => $validated['lcp_additional_charge'],
+            'down_payment' => $validated['down_payment'],
+            'payment_method' => $validated['payment_method'],
+            'reference_number' => $validated['reference_number'],
+            'promisory_note_value' => $validated['promisory_note_value'],
+            'number_of_terms' => $validated['number_of_terms'],
+            'promisory_note_value_interest' => $validated['promisory_note_value_interest'],
+            'promisory_note_value_interest_additional_charge' => $validated['promisory_note_value_interest_additional_charge'],
+            'transaction_date' => $validated['transaction_date'],
+            'receipt_number' => $validated['receipt_number'],
+        ]);
 
+        // Calculate total sale amount for paid items
+        $total = $order->promisory_note_value * $order->promisory_note_value_interest + floatval($order->promisory_note_value_interest_additional_charge);
+
+        // Create paid items
+        foreach ($items as $item) {
             InstallmentOrderItem::create([
                 'installment_order_id' => $order->id,
-                'item_id' => $validated['item_id'],
-                'serial' => $validated['serial'],
-                'sale_amount' => $validated['promisory_note_value'] * $validated['promisory_note_value_interest'] + $validated['promisory_note_value_interest_additional_charge']
+                'item_id' => $item['item_id'],
+                'serial' => $item['serial'],
+                'sale_amount' => $item['srp'],
+                'discount_amount' => 0
             ]);
-            $iventoryItem = Item::where('date_out', null)->findOrFail($validated['item_id']);
-            $iventoryItem->update(['date_out' => Carbon::parse(Carbon::parse($order->transaction_date)->toDateString())]);
 
-            $total = $order->promisory_note_value * $order->promisory_note_value_interest + floatval($order->promisory_note_value_interest_additional_charge);
+            // Update inventory item
+            $inventoryItem = Item::where('date_out', null)->findOrFail($item['item_id']);
+            $inventoryItem->update(['date_out' => Carbon::parse($order->transaction_date)->toDateString()]);
+        }
 
-            $monthlyPayment = $total / $order->number_of_terms;
+        // Create free items (discount_amount = SRP, sale_amount = 0)
+        foreach ($freeItems as $freeItem) {
+            // Get the item's SRP from database
+            $inventoryItem = Item::findOrFail($freeItem['item_id']);
+            
+            InstallmentOrderItem::create([
+                'installment_order_id' => $order->id,
+                'item_id' => $freeItem['item_id'],
+                'serial' => $freeItem['serial'],
+                'sale_amount' => 0,
+                'discount_amount' => $inventoryItem->srp // Discount equals SRP for free items
+            ]);
 
+            // Update inventory item
+            $inventoryItem->update(['date_out' => Carbon::parse($order->transaction_date)->toDateString()]);
+        }
 
+        // Create installment payment schedule
+        $monthlyPayment = $total / $order->number_of_terms;
 
-            for ($i = 1; $i <= $order->number_of_terms; $i++) {
-                InstallmentOrderPayment::create([
-                    'installment_order_id' => $order->id,
-                    'installment_number' => $i,
-                    'amount_due' => $monthlyPayment,
-                    'amount_paid' => 0,
-                    'due_date' => Carbon::parse($order->transaction_date)->addMonths($i),
-                    'payment_method' => null,
-                    'reference_number' => null,
-                    'status' => 'pending', // pending, paid, overdue, partial
-                    'paid_date' => null,
-                ]);
-            }
-            DB::commit();
-            return back()->with('success', 'Created Successfully');
-        } catch (Exception $e) {
-            DB::rollBack();
-            return back()->withErrors([
-                'message' => $e->getMessage(),
+        for ($i = 1; $i <= $order->number_of_terms; $i++) {
+            InstallmentOrderPayment::create([
+                'installment_order_id' => $order->id,
+                'installment_number' => $i,
+                'amount_due' => $monthlyPayment,
+                'amount_paid' => 0,
+                'due_date' => Carbon::parse($order->transaction_date)->addMonths($i),
+                'payment_method' => null,
+                'reference_number' => null,
+                'status' => 'pending', // pending, paid, overdue, partial
+                'paid_date' => null,
             ]);
         }
+
+        DB::commit();
+        return back()->with('success', 'Created Successfully');
+    } catch (Exception $e) {
+        DB::rollBack();
+        return back()->withErrors([
+            'message' => $e->getMessage(),
+        ]);
     }
+}
 
     public function generateOrderNumber()
     {

@@ -19,7 +19,7 @@ class POSCreditOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = InstallmentOrder::with(['customer', 'user', 'location', 'installment_order_item.item'])
+        $query = InstallmentOrder::with(['customer', 'user', 'location', 'installment_order_items.item'])
             ->latest('transaction_date');
 
     // ============================================
@@ -236,7 +236,7 @@ class POSCreditOrderController extends Controller
 
     public function show($order_number)
     {
-        $transction = InstallmentOrder::with(['remarks.user', 'customer', 'location', 'user', 'voider', 'installment_order_item.item', 'installment_order_payments.installment_order_payment_history.user'])
+        $transction = InstallmentOrder::with(['remarks.user', 'customer', 'location', 'user', 'voider', 'installment_order_items.item', 'installment_order_payments.installment_order_payment_history.user'])
             ->where('order_number', $order_number)->firstOrFail();
 
         $paymentHistory = $transction->installment_order_payments

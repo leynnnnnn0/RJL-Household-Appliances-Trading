@@ -545,29 +545,80 @@ export default function Show({transaction, paymentHistory} : PageProps){
                             </Card>
                         </div>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <IconTopologyStarRing3 className="w-5 h-5" />
-                                    Item Details
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className='grid grid-cols-3 gap-5'>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Name</p>
-                                    <p className="font-medium">{transaction.installment_order_item.item.description}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Model</p>
-                                    <p className="font-medium">{transaction.installment_order_item.item.model}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Serial</p>
-                                    <p className="font-medium">{transaction.installment_order_item.item.serial}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-
+                      <Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <IconTopologyStarRing3 className="w-5 h-5" />
+      Item Details
+    </CardTitle>
+    <CardDescription>
+      Items included in this installment order
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    {transaction.installment_order_items && transaction.installment_order_items.length > 0 ? (
+      <div className="space-y-4">
+        {transaction.installment_order_items.map((orderItem, index) => (
+          <div 
+            key={orderItem.id} 
+            className={`border rounded-lg p-4 ${
+              orderItem.discount_amount > 0 && orderItem.sale_amount === 0 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-muted/30'
+            }`}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-base">
+                    {orderItem.item.description}
+                  </h4>
+                  {orderItem.discount_amount > 0 && orderItem.sale_amount === 0 && (
+                    <Badge className="bg-green-600">FREE ITEM</Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Item #{index + 1}
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Model</p>
+                <p className="font-medium">{orderItem.item.model}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Serial</p>
+                <p className="font-medium">{orderItem.item.serial || orderItem.serial}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Sale Amount</p>
+                <p className="font-medium text-green-600">
+                  {formatCurrency(Number(orderItem.sale_amount))}
+                </p>
+              </div>
+              {orderItem.discount_amount > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Discount</p>
+                  <p className="font-medium text-blue-600">
+                    {formatCurrency(Number(orderItem.discount_amount))}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        
+      
+      </div>
+    ) : (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No items found</p>
+      </div>
+    )}
+  </CardContent>
+</Card>
                         <div className="grid gap-6 md:grid-cols-2">
                             {/* Customer Information */}
                             <Card>

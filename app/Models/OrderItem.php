@@ -22,7 +22,7 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Order::class);
     }
-
+s
     public function item()
     {
         return $this->belongsTo(Item::class);

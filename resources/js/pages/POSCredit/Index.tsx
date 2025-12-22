@@ -75,6 +75,7 @@ interface SelectedProduct extends Product {
   downPayment: number;
   selectedTerm: number;
   noDownPayment?: boolean;
+  isFree: boolean
 }
 
 interface Employee {
@@ -144,6 +145,8 @@ export default function Index({ locations, employees, transactions }: PageProps)
   const [investigationNotes, setInvestigationNotes] = useState<string>('');
 
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct | null>(null);
+
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[] | []>([]);
   const [downPayment, setDownPayment] = useState<number>(0);
   const [selectedTerm, setSelectedTerm] = useState<number>(3);
   const [noDownPayment, setNoDownPayment] = useState<boolean>(false);
@@ -313,13 +316,16 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   const calculatePaymentBreakdown = () => {
-    if (!selectedProduct) return null;
+    if (!selectedProducts) return null;
 
-    const lcp = calculateLCP(selectedProduct.srp);
+     const paidProducts = selectedProducts.filter(item => !item.isFree);
+     if(paidProducts.length == 0) return;
+
+    const lcp = totalLCP;
     const downPaymentAmount = noDownPayment ? 0 : downPayment;
     const pnv = lcp - downPaymentAmount;
 
-    const { multiplier, fixedCharge } = getInterestConfig(selectedProduct.item_type, selectedTerm);
+    const { multiplier, fixedCharge } = getInterestConfig(selectedProducts[0].item_type, selectedTerm);
 
     let finalPNV: number;
     if (noDownPayment) {
@@ -345,22 +351,65 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     };
   };
 
+  const [totalLCP, setTotalLCP] = useState(0);
+
   const handleProductSelect = (product: Product) => {
     const lcp = calculateLCP(product.srp);
     const downPaymentPercent = getDefaultDownPaymentPercent(product.item_type);
     const defaultDownPayment = Math.round(lcp * downPaymentPercent);
 
-    setSelectedProduct({
+
+
+    setSelectedProducts(prev => {
+  const alreadyExists = prev.some(p => p.id === product.id);
+  
+  if (alreadyExists) {
+    return prev; 
+  }
+  
+  return [
+    ...prev,
+    {
       ...product,
-      downPayment: defaultDownPayment,
+      downPayment: 0,
       selectedTerm: selectedTerm,
-      noDownPayment: false
-    });
+      noDownPayment: false,
+      isFree: false
+    }
+  ];
+});
+
+setSearchTerm("");
+    
     setDownPayment(defaultDownPayment);
     setNoDownPayment(false);
-    setSearchTerm(product.description);
     setShowDropdown(false);
+
+
   };
+
+ useEffect(() => {
+  if(selectedProducts.length == 0) return;
+  
+  // Filter out free items before calculating total
+  const paidProducts = selectedProducts.filter(item => !item.isFree);
+  
+  const total = paidProducts.length > 0
+    ? paidProducts.reduce((sum, item) => sum + Number.parseFloat(item.srp.toString()), 0)
+    : 0;
+
+
+
+  const lcp = total > 0 ? calculateLCP(total) : 0;
+
+  setTotalLCP(Number.parseFloat(lcp.toFixed(2)));
+
+  const downPaymentPercent = getDefaultDownPaymentPercent(selectedProducts[0].item_type);
+  const defaultDownPayment = Math.round(lcp * downPaymentPercent);
+
+  setDownPayment(defaultDownPayment);
+  
+}, [selectedProducts]);
 
   const handleTermSelect = (months: number) => {
     setSelectedTerm(months);
@@ -369,6 +418,8 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         ...selectedProduct,
         selectedTerm: months
       });
+
+      
     }
   };
 
@@ -430,8 +481,12 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   const validateForm = () => {
-    if (!selectedProduct) {
-      return "Please select a product";
+    if(selectedProducts.length == 0){
+      return "Please select an item to proceed";
+    }
+      const paidProducts = selectedProducts.filter(item => !item.isFree);
+    if (paidProducts.length == 0) {
+      return "Add at least one paid item.";
     }
     if (!firstName || !lastName) {
       return "Customer name is required";
@@ -471,6 +526,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   const validateDialogForm = () => {
+
     if (!receiptNumber) {
       return "Receipt number is required";
     }
@@ -489,113 +545,157 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     return null;
   };
 
-  const handleSubmit = async () => {
-    const dialogError = validateDialogForm();
-    if (dialogError) {
-      setValidationError(dialogError);
-      alert("Please make sure all the information needed is filled.");
-      return;
-    }
+ const handleSubmit = async () => {
+  const dialogError = validateDialogForm();
+  if (dialogError) {
+    setValidationError(dialogError);
+    alert("Please make sure all the information needed is filled.");
+    return;
+  }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
+  setValidationError('');
+
+  const clearAllFields = () => {
+    setSelectedCustomer(null);
+    setIsExistingCustomer(false);
+    setFirstName('');
+    setLastName('');
+    setContact('');
+    setAddress('');
+    setEmployment('');
+    setIncome('');
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowResults(false);
+    setRef1Name('');
+    setRef1Contact('');
+    setVisitDate('');
+    setInvestigatorId('');
+    setEmploymentVerified(false);
+    setInvestigationNotes('');
+    setSelectedProduct(null);
+    setSelectedProducts([]);
+    setDownPayment(0);
+    setSelectedTerm(3);
+    setNoDownPayment(false);
+    setSearchTerm('');
+    setFilteredProducts([]);
+    setShowDropdown(false);
+    setUploadedFiles([]);
+    setSelectedLocation('');
+    setModeOfPayment('');
+    setReferenceNumber('');
     setValidationError('');
-
-    const clearAllFields = () => {
-      setSelectedCustomer(null);
-      setIsExistingCustomer(false);
-      setFirstName('');
-      setLastName('');
-      setContact('');
-      setAddress('');
-      setEmployment('');
-      setIncome('');
-      setSearchQuery('');
-      setSearchResults([]);
-      setShowResults(false);
-      setRef1Name('');
-      setRef1Contact('');
-      setVisitDate('');
-      setInvestigatorId('');
-      setEmploymentVerified(false);
-      setInvestigationNotes('');
-      setSelectedProduct(null);
-      setDownPayment(0);
-      setSelectedTerm(3);
-      setNoDownPayment(false);
-      setSearchTerm('');
-      setFilteredProducts([]);
-      setShowDropdown(false);
-      setUploadedFiles([]);
-      setSelectedLocation('');
-      setModeOfPayment('');
-      setReferenceNumber('');
-      setValidationError('');
-      setCustomerEmail("");
-      setCustomerCity("");
-      setCustomerProvince("");
-      setCustomerZipcode("");
-      setCustomerCountry("");
-      setReceiptNumber('');
-    };
-
-    const breakdown = calculatePaymentBreakdown();
-    if (!breakdown || !selectedProduct) {
-      setValidationError("Unable to calculate payment breakdown");
-      setIsSubmitting(false);
-      return;
-    }
-
-    router.post('/pos-credit', {
-      customer_id: isExistingCustomer ? selectedCustomer?.id : null,
-      customer_first_name: firstName,
-      customer_last_name: lastName,
-      customer_phone_number: contact,
-      customer_address: address,
-      email: customerEmail,
-      city: customerCity,
-      province: customerProvince,
-      zipcode: customerZipcode,
-      country: customerCountry,
-      customer_source_of_income: employment,
-      customer_monthly_income: income,
-      customer_reference_full_name: ref1Name,
-      customer_reference_phone_number: ref1Contact,
-      home_visit_date: visitDate,
-      investigator_id: investigatorId,
-      is_employment_verified: employmentVerified,
-      investigation_notes: investigationNotes,
-      loan_contract_price: breakdown.lcp,
-      lcp_markup_rate: lcpMarkupRate,
-      lcp_additional_charge: lcpAdditionalCharge,
-      down_payment: breakdown.downPaymentAmount,
-      promisory_note_value: breakdown.pnv,
-      number_of_terms: selectedTerm,
-      promisory_note_value_interest: breakdown.multiplier,
-      promisory_note_value_interest_additional_charge: breakdown.fixedCharge,
-      item_id: selectedProduct.id,
-      serial: selectedProduct.serial,
-      location_id: selectedLocation,
-      payment_method: modeOfPayment || null,
-      reference_number: referenceNumber || null,
-      receipt_number: receiptNumber || null,  
-      transaction_date: transactionDate,
-      documents: uploadedFiles.map(f => f.file),
-    }, {
-      forceFormData: true,
-      onSuccess: () => {
-        toast.success("Installment Data Created.");
-        setDialogOpen(false);
-        clearAllFields();
-      },
-      onError: (e) => {
-        setValidationError('An error occurred while creating the account');
-        console.log(e);
-      },
-      onFinish: () => {
-        setIsSubmitting(false);
-      }
-    });
+    setCustomerEmail("");
+    setCustomerCity("");
+    setCustomerProvince("");
+    setCustomerZipcode("");
+    setCustomerCountry("");
+    setReceiptNumber('');
+    setTotalLCP(0);
   };
+
+  const breakdown = calculatePaymentBreakdown();
+  if (!breakdown) {
+    setValidationError("Unable to calculate payment breakdown");
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Prepare items data - only send paid items
+  const paidProducts = selectedProducts.filter(item => !item.isFree);
+  const freeProducts = selectedProducts.filter(item => item.isFree);
+
+  if (paidProducts.length === 0) {
+    setValidationError("At least one paid item is required");
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Prepare the items array with their details
+  const items = paidProducts.map(product => ({
+    item_id: product.id,
+    serial: product.serial,
+    description: product.description,
+    model: product.model,
+    srp: product.srp,
+    item_type: product.item_type
+  }));
+
+  // Prepare free items array
+  const free_items = freeProducts.map(product => ({
+    item_id: product.id,
+    serial: product.serial,
+    description: product.description,
+    model: product.model,
+    item_type: product.item_type
+  }));
+
+  router.post('/pos-credit', {
+    // Customer Information
+    customer_id: isExistingCustomer ? selectedCustomer?.id : null,
+    customer_first_name: firstName,
+    customer_last_name: lastName,
+    customer_phone_number: contact,
+    customer_address: address,
+    email: customerEmail,
+    city: customerCity,
+    province: customerProvince,
+    zipcode: customerZipcode,
+    country: customerCountry,
+    customer_source_of_income: employment,
+    customer_monthly_income: income,
+    
+    // Reference Information
+    customer_reference_full_name: ref1Name,
+    customer_reference_phone_number: ref1Contact,
+    
+    // Investigation Details
+    home_visit_date: visitDate,
+    investigator_id: investigatorId,
+    is_employment_verified: employmentVerified,
+    investigation_notes: investigationNotes,
+    
+    // Payment Breakdown
+    loan_contract_price: breakdown.lcp,
+    lcp_markup_rate: lcpMarkupRate,
+    lcp_additional_charge: lcpAdditionalCharge,
+    down_payment: breakdown.downPaymentAmount,
+    promisory_note_value: breakdown.pnv,
+    number_of_terms: selectedTerm,
+    promisory_note_value_interest: breakdown.multiplier,
+    promisory_note_value_interest_additional_charge: breakdown.fixedCharge,
+    
+    // Items - Send as JSON string or array depending on your backend
+    items: items,
+    free_items: free_items,
+    
+    // Transaction Details
+    location_id: selectedLocation,
+    payment_method: modeOfPayment || null,
+    reference_number: referenceNumber || null,
+    receipt_number: receiptNumber || null,  
+    transaction_date: transactionDate,
+    
+    // Documents
+    documents: uploadedFiles.map(f => f.file),
+  }, {
+    forceFormData: true,
+    onSuccess: () => {
+      toast.success("Installment Data Created.");
+      setDialogOpen(false);
+      clearAllFields();
+    },
+    onError: (e) => {
+      setValidationError('An error occurred while creating the account');
+      console.log(e);
+    },
+    onFinish: () => {
+      setIsSubmitting(false);
+    }
+  });
+};
 
   const updateInterestConfig = (itemType: string, term: number, field: 'multiplier' | 'fixedCharge', value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -644,6 +744,20 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTempLcpMarkupRate(1.1);
     setTempLcpAdditionalCharge(300);
   };
+
+  const handleRemoveItem = (productId: string | number) => {
+  setSelectedProducts(prev => prev.filter(p => p.id !== productId));
+};
+
+const setProductToFree = (id) => {
+  setSelectedProducts(prevProducts =>
+    prevProducts.map(item =>
+      item.id === id 
+        ? { ...item, isFree: !item.isFree }
+        : item
+    )
+  );
+};
 
   return (
     <div className="min-h-screen bg-background">
@@ -771,65 +885,58 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                 </div>
               </div>
 
-              {selectedProduct && (
-                <>
-                  <Separator />
+              {selectedProducts.length > 0 && (
+  <div className="border rounded-lg overflow-hidden">
+    <table className="w-full">
+      <thead className="bg-muted">
+        <tr>
+          <th className="text-left p-3 font-semibold">Product</th>
+          <th className="text-start p-3 font-semibold">SRP</th>
+          <th className="text-start p-3 font-semibold">Type</th>
+                   <th className="text-start p-3 font-semibold">Is free?</th>
+          <th className="text-center p-3 font-semibold w-24">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {selectedProducts.map((item, index) => {
 
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                    <h3 className="font-semibold text-sm">Selected Product</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Description</p>
-                        <p className="font-medium">{selectedProduct.description}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Model</p>
-                        <p className="font-medium">{selectedProduct.model}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Serial Number</p>
-                        <p className="font-medium">{selectedProduct.serial}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Supplier</p>
-                        <p className="font-medium">{selectedProduct.supplier}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Item Type</p>
-                        <p className="font-medium capitalize">{selectedProduct.item_type || 'furniture'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Unit Cost</p>
-                        <p className="font-medium">₱{parseFloat(selectedProduct.unit_cost).toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">SRP</p>
-                        <p className="text-lg font-bold text-primary">₱{selectedProduct.srp.toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">LCP (Loan Contract Price)</p>
-                        <p className="text-lg font-bold text-blue-600">₱{calculateLCP(selectedProduct.srp).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedProduct(null);
-                        setSearchTerm('');
-                        setDownPayment(0);
-                        setNoDownPayment(false);
-                      }}
-                      className="w-full"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Clear Selection
-                    </Button>
-                  </div>
+          return (
+            <tr key={index} className="border-t hover:bg-muted/50">
+              <td className="p-3">
+                <div className="font-medium">{item.description}</div>
+                <div className="text-sm text-muted-foreground">
+                  {item.model} • {item.serial}
+                </div>
+              </td>
+              <td className="p-3 text-start">{item.srp}</td>
+                <td className="p-3 text-start">{item.item_type}</td>
+                   <td className="p-3 text-start">
+                    <Checkbox checked={item.isFree} onCheckedChange={() => setProductToFree(item.id)}/>
+                   </td>
+                 <td className="p-3">
+                <div className="flex gap-1 justify-center">
+                  <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)}>
+                    <X className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+       
+      </tbody>
+    </table>
 
-                  <Separator />
+ 
+  </div>
+)}
 
-                  <div className="space-y-4">
+
+
+       {selectedProducts.length > 0 && 
+     
+       <div className="space-y-4">
+                <Separator />
                     <div>
                       <Label>Payment Term *</Label>
                       <div className="grid grid-cols-4 gap-3 mt-2">
@@ -855,7 +962,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                         checked={noDownPayment}
                         onCheckedChange={handleNoDownPaymentToggle}
                       />
-                      <Label
+                       <Label
                         htmlFor="noDownPayment"
                         className="text-sm font-medium cursor-pointer"
                       >
@@ -863,7 +970,25 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                       </Label>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                        <Label htmlFor="downPayment">LCP *</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2.5 text-muted-foreground">₱</span>
+                          <Input
+                            id="lcp"
+                            type="number"
+                            placeholder="0"
+                            className="pl-7"
+                            value={totalLCP}
+                            disabled={true}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {noDownPayment ? 'No down payment applied' : 'Initial payment'}
+                        </p>
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="downPayment">Down Payment *</Label>
                         <div className="relative">
@@ -889,14 +1014,13 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                           <span className="font-semibold">
                             ₱{calculatePaymentBreakdown()?.pnv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
-                        </div>
+                              </div>
                         <p className="text-xs text-muted-foreground">
                           LCP - Down Payment
                         </p>
                       </div>
                     </div>
-
-                    {(() => {
+                        {(() => {
                       const breakdown = calculatePaymentBreakdown();
                       if (!breakdown) return null;
 
@@ -925,7 +1049,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                               </div>
                               <div>
                                 <p className="text-muted-foreground">PNV (Promissory Note)</p>
-                                <p className="font-semibold">₱{breakdown.pnv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                           <p className="font-semibold">₱{breakdown.pnv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                               </div>
                             </div>
                             <div className="grid grid-cols-3 gap-4 text-sm">
@@ -954,13 +1078,11 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
                             )}
                           </CardContent>
                         </Card>
-                      );
+                       );
                     })()}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                  </div>}
+        </CardContent>
+        </Card>
 
           <Card>
             <CardHeader>
