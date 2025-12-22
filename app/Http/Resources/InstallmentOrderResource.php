@@ -18,7 +18,8 @@ class InstallmentOrderResource extends JsonResource
             'id' => $this->id,
             'order_number' => $this->order_number,
             'customer' => $this->customer->full_name,
-            'item_model'=> $this->installment_order_item->item->model,
+            'item_model'=> $this->installment_order_items->map(fn($item) => $item->item->model)
+                        ->implode(', '),                    
             'installment_payments' => $this->installment_order_payments->mapWithKeys(function ($payment) {
                 return [
                     $payment->id => [
