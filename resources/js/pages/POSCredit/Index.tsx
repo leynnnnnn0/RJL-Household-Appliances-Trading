@@ -120,6 +120,9 @@ export default function Index({ locations, employees, transactions }: PageProps)
   ]);
   const [employmentVerified, setEmploymentVerified] = useState<boolean>(false);
 
+  const [noInterestRate, setNoInterestRate] = useState<boolean>(false);
+
+
   const [itemSearch, setItemSearch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Customer[]>([]);
@@ -315,41 +318,48 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     return interestConfigs[type]?.[months] || { multiplier: 1.12, fixedCharge: 0 };
   };
 
-  const calculatePaymentBreakdown = () => {
-    if (!selectedProducts) return null;
+ const calculatePaymentBreakdown = () => {
+  if (!selectedProducts) return null;
 
-     const paidProducts = selectedProducts.filter(item => !item.isFree);
-     if(paidProducts.length == 0) return;
+  const paidProducts = selectedProducts.filter(item => !item.isFree);
+  if(paidProducts.length == 0) return;
 
-    const lcp = totalLCP;
-    const downPaymentAmount = noDownPayment ? 0 : downPayment;
-    const pnv = lcp - downPaymentAmount;
+  const lcp = totalLCP;
+  const downPaymentAmount = noDownPayment ? 0 : downPayment;
+  const pnv = lcp - downPaymentAmount;
 
-    const { multiplier, fixedCharge } = getInterestConfig(selectedProducts[0].item_type, selectedTerm);
+  const { multiplier, fixedCharge } = getInterestConfig(selectedProducts[0].item_type, selectedTerm);
 
-    let finalPNV: number;
-    if (noDownPayment) {
-      finalPNV = lcp * 1.33 + 600;
-    } else {
-      finalPNV = pnv * multiplier + fixedCharge;
-    }
+  let finalPNV: number;
+  
+  // Check if no interest rate is applied
+  if (noInterestRate) {
+    // No interest: Final PNV equals PNV (no multiplier or fixed charge)
+    finalPNV = pnv;
+  } else if (noDownPayment) {
+    // No down payment option: Special rate
+    finalPNV = lcp * 1.33 + 600;
+  } else {
+    // Standard calculation with interest
+    finalPNV = pnv * multiplier + fixedCharge;
+  }
 
-    const monthlyPayment = finalPNV / selectedTerm;
-    const totalAmount = downPaymentAmount + finalPNV;
-    const totalInterest = finalPNV - pnv;
+  const monthlyPayment = finalPNV / selectedTerm;
+  const totalAmount = downPaymentAmount + finalPNV;
+  const totalInterest = finalPNV - pnv;
 
-    return {
-      lcp,
-      pnv,
-      finalPNV,
-      monthlyPayment,
-      totalAmount,
-      totalInterest,
-      downPaymentAmount,
-      multiplier,
-      fixedCharge
-    };
+  return {
+    lcp,
+    pnv,
+    finalPNV,
+    monthlyPayment,
+    totalAmount,
+    totalInterest,
+    downPaymentAmount,
+    multiplier,
+    fixedCharge
   };
+};
 
   const [totalLCP, setTotalLCP] = useState(0);
 
@@ -459,6 +469,38 @@ setSearchTerm("");
       }
     }
   };
+
+  const handleNoInterestRateToggle = (checked: boolean) => {
+    setNoInterestRate(checked);
+    if(checked){
+      setDownPayment(0);
+      const paidProducts = selectedProducts.filter(item => !item.isFree);
+  
+    const total = paidProducts.length > 0
+    ? paidProducts.reduce((sum, item) => sum + Number.parseFloat(item.srp.toString()), 0)
+    : 0;
+    
+    setTotalLCP(total);
+    
+    }else {
+       const paidProducts = selectedProducts.filter(item => !item.isFree);
+  
+  const total = paidProducts.length > 0
+    ? paidProducts.reduce((sum, item) => sum + Number.parseFloat(item.srp.toString()), 0)
+    : 0;
+
+
+
+  const lcp = total > 0 ? calculateLCP(total) : 0;
+
+  setTotalLCP(Number.parseFloat(lcp.toFixed(2)));
+
+  const downPaymentPercent = getDefaultDownPaymentPercent(selectedProducts[0].item_type);
+  const defaultDownPayment = Math.round(lcp * downPaymentPercent);
+
+  setDownPayment(defaultDownPayment);
+    }
+  }
 
   const handleProductSearch = (value: string) => {
     setSearchTerm(value);
@@ -659,13 +701,13 @@ setSearchTerm("");
     
     // Payment Breakdown
     loan_contract_price: breakdown.lcp,
-    lcp_markup_rate: lcpMarkupRate,
-    lcp_additional_charge: lcpAdditionalCharge,
+    lcp_markup_rate: noInterestRate ? 0 : lcpMarkupRate,
+    lcp_additional_charge: noInterestRate ? 0 : lcpAdditionalCharge,
     down_payment: breakdown.downPaymentAmount,
-    promisory_note_value: breakdown.pnv,
+    promisory_note_value: noInterestRate ? 0 : breakdown.pnv,
     number_of_terms: selectedTerm,
-    promisory_note_value_interest: breakdown.multiplier,
-    promisory_note_value_interest_additional_charge: breakdown.fixedCharge,
+    promisory_note_value_interest: noInterestRate ? 0: breakdown.multiplier,
+    promisory_note_value_interest_additional_charge: noInterestRate ? 0 : breakdown.fixedCharge,
     
     // Items - Send as JSON string or array depending on your backend
     items: items,
@@ -677,6 +719,8 @@ setSearchTerm("");
     reference_number: referenceNumber || null,
     receipt_number: receiptNumber || null,  
     transaction_date: transactionDate,
+
+    is_no_interest: noInterestRate,
     
     // Documents
     documents: uploadedFiles.map(f => f.file),
@@ -956,7 +1000,8 @@ const setProductToFree = (id) => {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                   <div className="grid grid-cols-2 gap-5">
+                     <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                       <Checkbox
                         id="noDownPayment"
                         checked={noDownPayment}
@@ -969,6 +1014,20 @@ const setProductToFree = (id) => {
                         No Down Payment (Special Option)
                       </Label>
                     </div>
+                     <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <Checkbox
+                        id="noDownPayment"
+                        checked={noInterestRate}
+                        onCheckedChange={handleNoInterestRateToggle}
+                      />
+                       <Label
+                        htmlFor="noDownPayment"
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        No Interest Rate (Special Option)
+                      </Label>
+                    </div>
+                   </div>
 
                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
@@ -1000,7 +1059,7 @@ const setProductToFree = (id) => {
                             className="pl-7"
                             value={downPayment}
                             onChange={(e) => handleDownPaymentChange(e.target.value)}
-                            disabled={noDownPayment}
+                            disabled={noDownPayment || noInterestRate}
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -1273,6 +1332,7 @@ const setProductToFree = (id) => {
                       placeholder="Full name"
                       value={ref1Name}
                       onChange={(e) => setRef1Name(e.target.value)}
+                      disabled={selectedCustomer?.reference?.full_name != null}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1282,6 +1342,7 @@ const setProductToFree = (id) => {
                       placeholder="0912 345 6789"
                       value={ref1Contact}
                       onChange={(e) => setRef1Contact(e.target.value)}
+                                disabled={selectedCustomer?.reference?.phone_number != null}
                     />
                   </div>
                 </div>
@@ -1302,13 +1363,14 @@ const setProductToFree = (id) => {
                     id="visitDate"
                     type="date"
                     value={visitDate}
+                              disabled={selectedCustomer?.investigation_detail?.home_visit_date != null}
                     onChange={(e) => setVisitDate(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="investigator">Investigator Name *</Label>
-                  <Select value={investigatorId} onValueChange={setInvestigatorId}>
+                  <Select           disabled={selectedCustomer?.investigation_detail?.employee_id != null} value={investigatorId} onValueChange={setInvestigatorId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select investigator" />
                     </SelectTrigger>
@@ -1324,6 +1386,7 @@ const setProductToFree = (id) => {
 
                 <div className="flex items-center space-x-2">
                   <Checkbox
+                            disabled={selectedCustomer?.investigation_detail?.is_employment_verified != null}
                     id="verified"
                     checked={employmentVerified}
                     onCheckedChange={(checked) => setEmploymentVerified(checked as boolean)}
@@ -1339,6 +1402,7 @@ const setProductToFree = (id) => {
                 <div className="space-y-2">
                   <Label htmlFor="notes">Investigation Notes</Label>
                   <Textarea
+                            disabled={selectedCustomer?.investigation_detail?.investigation_notes != null}
                     id="notes"
                     placeholder="Add notes about the customer, home visit, references verification, etc."
                     rows={4}

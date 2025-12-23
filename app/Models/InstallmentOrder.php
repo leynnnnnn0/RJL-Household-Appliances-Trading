@@ -158,6 +158,8 @@ class InstallmentOrder extends Model
 
         $totalToPay = ($noteValue * $interest) + $additional;
 
+        if($totalToPay == 0) $totalToPay = $this->loan_contract_price;
+
         return $totalToPay - $paid - $this->acceleration_discount;
     }
 

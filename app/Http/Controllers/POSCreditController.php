@@ -45,6 +45,7 @@ class POSCreditController extends Controller
    public function store(Request $request)
 {
     $validated = $request->validate([
+        'is_no_interest' => 'required',
         'customer_id' => 'nullable|exists:customers,id',
         'customer_first_name' => 'required|string',
         'customer_last_name' => 'required',
@@ -89,6 +90,7 @@ class POSCreditController extends Controller
         'transaction_date' => 'required',
         'documents' => 'nullable'
     ]);
+
 
 
     try {
@@ -186,7 +188,7 @@ class POSCreditController extends Controller
         ]);
 
         // Calculate total sale amount for paid items
-        $total = $order->promisory_note_value * $order->promisory_note_value_interest + floatval($order->promisory_note_value_interest_additional_charge);
+        $total = $validated['is_no_interest'] ? $validated['loan_contract_price']  : $order->promisory_note_value * $order->promisory_note_value_interest + floatval($order->promisory_note_value_interest_additional_charge);
 
         // Create paid items
         foreach ($items as $item) {
@@ -222,8 +224,11 @@ class POSCreditController extends Controller
 
         // Create installment payment schedule
         $monthlyPayment = $total / $order->number_of_terms;
+        $startCount = $validated['is_no_interest'] ? 0 : 1;
+        $numberOfTerms = $validated['is_no_interest'] ? $order->number_of_terms - 1 : $order->number_of_terms;
+    
 
-        for ($i = 1; $i <= $order->number_of_terms; $i++) {
+        for ($i = $startCount; $i <= $numberOfTerms; $i++) {
             InstallmentOrderPayment::create([
                 'installment_order_id' => $order->id,
                 'installment_number' => $i,

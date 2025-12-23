@@ -104,8 +104,9 @@ export default function Index({ transactions, locations, employees }: Props) {
   };
 
   const calculatePNV = (transaction: InstallmentOrderWithRelations) => {
-    return transaction.promisory_note_value * transaction.promisory_note_value_interest + 
-           Number(transaction.promisory_note_value_interest_additional_charge);
+    const total =  Number(transaction.promisory_note_value_interest_additional_charge);
+  
+    return total == 0 ? transaction.loan_contract_price : total;
   };
 
   const calculateMonthly = (transaction: InstallmentOrderWithRelations) => {

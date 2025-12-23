@@ -178,7 +178,8 @@ export default function Show({transaction, paymentHistory} : PageProps){
     const down = transaction.down_payment;
     const pnv = lcp - down;
     const pnvAdditionalCharge = Number(transaction.promisory_note_value_interest_additional_charge);
-    const final_pnv = pnv * transaction.promisory_note_value_interest + pnvAdditionalCharge;
+    let final_pnv = pnv * transaction.promisory_note_value_interest + pnvAdditionalCharge;
+    if(final_pnv == 0) final_pnv = transaction.loan_contract_price;
 
     
     const totalToPay = final_pnv;
