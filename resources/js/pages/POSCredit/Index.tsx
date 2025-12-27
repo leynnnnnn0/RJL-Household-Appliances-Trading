@@ -30,6 +30,7 @@ import axios from 'axios';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { CustomerReference, InvenstigationDetail } from '@/types';
+import { set } from 'lodash';
 
 interface Customer {
   id: string;
@@ -446,6 +447,7 @@ setSearchTerm("");
 
   const handleNoDownPaymentToggle = (checked: boolean) => {
     setNoDownPayment(checked);
+    if(noInterestRate && checked) setNoInterestRate(false);
     if (checked) {
       setDownPayment(0);
       if (selectedProduct) {
@@ -472,6 +474,7 @@ setSearchTerm("");
 
   const handleNoInterestRateToggle = (checked: boolean) => {
     setNoInterestRate(checked);
+    if(noDownPayment && checked) setNoDownPayment(false);
     if(checked){
       setDownPayment(0);
       const paidProducts = selectedProducts.filter(item => !item.isFree);
