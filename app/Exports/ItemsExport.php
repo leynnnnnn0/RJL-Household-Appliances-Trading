@@ -34,7 +34,7 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
         }
 
         // Map items to export format
-        return $this->items->map(function($item) {
+        return $this->items->map(function ($item) {
             return [
                 'item_type' => $item->item_type,
                 'supplier' => $item->supplier,
@@ -100,116 +100,91 @@ class ItemsExport implements FromCollection, WithHeadings, WithStyles, WithColum
         ]);
 
         $sheet->getStyle('K2:K1000')->getNumberFormat()
-    ->setFormatCode('dd/mm/yyyy');
+            ->setFormatCode('dd/mm/yyyy');
 
-$sheet->getStyle('L2:L1000')->getNumberFormat()
-    ->setFormatCode('dd/mm/yyyy');
+        $sheet->getStyle('L2:L1000')->getNumberFormat()
+            ->setFormatCode('dd/mm/yyyy');
 
         return [];
     }
 
     public function columnWidths(): array
-{
-    return [
-        'A' => 15, // Item Type
-        'B' => 20, // Supplier
-        'C' => 20, // Location
-        'D' => 12, // DR No
-        'E' => 30, // Description (FIXED - was 'F')
-        'F' => 15, // Model
-        'G' => 15, // Serial
-        'H' => 10, // Quantity
-        'I' => 12, // SRP
-        'J' => 12, // Unit Cost
-        'K' => 18, // Date of Purchase
-        'L' => 15, // Date Out
-        'M' => 10, // Size
-        'N' => 25, // Remarks
-    ];
-}
+    {
+        return [
+            'A' => 15, // Item Type
+            'B' => 20, // Supplier
+            'C' => 20, // Location
+            'D' => 12, // DR No
+            'E' => 30, // Description
+            'F' => 15, // Model
+            'G' => 15, // Serial
+            'H' => 10, // Quantity
+            'I' => 12, // SRP
+            'J' => 12, // Unit Cost
+            'K' => 18, // Date of Purchase
+            'L' => 15, // Date Out
+            'M' => 10, // Size
+            'N' => 25, // Remarks
+        ];
+    }
 
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                
-                // Only add dropdowns if this is a template (no items)
+
                 if ($this->items === null) {
-                    // Item Type dropdown options
-                    $itemTypes = ['appliances', 'gadgets', 'furniture'];
-                    $itemTypeList = '"' . implode(',', $itemTypes) . '"';
-                    
-                    // Get suppliers
-                    $suppliers = Supplier::all()->pluck('name')->toArray();
-                    $supplierList = '"' . implode(',', $suppliers) . '"';
-                    
-                    // Get locations
-                    $locations = Location::all()->pluck('name')->toArray();
-                    $locationList = '"' . implode(',', $locations) . '"';
-                    
-                    // Add dropdown validation for Item Type column (A2:A1000)
-                    $validation = $sheet->getCell('A2')->getDataValidation();
-                    $validation->setType(DataValidation::TYPE_LIST);
-                    $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
-                    $validation->setAllowBlank(false);
-                    $validation->setShowInputMessage(true);
-                    $validation->setShowErrorMessage(true);
-                    $validation->setShowDropDown(true);
-                    $validation->setErrorTitle('Invalid Item Type');
-                    $validation->setError('Please select an item type from the dropdown.');
-                    $validation->setPromptTitle('Select Item Type');
-                    $validation->setPrompt('Choose: appliances, gadgets, or furniture.');
-                    $validation->setFormula1($itemTypeList);
-                    
-                    // Apply to range
-                    for ($i = 2; $i <= 1000; $i++) {
-                        $sheet->getCell('A' . $i)->setDataValidation(clone $validation);
-                    }
-                    
-                    // Add dropdown validation for Supplier column (B2:B1000)
-                    if (!empty($suppliers)) {
-                        $validation = $sheet->getCell('B2')->getDataValidation();
-                        $validation->setType(DataValidation::TYPE_LIST);
-                        $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
-                        $validation->setAllowBlank(false);
-                        $validation->setShowInputMessage(true);
-                        $validation->setShowErrorMessage(true);
-                        $validation->setShowDropDown(true);
-                        $validation->setErrorTitle('Invalid Supplier');
-                        $validation->setError('Please select a supplier from the dropdown.');
-                        $validation->setPromptTitle('Select Supplier');
-                        $validation->setPrompt('Choose a supplier from the list.');
-                        $validation->setFormula1($supplierList);
-                        
-                        // Apply to range
-                        for ($i = 2; $i <= 1000; $i++) {
-                            $sheet->getCell('B' . $i)->setDataValidation(clone $validation);
+                    try {
+                        // Item Type dropdown
+                        $itemTypes = ['appliances', 'gadgets', 'furniture'];
+                        $itemTypeList = '"' . implode(',', $itemTypes) . '"';
+                        $this->addDropdownValidation($sheet, 'A', $itemTypeList, 'Item Type');
+
+                        // Location dropdown
+                        $locations = Location::all()->pluck('name')->toArray();
+
+                        if (!empty($locations)) {
+                            // Clean the data - remove problematic characters
+                            $locations = array_map(function ($name) {
+                                return str_replace(['"', ',', "\n", "\r"], '', $name);
+                            }, $locations);
+
+                            $locationList = '"' . implode(',', $locations) . '"';
+
+                            // Check if list is too long (255 char limit)
+                            if (strlen($locationList) <= 255) {
+                                $this->addDropdownValidation($sheet, 'C', $locationList, 'Location');
+                            } else {
+                                \Log::warning('Location dropdown list exceeds 255 character limit!');
+                            }
                         }
-                    }
-                    
-                    // Add dropdown validation for Location column (C2:C1000)
-                    if (!empty($locations)) {
-                        $validation = $sheet->getCell('C2')->getDataValidation();
-                        $validation->setType(DataValidation::TYPE_LIST);
-                        $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
-                        $validation->setAllowBlank(false);
-                        $validation->setShowInputMessage(true);
-                        $validation->setShowErrorMessage(true);
-                        $validation->setShowDropDown(true);
-                        $validation->setErrorTitle('Invalid Location');
-                        $validation->setError('Please select a location from the dropdown.');
-                        $validation->setPromptTitle('Select Location');
-                        $validation->setPrompt('Choose a location from the list.');
-                        $validation->setFormula1($locationList);
-                        
-                        // Apply to range
-                        for ($i = 2; $i <= 1000; $i++) {
-                            $sheet->getCell('C' . $i)->setDataValidation(clone $validation);
-                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Excel export error: ' . $e->getMessage());
+                        \Log::error('Stack trace: ' . $e->getTraceAsString());
                     }
                 }
             },
         ];
+    }
+
+    private function addDropdownValidation($sheet, $column, $list, $title)
+    {
+        $validation = $sheet->getCell($column . '2')->getDataValidation();
+        $validation->setType(DataValidation::TYPE_LIST);
+        $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
+        $validation->setAllowBlank(false);
+        $validation->setShowInputMessage(true);
+        $validation->setShowErrorMessage(true);
+        $validation->setShowDropDown(true);
+        $validation->setErrorTitle('Invalid ' . $title);
+        $validation->setError('Please select a ' . strtolower($title) . ' from the dropdown.');
+        $validation->setPromptTitle('Select ' . $title);
+        $validation->setPrompt('Choose a ' . strtolower($title) . ' from the list.');
+        $validation->setFormula1($list);
+
+        for ($i = 2; $i <= 1000; $i++) {
+            $sheet->getCell($column . $i)->setDataValidation(clone $validation);
+        }
     }
 }

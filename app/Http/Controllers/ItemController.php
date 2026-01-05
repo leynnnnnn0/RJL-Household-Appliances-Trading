@@ -13,59 +13,61 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 
 class ItemController extends Controller
 {
     public function index(Request $request)
-{
-    $query = Item::with(['supplier', 'location'])->latest();
+    {
+        $query = Item::with(['supplier', 'location'])->latest();
 
-    if ($search = $request->input('search')) {
-        $query->where(function ($q) use ($search) {
-            $q->where('description', 'like', "%{$search}%")
-              ->orWhere('model', 'like', "%{$search}%")
-              ->orWhere('serial', 'like', "%{$search}%");
-        });
-    }
-
-    if ($availability = $request->input('availability')) {
-        if ($availability === 'available') {
-            $query->whereNull('date_out');
-        } elseif ($availability === 'unavailable') {
-            $query->whereNotNull('date_out');
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                    ->orWhere('model', 'like', "%{$search}%")
+                    ->orWhere('serial', 'like', "%{$search}%");
+            });
         }
+
+        if ($availability = $request->input('availability')) {
+            if ($availability === 'available') {
+                $query->whereNull('date_out');
+            } elseif ($availability === 'unavailable') {
+                $query->whereNotNull('date_out');
+            }
+        }
+
+        if ($supplier = $request->input('supplier')) {
+            $query->whereHas('supplier', fn($q) => $q->where('slug', $supplier));
+        }
+
+        if ($itemType = $request->input('item_type')) {
+            $query->where('item_type', $itemType);
+        }
+
+        if ($location = $request->input('location')) {
+            $query->where('location_id', $location);
+        }
+
+        $items = $query->paginate(8)->withQueryString();
+
+        return Inertia::render('Item/Index', [
+            'items' => $items,
+            'suppliers' => Supplier::dropdown(),
+            'locations' => Location::dropdown(),
+        ]);
     }
 
-    if ($supplier = $request->input('supplier')) {
-        $query->whereHas('supplier', fn($q) => $q->where('slug', $supplier));
-    }
 
-    if ($itemType = $request->input('item_type')) {
-        $query->where('item_type', $itemType);
-    }
-
-    if ($location = $request->input('location')) {
-        $query->where('location_id', $location);
-    }
-
-    $items = $query->paginate(8)->withQueryString();
-
-    return Inertia::render('Item/Index', [
-        'items' => $items,
-        'suppliers' => Supplier::dropdown(),
-        'locations' => Location::dropdown(),
-    ]);
-}
-
-
-    public function create(){
-        $suppliers = Supplier::all()->map(function($supplier){
+    public function create()
+    {
+        $suppliers = Supplier::all()->map(function ($supplier) {
             return [
                 'slug' => $supplier->slug,
                 'name' => $supplier->name,
             ];
         });
-        $locations = Location::all()->map(function($location){
+        $locations = Location::all()->map(function ($location) {
             return [
                 'id' => $location->id,
                 'name' => $location->name,
@@ -77,7 +79,8 @@ class ItemController extends Controller
         ]);
     }
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         $validated = $request->validate([
             'item_type' => 'required|in:appliances,gadgets,furniture',
             'supplier' => 'required|exists:suppliers,slug',
@@ -97,12 +100,13 @@ class ItemController extends Controller
         return redirect()->route('items.index');
     }
 
-    public function show($id){
-        
-        $item = Item::with(['supplier', 'location', 'installment_orders.customer','installment_orders.user', 'orders.customer', 'orders.employee'])
-        ->findOrFail($id);
+    public function show($id)
+    {
 
-        $installmentOrders = $item->installment_orders->map(function($order){
+        $item = Item::with(['supplier', 'location', 'installment_orders.customer', 'installment_orders.user', 'orders.customer', 'orders.employee'])
+            ->findOrFail($id);
+
+        $installmentOrders = $item->installment_orders->map(function ($order) {
             return [
                 'order_number' => $order->order_number,
                 'customer' => $order->customer->full_name,
@@ -112,7 +116,7 @@ class ItemController extends Controller
             ];
         });
 
-         $orders = $item->orders->map(function($order){
+        $orders = $item->orders->map(function ($order) {
             return [
                 'order_number' => $order->order_number,
                 'customer' => $order->customer->full_name,
@@ -123,25 +127,26 @@ class ItemController extends Controller
         });
 
         $purchaseHistory = collect()
-        ->concat($installmentOrders)
-        ->concat($orders);
+            ->concat($installmentOrders)
+            ->concat($orders);
 
 
         return Inertia::render('Item/Show', ['item' => $item, 'purchaseHistory' => $purchaseHistory]);
     }
 
-    public function edit($id){
+    public function edit($id)
+    {
         $item = Item::with(['supplier', 'location'])->findOrFail($id);
-        if($item->date_out != null){
+        if ($item->date_out != null) {
             return response(status: 403);
         }
-        $suppliers = Supplier::all()->map(function($supplier){
+        $suppliers = Supplier::all()->map(function ($supplier) {
             return [
                 'slug' => $supplier->slug,
                 'name' => $supplier->name,
             ];
         });
-        $locations = Location::all()->map(function($location){
+        $locations = Location::all()->map(function ($location) {
             return [
                 'id' => $location->id,
                 'name' => $location->name,
@@ -154,7 +159,8 @@ class ItemController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id){
+    public function update(Request $request, $id)
+    {
         $item = Item::findOrFail($id);
         $validated = $request->validate([
             'item_type' => 'required|in:appliances,gadgets,furniture',
@@ -215,176 +221,209 @@ class ItemController extends Controller
         $items = $query->get();
 
         $filename = 'items-' . now()->format('Y-m-d-His') . '.xlsx';
-        
+
         return Excel::download(new ItemsExport($items), $filename);
     }
 
-    public function createFromImport(){
+    public function createFromImport()
+    {
         return Inertia::render('Item/Import', [
             'items' => session('imported_items', [])
         ]);
     }
 
-    public function saveImportedItems(){
-    $items = session('imported_items', []);
-    if (empty($items)) {
-        return back()->withErrors(['error' => 'No items to save.']);
-    }
-    
-    try {
-        DB::beginTransaction();
-        $savedCount = 0;
-        
-        foreach ($items as $item) {
-            if (empty($item['item_type'])) {
-                throw new \Exception("Row {$item['row_number']}: Item Type is required.");
-            }
-            
-            if (empty($item['supplier']) || empty($item['location_id'])) {
-                throw new \Exception("Row {$item['row_number']}: Supplier and Location are required.");
-            }
-            
-            if (empty($item['description'])) {
-                throw new \Exception("Row {$item['row_number']}: Description is required.");
-            }
-            
-            Item::create([
-                'item_type' => $item['item_type'],
-                'supplier' => $item['supplier'],
-                'location_id' => $item['location_id'],
-                'dr_no' => $item['dr_no'],
-                'description' => $item['description'],
-                'model' => $item['model'],
-                'serial' => $item['serial'],
-                'quantity' => $item['quantity'],
-                'srp' => $item['srp'],
-                'unit_cost' => $item['unit_cost'],
-                'date_of_purchase' => $item['date_of_purchase'],
-                'date_out' => $item['date_out'],
-                'remarks' => $item['remarks'],
-            ]);
-            $savedCount++;
+    public function saveImportedItems()
+    {
+        $items = session('imported_items', []);
+        if (empty($items)) {
+            return back()->withErrors(['error' => 'No items to save.']);
         }
-        
-        DB::commit();
-        session()->forget('imported_items');
-        
-        return redirect()->route('items.index')
-            ->with('success', "$savedCount items saved successfully!");
-            
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->withErrors([
-            'error' => 'Import failed: ' . $e->getMessage() . "\n\nNo items were saved. Please contact your administrator for more information."
+
+        try {
+            DB::beginTransaction();
+            $savedCount = 0;
+
+            foreach ($items as $item) {
+                if (empty($item['item_type'])) {
+                    throw new \Exception("Row {$item['row_number']}: Item Type is required.");
+                }
+
+                if (empty($item['supplier_name']) || empty($item['location_id'])) {
+                    throw new \Exception("Row {$item['row_number']}: Supplier and Location are required.");
+                }
+
+                if (empty($item['description'])) {
+                    throw new \Exception("Row {$item['row_number']}: Description is required.");
+                }
+
+                // Get or create supplier
+                $supplierSlug = $this->getOrCreateSupplier($item['supplier_name']);
+
+                Item::create([
+                    'item_type' => $item['item_type'],
+                    'supplier' => $supplierSlug,
+                    'location_id' => $item['location_id'],
+                    'dr_no' => $item['dr_no'],
+                    'description' => $item['description'],
+                    'model' => $item['model'],
+                    'serial' => $item['serial'],
+                    'quantity' => $item['quantity'],
+                    'srp' => $item['srp'],
+                    'unit_cost' => $item['unit_cost'],
+                    'date_of_purchase' => $item['date_of_purchase'],
+                    'date_out' => $item['date_out'],
+                    'remarks' => $item['remarks'],
+                ]);
+                $savedCount++;
+            }
+
+            DB::commit();
+            session()->forget('imported_items');
+
+            return redirect()->route('items.index')
+                ->with('success', "$savedCount items saved successfully!");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors([
+                'error' => 'Import failed: ' . $e->getMessage() . "\n\nNo items were saved. Please contact your administrator for more information."
+            ]);
+        }
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240'
         ]);
+
+        try {
+            $rows = Excel::toCollection(new ItemsImport, $request->file('file'))->first();
+            $locations = Location::all()->keyBy('name');
+
+            $validItemTypes = ['appliances', 'gadgets', 'furniture'];
+
+            $formattedItems = $rows->skip(1)->filter(function ($row) {
+                return !empty($row[0]) || !empty($row[5]);
+            })->map(function ($row, $index) use ($locations, $validItemTypes) {
+                $itemType = strtolower(trim($row[0] ?? ''));
+
+                // Validate item type
+                if (!in_array($itemType, $validItemTypes)) {
+                    $itemType = null;
+                }
+
+                // Get supplier name (no need to check if exists yet)
+                $supplierName = trim($row[1] ?? '');
+
+                $locationName = $row[2] ?? null;
+                $locationId = null;
+                if ($locationName && isset($locations[$locationName])) {
+                    $locationId = $locations[$locationName]->id;
+                }
+
+                $dateOfPurchase = $this->convertExcelDate($row[10] ?? null);
+                $dateOut = $this->convertExcelDate($row[11] ?? null);
+
+                return [
+                    'row_number' => $index + 2, // +2 because we skip header and Excel rows start at 1
+                    'item_type' => $itemType,
+                    'supplier_name' => $supplierName,
+                    'location_id' => $locationId,
+                    'location_display' => $locationName,
+                    'dr_no' => $row[3] ?? null,
+                    'description' => $row[4] ?? null,
+                    'model' => $row[5] ?? null,
+                    'serial' => $row[6] ?? null,
+                    'quantity' => $row[7] ?? null,
+                    'srp' => $row[8] ?? null,
+                    'unit_cost' => $row[9] ?? null,
+                    'date_of_purchase' => $dateOfPurchase,
+                    'date_out' => $dateOut,
+                    'size' => $row[12] ?? null,
+                    'remarks' => $row[13] ?? null,
+                ];
+            })->values()->toArray();
+
+            session(['imported_items' => $formattedItems]);
+
+            return redirect()->back()->with('success', count($formattedItems) . ' items imported successfully. Please review before saving.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors('error', 'Error importing file: ' . $e->getMessage());
+        }
     }
-}
 
-public function import(Request $request){
-    $request->validate([
-        'file' => 'required|mimes:xlsx,xls,csv|max:10240'
-    ]);
-    
-    try {
-        $rows = Excel::toCollection(new ItemsImport, $request->file('file'))->first();
-        $suppliers = Supplier::all()->keyBy('name');
-        $locations = Location::all()->keyBy('name');
-        
-        $validItemTypes = ['appliances', 'gadgets', 'furniture'];
-        
-        $formattedItems = $rows->skip(1)->filter(function($row) {
-            return !empty($row[0]) || !empty($row[5]);
-        })->map(function($row, $index) use ($suppliers, $locations, $validItemTypes) {
-            $itemType = strtolower(trim($row[0] ?? ''));
-            
-            // Validate item type
-            if (!in_array($itemType, $validItemTypes)) {
-                $itemType = null;
+    /**
+     * Get existing supplier or create new one
+     * Returns supplier slug
+     */
+    private function getOrCreateSupplier($supplierName)
+    {
+        if (empty($supplierName)) {
+            throw new \Exception("Supplier name cannot be empty.");
+        }
+
+        // Generate slug from name
+        $slug = Str::slug($supplierName);
+
+        // Check if supplier exists by name (case-insensitive)
+        $supplier = Supplier::whereRaw('LOWER(name) = ?', [strtolower($supplierName)])->first();
+
+        if (!$supplier) {
+            // Check if slug exists, if so make it unique
+            $originalSlug = $slug;
+            $counter = 1;
+            while (Supplier::where('slug', $slug)->exists()) {
+                $slug = $originalSlug . '-' . $counter;
+                $counter++;
             }
-            
-            $categoryName = $row[1] ?? null;
-            $categorySlug = null;
-            if ($categoryName && isset($suppliers[$categoryName])) {
-                $categorySlug = $suppliers[$categoryName]->slug;
-            }
-            
-            $locationName = $row[2] ?? null;
-            $locationId = null;
-            if ($locationName && isset($locations[$locationName])) {
-                $locationId = $locations[$locationName]->id;
-            }
-            
-            $dateOfPurchase = $this->convertExcelDate($row[10] ?? null);
-            $dateOut = $this->convertExcelDate($row[11] ?? null);
-            
-            return [
-                'row_number' => $index,
-                'item_type' => $itemType,
-                'supplier' => $categorySlug,
-                'category_display' => $categoryName,
-                'location_id' => $locationId,
-                'location_display' => $locationName,
-                'dr_no' => $row[3] ?? null,
-                'description' => $row[4] ?? null,
-                'model' => $row[5] ?? null,
-                'serial' => $row[6] ?? null,
-                'quantity' => $row[7] ?? null,
-                'srp' => $row[8] ?? null,
-                'unit_cost' => $row[9] ?? null,
-                'date_of_purchase' => $dateOfPurchase,
-                'date_out' => $dateOut,
-                'size' => $row[12] ?? null,
-                'remarks' => $row[13] ?? null,
-            ];
-        })->values()->toArray();
-        
-        session(['imported_items' => $formattedItems]);
-        
-        return redirect()->back()->with('success', count($formattedItems) . ' items imported successfully. Please review before saving.');
-        
-    } catch (\Exception $e) {
-        return redirect()->back()->withErrors('error', 'Error importing file: ' . $e->getMessage());
+
+            // Create new supplier
+            $supplier = Supplier::create([
+                'name' => $supplierName,
+                'slug' => $slug,
+                'remarks' => 'Auto-created from import'
+            ]);
+        }
+
+        return $supplier->slug;
     }
-}
 
+    private function convertExcelDate($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
 
+        if (is_string($value)) {
+            try {
+                return \Carbon\Carbon::parse($value)->format('Y-m-d');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
 
-private function convertExcelDate($value)
-{
-    if (empty($value)) {
+        if (is_numeric($value)) {
+            try {
+                $unix_date = ($value - 25569) * 86400;
+                return \Carbon\Carbon::createFromTimestamp($unix_date)->format('Y-m-d');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
         return null;
     }
-    
-    if (is_string($value)) {
-        try {
-            return \Carbon\Carbon::parse($value)->format('Y-m-d');
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
-    
-    if (is_numeric($value)) {
-        try {
-            $unix_date = ($value - 25569) * 86400;
-            return \Carbon\Carbon::createFromTimestamp($unix_date)->format('Y-m-d');
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
-    
-    return null;
-}
 
-     public function cancelImport(){
+    public function cancelImport()
+    {
         session()->forget('imported_items');
         return redirect()->back()->with('info', 'Import cancelled.');
     }
 
-    public function destroy($id){
+    public function destroy($id)
+    {
         $item = Item::findOrFail($id);
         $item->delete();
         return redirect()->route('items.index');
     }
-
-
 }

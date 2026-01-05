@@ -235,7 +235,7 @@ export default function Import({items} : ImportProps) {
                         items.map((item, index) => (
                             <TableRow key={index}>
                                 <TableCell className="text-[10px]">{item.row_number}</TableCell>
-                                <TableCell className="text-[10px]">{item.supplier}</TableCell>
+                                <TableCell className="text-[10px]">{item.supplier_name}</TableCell>
                                 <TableCell className="text-[10px]">{item.location_display}</TableCell>
                                    <TableCell className="text-[10px]">{item.item_type}</TableCell>
                                 <TableCell className="text-[10px]">{item.dr_no}</TableCell>
