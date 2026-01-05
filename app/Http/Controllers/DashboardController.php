@@ -43,7 +43,7 @@ class DashboardController extends Controller
         $marginPercent = $unitCostTotal > 0
             ? (($srpTotal - $unitCostTotal) / $unitCostTotal) * 100
             : 0;
-
+  
         if (Auth::user()->getRoleNames()->contains('super admin')) {
 
             // Get filter parameters
@@ -292,8 +292,7 @@ class DashboardController extends Controller
                         'reference_number' => $order->reference_number,
                         'is_voided' => false,
                         'created_at' => $order->created_at,
-                        'remarks' => $order->installment_order_payment->installment_order->$order->installment_order_items->map(fn($item) => $item->item->model)
-                            ->implode(', ')
+                        'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)->implode(', ')
                     ];
                 })
                 ->groupBy('receipt_number')
