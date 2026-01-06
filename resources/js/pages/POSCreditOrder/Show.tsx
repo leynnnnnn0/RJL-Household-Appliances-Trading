@@ -952,16 +952,16 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                                     )}
                                                 </div>
 
-                                                {/* <div className="space-y-2">
+                                                <div className="space-y-2">
                                                     <Label htmlFor="reference_number">Reference Number</Label>
                                                     <Input
                                                         id="reference_number"
                                                         type="text"
-                                                        placeholder="Optional"
+                                                        placeholder="Required for non cash payments"
                                                         value={data.reference_number}
                                                         onChange={(e) => setData('reference_number', e.target.value)}
                                                     />
-                                                </div> */}
+                                                </div>
 
                                                 <div className="space-y-2">
                                                     <Label htmlFor="paid_date">Payment Date *</Label>
