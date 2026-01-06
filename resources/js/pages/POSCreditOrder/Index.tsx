@@ -389,7 +389,7 @@ export default function Index({ transactions, locations, employees }: Props) {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="font-semibold">Customer</TableHead>
-                <TableHead className="font-semibold">Order Number</TableHead>
+                <TableHead className="font-semibold">CRN</TableHead>
                 <TableHead className="font-semibold">Transaction Date</TableHead>
                 <TableHead className="font-semibold">No. of Terms</TableHead>
                 <TableHead className="font-semibold">Total PNV</TableHead>
@@ -414,7 +414,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                 transactions.data.map((transaction) => (
                   <TableRow key={transaction.order_number} className="hover:bg-muted/50 transition-colors">
                     <TableCell>{transaction.customer.full_name}</TableCell>
-                    <TableCell className="font-medium">{transaction.order_number}</TableCell>
+                    <TableCell className="font-medium">{transaction.receipt_number}</TableCell>
                     <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
                     <TableCell>{transaction.number_of_terms} months</TableCell>
                     <TableCell>₱{calculatePNV(transaction).toLocaleString()}</TableCell>
