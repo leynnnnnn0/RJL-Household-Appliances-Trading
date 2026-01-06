@@ -545,7 +545,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                                       </TableCell>
                                       <TableCell className="text-xs">
                                           {transaction.receipt_number}
-                                      </TableCell>
+                                      </TableCell> 
                                       <TableCell>
                                           {formatDate(
                                               transaction.transaction_date,

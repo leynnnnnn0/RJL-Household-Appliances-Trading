@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/demandLetter/{id}', [PDFController::class, 'demandLetter']);
     Route::get('/depositAgreement/{id}', [PDFController::class, 'depositAgreement']);
     Route::get('/download', [PDFController::class, 'download']);
+    Route::get('/promisory-note', [PDFController::class, 'generatePromissoryNote']);
     Route::resource('pdf', PDFController::class);
     /*
     |--------------------------------------------------------------------------
@@ -173,6 +174,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/transactions/download-pdf', [DashboardController::class, 'downloadTransactionsPdf'])
     ->name('transactions.download.pdf');
+
 
     Route::delete('/customers/{customer}/documents/{document}', [CustomerController::class, 'destroyDocument'])
     ->name('customers.documents.destroy');
