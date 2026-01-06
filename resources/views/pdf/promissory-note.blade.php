@@ -6,22 +6,22 @@
     <title>Promissory Note</title>
     <style>
         @page {
-            margin: 1in;
+            margin: 0.6in 0.75in;
         }
         body {
             font-family: 'Times New Roman', serif;
-            font-size: 12pt;
-            line-height: 1.6;
+            font-size: 11pt;
+            line-height: 1.4;
             color: #000;
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 18px;
         }
         .title {
             text-decoration: underline;
             font-weight: bold;
-            font-size: 14pt;
+            font-size: 13pt;
         }
         .underline {
             text-decoration: underline;
@@ -29,27 +29,34 @@
         }
         .content {
             text-align: justify;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+        }
+        .content p {
+            margin: 0 0 10px 0;
         }
         .section-title {
             font-weight: bold;
-            margin-top: 25px;
-            margin-bottom: 10px;
+            margin-top: 15px;
+            margin-bottom: 8px;
         }
         .signature-section {
-            margin-top: 50px;
+            margin-top: 30px;
+        }
+        .signature-section p {
+            margin: 0 0 8px 0;
         }
         .signature-line {
             border-bottom: 1px solid #000;
-            width: 300px;
-            margin: 30px 0 5px 0;
+            width: 280px;
+            margin: 20px 0 5px 0;
         }
         .label {
             font-weight: bold;
-            margin-top: 5px;
+            margin-top: 3px;
+            line-height: 1.3;
         }
         sup {
-            font-size: 8pt;
+            font-size: 7pt;
         }
     </style>
 </head>
@@ -59,11 +66,11 @@
     </div>
 
     <div class="content">
-        <p><span class="underline">{{ strtoupper(\Carbon\Carbon::parse($note_date)->format('F d, Y')) }}</span></p>
+        <p><span class="underline">{{ $note_date }}</span></p>
         
         <p><span class="underline">{{ strtoupper($item_description) }}</span></p>
         
-        <p><span class="underline">(PHP {{ number_format($principal_amount, 2) }})</span></p>
+        <p><span class="underline">(PHP {{ $principal_amount }})</span></p>
     </div>
 
     <div class="content">
@@ -72,19 +79,19 @@
             unconditionally promises to pay to the order of {{ strtoupper($creditor_name) }} 
             with business address at {{ $creditor_address }}, the principal sum of 
             <span class="underline">{{ strtoupper($principal_amount_words) }}</span> 
-            (PHP <span class="underline">{{ number_format($principal_amount, 2) }}</span>), 
+            (PHP <span class="underline">{{ $principal_amount }}</span>), 
             in the installment amount of <span class="underline">{{ strtoupper($installment_amount_words) }}</span> 
-            (<span class="underline">PHP {{ number_format($installment_amount, 2) }}</span>) 
+            (<span class="underline">PHP {{ $installment_amount }}</span>) 
             for <span class="underline">{{ $installment_months }} MONS.</span> successive months, 
             due and payable without need of notice or demand every 
             <span class="underline">{{ $payment_day }}<sup>{{ $payment_day_suffix }}</sup></span> 
             day of each month starting on 
-            <span class="underline">{{ strtoupper(\Carbon\Carbon::parse($first_payment_date)->format('M. Y')) }}</span>, 
+            <span class="underline">{{ $first_payment_date }}</span>, 
             provided that a late payment of One Hundred Pesos (PHP 100.00) per month shall be added on 
             each unpaid installment from due date thereof until fully Paid.
         </p>
 
-        <p>
+        <p> 
             Default in the payment of at least two months installments including additional late charges 
             shall cause the total outstanding balance to become due and demandable.
         </p>
@@ -172,7 +179,7 @@
         <div class="label">ID NO.: {{ $maker_id }}</div>
     </div>
 
-    <div class="signature-section" style="margin-top: 60px;">
+    <div class="signature-section" style="margin-top: 40px;">
         <p>
             <strong>SUBSCRIBED AND SWORN</strong> to before me this _____ day of _________________ 20_____ 
             at {{ $signing_location }}, Philippines.
@@ -180,7 +187,7 @@
         
         <p><strong>WITNESS MY HAND AND SEAL.</strong></p>
         
-        <div class="signature-line" style="margin-top: 40px;"></div>
+        <div class="signature-line" style="margin-top: 25px;"></div>
         <div class="label">NOTARY PUBLIC</div>
     </div>
 </body>

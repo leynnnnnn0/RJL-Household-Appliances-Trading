@@ -33,7 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/demandLetter/{id}', [PDFController::class, 'demandLetter']);
     Route::get('/depositAgreement/{id}', [PDFController::class, 'depositAgreement']);
     Route::get('/download', [PDFController::class, 'download']);
-    Route::get('/promisory-note', [PDFController::class, 'generatePromissoryNote']);
+    Route::get('/promisory-note/{id}', [PDFController::class, 'generatePromissoryNote']);
     Route::resource('pdf', PDFController::class);
     /*
     |--------------------------------------------------------------------------

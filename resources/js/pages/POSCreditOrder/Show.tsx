@@ -398,6 +398,13 @@ export default function Show({transaction, paymentHistory} : PageProps){
                                       {!transaction.is_defaulted ?  <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
+                                            
+                                               <DropdownMenuItem 
+                                                onClick={() => window.open(`/promisory-note/${transaction.id}`, '_blank')}
+                                            >
+                                                <Download className="w-4 h-4 mr-2" />
+                                                Promisorry Note
+                                            </DropdownMenuItem>
                                             <DropdownMenuItem 
                                                 onClick={() => window.open(`/installmentContract/${transaction.id}`, '_blank')}
                                             >

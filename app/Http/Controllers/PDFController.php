@@ -168,10 +168,36 @@ class PDFController extends Controller
     /**
      * Generate promissory note PDF
      */
-    public function generatePromissoryNote()
+    public function generatePromissoryNote($id)
     {
+        $installmentOrder = InstallmentOrder::with(['customer', 'installment_order_items.item'])->findOrFail($id);
+        $formatter = new \NumberFormatter('en', \NumberFormatter::SPELLOUT);
+   
         // Fake data for testing
-        $data = $this->getFakeData();
+        $data = [
+            'note_date' => Carbon::now()->format('F d, Y'),
+            'item_description' => $installmentOrder->installment_order_items->map(fn($item) => $item->item->model)
+                            ->implode(', '),
+            'principal_amount' => number_format($installmentOrder->total_p_n_v, 2),
+            'maker_name' => strtoupper($installmentOrder->customer->full_name),
+            'maker_address' => strtoupper($installmentOrder->customer->address),
+            'principal_amount_words' => $formatter->format(round($installmentOrder->total_p_n_v, 2)) . ' Pesos',
+            'installment_amount' => number_format($installmentOrder->monthly_payment, 2),
+            'installment_amount_words' => $formatter->format(round($installmentOrder->monthly_payment, 2)) . ' Pesos',
+            'installment_months' => $installmentOrder->number_of_terms,
+            'payment_day' => Carbon::parse($installmentOrder->transaction_date)->format('j'),
+            'payment_day_suffix' => $this->getOrdinalSuffix(Carbon::parse($installmentOrder->transaction_date)->format('j')),
+            'first_payment_date' => Carbon::parse($installmentOrder->transaction_date)->addMonth()->format('F d, Y'),
+            'creditor_name' => 'RJL HOUSEHOLD APPLIANCES TRADING',
+            'creditor_address' => 'PTR BUILDING, PARANG PARANG, ORANI, BATAAN',
+            'signing_location' => 'ORANI, BATAAN',
+            'jurisdiction' => 'BATAAN',
+            'maker_id' => '',
+            'note_day' => Carbon::now()->format('j'),
+            'note_day_suffix' => $this->getOrdinalSuffix(Carbon::now()->format('j')),
+        ];
+
+    
 
         $pdf = Pdf::loadView('pdf.promissory-note', $data);
 
