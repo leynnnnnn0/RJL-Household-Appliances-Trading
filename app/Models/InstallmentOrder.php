@@ -36,7 +36,7 @@ class InstallmentOrder extends Model
         'reason_for_cancellation',
         'void_date',
         'voider_id',
-
+  
         'is_completed',
 
         'is_accelerated',
