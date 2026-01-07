@@ -1,1 +1,0 @@
-import{c as o,j as r}from"./app-DawOpi0-.js";/* empty css            */function m(){const t=o.c(1);let e;return t[0]===Symbol.for("react.memo_cache_sentinel")?(e=r.jsx(r.Fragment,{children:r.jsx("h1",{children:"Hello There!"})}),t[0]=e):e=t[0],e}export{m as default};

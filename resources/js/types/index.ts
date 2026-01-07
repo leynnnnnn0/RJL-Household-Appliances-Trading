@@ -97,12 +97,18 @@ export type CustomerReference = {
 
 
 export type InvenstigationDetail = {
-  id: number | string;
-  employee_id: number | string;
-  home_visit_date: string;
-  is_employment_verified: boolean;
-  investigation_notes: string;
-}
+    id: number | string;
+    employee_id: number | string;
+    home_visit_date: string;
+    is_employment_verified: boolean;
+    investigation_notes: string;
+
+    id_presented?: string;
+    id_number?: string;
+    civil_status?: string;
+    spouse_name?: string;
+    spouse_contact_number?: string;
+};
 
 
 

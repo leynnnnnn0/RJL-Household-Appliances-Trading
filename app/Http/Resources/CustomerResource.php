@@ -36,6 +36,11 @@ class CustomerResource extends JsonResource
                 'home_visit_date' => $this->investigation_detail?->home_visit_date,
                 'is_employment_verified' => $this->investigation_detail?->is_employment_verified,
                 'investigation_notes' => $this->investigation_detail?->investigation_notes,
+                'id_presented' => $this->investigation_detail?->id_presented,
+                'id_number' => $this->investigation_detail?->id_number,
+                'civil_status' => $this->investigation_detail?->civil_status,
+                'spouse_name' => $this->investigation_detail?->spouse_name,
+                'spouse_contact_number' => $this->investigation_detail?->spouse_contact_number,
             ]
         ];
     }

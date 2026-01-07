@@ -15,7 +15,12 @@ class InvestigationDetail extends Model
         'employee_id',
         'home_visit_date',
         'is_employment_verified',
-        'investigation_notes'
+        'investigation_notes',
+        'id_presented',
+        'id_number',
+        'civil_status',
+        'spouse_name',
+        'spouse_contact_number',
     ];  
 
     public function customer()

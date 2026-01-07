@@ -88,7 +88,12 @@ class POSCreditController extends Controller
         'promisory_note_value_interest_additional_charge' => 'required',
         'receipt_number' => 'required|unique:installment_orders,receipt_number',
         'transaction_date' => 'required',
-        'documents' => 'nullable'
+        'documents' => 'nullable',
+        'id_presented' => 'nullable|string',
+        'id_number' => 'nullable|string',
+        'civil_status' => 'nullable|string',
+        'spouse_name' => 'nullable|string',
+        'spouse_contact_number' => 'nullable|string',
     ]);
 
 
@@ -163,7 +168,12 @@ class POSCreditController extends Controller
                 'employee_id' => $validated['investigator_id'],
                 'home_visit_date' => $validated['home_visit_date'],
                 'is_employment_verified' => $validated['is_employment_verified'],
-                'investigation_notes' => $validated['investigation_notes']
+                'investigation_notes' => $validated['investigation_notes'],
+                'id_presented' => $validated['id_presented'],
+                'id_number' => $validated['id_number'],
+                'civil_status' => $validated['civil_status'],
+                'spouse_name' => $validated['spouse_name'],
+                'spouse_contact_number' => $validated['spouse_contact_number'],
             ]
         );
 
