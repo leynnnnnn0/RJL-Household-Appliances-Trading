@@ -422,7 +422,7 @@ class DashboardController extends Controller
             'installment_order_payment.installment_order.customer',
             'user'
         ])
-            ->whereBetween(DB::raw('DATE(created_at)'), [$fromDate, $toDate]);
+            ->whereBetween(DB::raw('DATE(paid_date)'), [$fromDate, $toDate]);
 
         // Apply employee filter if specified
         if ($employeeId && $employeeId != 'all') {
