@@ -430,7 +430,7 @@ export default function Index({
                             </div>
                         </CardContent>
                     </Card>
-                  
+
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-base">
@@ -444,7 +444,7 @@ export default function Index({
                         </CardContent>
                     </Card>
 
-                       <Card>
+                    <Card>
                         <CardHeader>
                             <CardTitle className="text-base">
                                 Advanced Payments
@@ -456,7 +456,7 @@ export default function Index({
                             </div>
                         </CardContent>
                     </Card>
-                    
+
                     <Card className="border-orange-200 bg-orange-50">
                         <CardHeader>
                             <CardTitle className="text-base">
@@ -620,10 +620,8 @@ export default function Index({
                                         </span>
                                         <span className="text-xl font-bold text-green-600">
                                             {formatCurrency(
-                                                summary.total_amount_paid +
-                                                    summary.total_advance -
-                                                    summary.total_rebate +
-                                                    summary.total_penalty,
+                                                summary.total_amount_paid + summary.total_advanced_payment - summary.total_rebate + summary.total_penalty
+                                                   
                                             )}
                                         </span>
                                     </div>
@@ -763,6 +761,8 @@ export default function Index({
                                                 'hsl(var(--background))',
                                             border: '1px solid hsl(var(--border))',
                                         }}
+                                        labelStyle={{ color: '#000000' }}
+                                        itemStyle={{ color: '#000000' }}
                                     />
                                     <Legend />
                                     <Bar

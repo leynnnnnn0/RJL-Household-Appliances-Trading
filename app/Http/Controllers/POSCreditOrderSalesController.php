@@ -19,24 +19,24 @@ class POSCreditOrderSalesController extends Controller
         $itemTypeFilter = $request->input('item_type', 'all');
         $locationId = $request->input('location_id', 'all');
 
-    
+
         $query = InstallmentOrder::query()
             ->where('is_voided', false)
             ->where('transaction_date', '<=', $dateTo);
-       
 
-       
+
+
 
         if ($locationId !== 'all') {
             $query->where('location_id', $locationId);
         }
 
         if ($itemTypeFilter !== 'all') {
-            $query->whereHas('installment_order_item.item', function($q) use ($itemTypeFilter) {
+            $query->whereHas('installment_order_item.item', function ($q) use ($itemTypeFilter) {
                 $q->where('item_type', $itemTypeFilter);
             });
         }
-  
+
 
         $orders = $query->with(['installment_order_payments', 'installment_order_items.item'])->get();
 
@@ -83,6 +83,13 @@ class POSCreditOrderSalesController extends Controller
             'gadgets' => 0,
         ];
 
+        // Rebate per item type
+        $rebateByItemType = [
+            'furniture' => 0,
+            'appliances' => 0,
+            'gadgets' => 0,
+        ];
+
         $totalPNV = 0;
         $totalRemainingBalance = 0;
         $collectibleBalance = 0;
@@ -92,9 +99,12 @@ class POSCreditOrderSalesController extends Controller
         $totalAmountDue = 0;
         $totalAmountPaid = 0;
         $totalAdvancedPayments = 0;
+        $totalRebate = 0;
+
 
         foreach ($orders as $order) {
-            $itemType = $order->installment_order_item->item->item_type ?? 'furniture';
+            $itemType = $order->installment_order_items->first()->item->item_type;
+
 
             $totalAdvancedPayments += $order->total_advanced_payment;
 
@@ -109,14 +119,20 @@ class POSCreditOrderSalesController extends Controller
             foreach ($order->installment_order_payments as $payment) {
                 $orderAmountDue += $payment->amount_due;
                 $orderAmountPaid += $payment->amount_paid;
-                
+
+                // Calculate rebate
+                if ($payment->rebate_amount > 0) {
+                    $totalRebate += $payment->rebate_amount;
+                    $rebateByItemType[$itemType] += $payment->rebate_amount;
+                }
+
                 $balance = $payment->amount_due - $payment->amount_paid;
-                
+
                 // Only count if there's a balance
                 if ($balance > 0) {
                     $dueDate = Carbon::parse($payment->due_date);
                     $daysOverdue = $today->diffInDays($dueDate, false);
-                    
+
                     // Receivables by aging
                     if ($daysOverdue >= 0) {
                         $receivables['current'] += $balance;
@@ -129,7 +145,7 @@ class POSCreditOrderSalesController extends Controller
                     } else {
                         $receivables['90_plus_days'] += $balance;
                     }
-                    
+
                     $receivables['total'] += $balance;
                 }
 
@@ -137,7 +153,7 @@ class POSCreditOrderSalesController extends Controller
                 if ($payment->amount_paid > 0) {
                     $dueDate = Carbon::parse($payment->due_date);
                     $daysOverdue = $today->diffInDays($dueDate, false);
-                    
+
                     if ($daysOverdue >= 0) {
                         $collections['current'] += $payment->amount_paid;
                     } elseif ($daysOverdue >= -30) {
@@ -149,7 +165,7 @@ class POSCreditOrderSalesController extends Controller
                     } else {
                         $collections['90_plus_days'] += $payment->amount_paid;
                     }
-                    
+
                     $collections['total'] += $payment->amount_paid;
                     $collectionsByItemType[$itemType] += $payment->amount_paid;
                 }
@@ -158,7 +174,7 @@ class POSCreditOrderSalesController extends Controller
                 if ($payment->paid_date && $payment->amount_paid > 0) {
                     $paidDate = Carbon::parse($payment->paid_date);
                     $dueDate = Carbon::parse($payment->due_date);
-                    
+
                     if ($paidDate->lessThan($dueDate)) {
                         $advanceByItemType[$itemType] += $payment->amount_paid;
                     }
@@ -167,7 +183,7 @@ class POSCreditOrderSalesController extends Controller
 
             $totalAmountDue += $orderAmountDue;
             $totalAmountPaid += $orderAmountPaid;
-            
+
             $orderRemainingBalance = $orderAmountDue - $orderAmountPaid;
             $totalRemainingBalance += $orderRemainingBalance;
 
@@ -185,7 +201,7 @@ class POSCreditOrderSalesController extends Controller
 
         // Collection performance
         $collectionRate = $totalAmountDue > 0 ? ($totalAmountPaid / $totalAmountDue) * 100 : 0;
-        
+
         // Active accounts
         $activeAccounts = $orders->where('is_completed', false)->where('is_defaulted', false)->count();
 
@@ -207,15 +223,16 @@ class POSCreditOrderSalesController extends Controller
                 'total_pnv' => round($totalPNV, 2),
                 'total_amount_due' => round($totalAmountDue, 2),
                 'total_amount_paid' => round($totalAmountPaid, 2) - $totalAdvancedPayments,
-                'total_remaining_balance' => round($totalRemainingBalance,
-                 2),
-                 'total_advanced_payment' => $totalAdvancedPayments,
+                'total_remaining_balance' => round($totalRemainingBalance, 2),
+                'total_advanced_payment' => $totalAdvancedPayments,
                 'collectible_balance' => round($collectibleBalance, 2),
                 'defaulted_balance' => round($defaultedBalance, 2),
                 'total_orders' => $orders->count(),
                 'active_accounts' => $activeAccounts,
                 'completed_accounts' => $completedAccounts,
                 'defaulted_accounts' => $defaultedAccounts,
+                'total_penalty' => 0,
+                'total_rebate' => round($totalRebate, 2),
             ],
             'receivables' => [
                 'current' => round($receivables['current'], 2),
@@ -258,9 +275,9 @@ class POSCreditOrderSalesController extends Controller
                 'gadgets' => round($advanceByItemType['gadgets'], 2),
             ],
             'rebate_by_item_type' => [
-                'furniture' => 0,
-                'appliances' => 0,
-                'gadgets' => 0,
+                'furniture' => round($rebateByItemType['furniture'], 2),
+                'appliances' => round($rebateByItemType['appliances'], 2),
+                'gadgets' => round($rebateByItemType['gadgets'], 2),
             ],
             'collection_performance' => [
                 'collection_rate' => round($collectionRate, 2),
