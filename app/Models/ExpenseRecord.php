@@ -23,6 +23,7 @@ class ExpenseRecord extends Model
         'payment_method',
         'reference_number',
         'receipt_path',
+        'expense_date',
     ];
 
     protected $casts = [

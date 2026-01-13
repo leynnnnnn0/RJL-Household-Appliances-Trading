@@ -81,6 +81,7 @@ class ExpenseRecordController extends Controller
             'reference_number' => 'nullable|string|max:255',
             'remarks' => 'nullable|string',
             'receipt_path' => 'nullable|image|mimes:jpeg,png,jpg|max:10240', // 10MB max
+            'expense_date' => 'required|date',
         ]);
 
         // Handle image upload
@@ -130,6 +131,7 @@ class ExpenseRecordController extends Controller
             'reference_number' => 'nullable|string|max:255',
             'remarks' => 'nullable|string',
             'receipt_path' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'expense_date' => 'required|date',
         ]);
 
         // Remove receipt_path from validated if no new file uploaded

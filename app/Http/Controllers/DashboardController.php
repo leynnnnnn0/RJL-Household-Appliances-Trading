@@ -189,7 +189,7 @@ class DashboardController extends Controller
 
             // Get expenses within date range
             $expensesQuery = ExpenseRecord::where('status', 'approved')
-                ->whereBetween('created_at', [$fromDate, $toDate]);
+                ->whereBetween('expense_date', [$fromDate, $toDate]);
 
             if ($employeeId) {
                 $expensesQuery->where('user_id', $employeeId);
@@ -345,7 +345,7 @@ class DashboardController extends Controller
 
             $expenses = ExpenseRecord::where('user_id', Auth::id())
                 ->where('status', 'approved')
-                ->whereDate('created_at', today())
+                ->whereDate('expense_date', today())
                 ->sum('amount');
 
 
@@ -540,13 +540,22 @@ class DashboardController extends Controller
 
         // Get expenses within date range
         $expensesQuery = ExpenseRecord::where('status', 'approved')
-            ->whereBetween('created_at', [$fromDate, $toDate]);
+            ->whereDate('expense_date', '>=', $fromDate)
+            ->whereDate('expense_date', '<=', $toDate);
 
-        if ($employeeId) {
+
+        if ($employeeId != 'all') {
             $expensesQuery->where('user_id', $employeeId);
         }
 
+
+
+
+
         $expenses = $expensesQuery->sum('amount');
+
+
+
 
         // Sort transactions by date
         $allTransactions = $transactions->sortByDesc('created_at')->values();

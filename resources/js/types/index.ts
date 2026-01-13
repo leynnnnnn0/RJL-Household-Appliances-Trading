@@ -276,6 +276,7 @@ export type ExpenseRecord = {
   user?: User; 
   created_at: string; 
   updated_at: string;
+  expense_date: string;
 }
 // Usage examples:
 // suppliers: Paginated<Supplier>
