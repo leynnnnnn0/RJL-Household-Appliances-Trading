@@ -545,7 +545,7 @@ export default function Index({ transactions, locations, employees }: Props) {
                                       </TableCell>
                                       <TableCell className="text-xs">
                                           {transaction.receipt_number}
-                                      </TableCell> 
+                                      </TableCell>
                                       <TableCell>
                                           {formatDate(
                                               transaction.transaction_date,
@@ -556,22 +556,15 @@ export default function Index({ transactions, locations, employees }: Props) {
                                       </TableCell>
                                       <TableCell>
                                           ₱
-                                          {calculatePNV(
-                                              transaction,
-                                          ).toLocaleString()}
+                                          {transaction.total_pnv.toLocaleString()}
                                       </TableCell>
                                       <TableCell>
                                           ₱
-                                          {calculateMonthly(
-                                              transaction,
-                                          ).toLocaleString()}
+                                          {transaction.monthly_payment.toLocaleString()}
                                       </TableCell>
                                       <TableCell>
-                                          {formatCurrency(
-                                              calculateRemainingBalance(
-                                                  transaction,
-                                              ),
-                                          )}
+                                          ₱
+                                          {transaction.remaining_balance > 1 ? transaction.remaining_balance.toLocaleString() : "0"}
                                       </TableCell>
                                       <TableCell>
                                           {getStatusBadge(transaction)}

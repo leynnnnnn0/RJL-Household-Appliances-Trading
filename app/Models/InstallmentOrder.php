@@ -146,6 +146,10 @@ class InstallmentOrder extends Model
         $interest = floatval($this->promisory_note_value_interest);
         $additional = floatval($this->promisory_note_value_interest_additional_charge);
 
+
+        if($interest < 0.01) {
+            return $this->loan_contract_price;
+        }
         return $noteValue * $interest + $additional;
     }
 
