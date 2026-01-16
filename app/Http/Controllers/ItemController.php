@@ -7,6 +7,7 @@ use App\Imports\ItemsImport;
 use App\Models\Supplier;
 use App\Models\Item;
 use App\Models\Location;
+use App\Models\TransferData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -103,7 +104,7 @@ class ItemController extends Controller
     public function show($id)
     {
 
-        $item = Item::with(['supplier', 'location', 'installment_orders.customer', 'installment_orders.user', 'orders.customer', 'orders.employee'])
+        $item = Item::with(['supplier', 'location', 'installment_orders.customer', 'installment_orders.user', 'orders.customer', 'orders.employee', 'transfer_data.from_location', 'transfer_data.to_location'])
             ->findOrFail($id);
 
         $installmentOrders = $item->installment_orders->map(function ($order) {
@@ -113,6 +114,15 @@ class ItemController extends Controller
                 'transaction_date' =>  Carbon::parse($order->transaction_date)->format('F d, Y'),
                 'transaction_by' => $order->user->full_name,
                 'created_at' => Carbon::parse($order->created_at)->format('F d, Y')
+            ];
+        });
+
+        $transferHistory = $item->transfer_data->map(function ($transfer) {
+            return [
+                'from_location' => $transfer->from_location->name,
+                'to_location' => $transfer->to_location->name,
+                'remarks' => $transfer->remarks,
+                'transferred_at' => Carbon::parse($transfer->created_at)->format('F d, Y h:i A')
             ];
         });
 
@@ -131,7 +141,7 @@ class ItemController extends Controller
             ->concat($orders);
 
 
-        return Inertia::render('Item/Show', ['item' => $item, 'purchaseHistory' => $purchaseHistory]);
+        return Inertia::render('Item/Show', ['item' => $item, 'purchaseHistory' => $purchaseHistory, 'transferHistory' => $transferHistory]);
     }
 
     public function edit($id)
@@ -350,6 +360,28 @@ class ItemController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors('error', 'Error importing file: ' . $e->getMessage());
         }
+    }
+
+    public function move(Request $request, $id)
+    {
+        $item = Item::findOrFail($id);
+        $validated = $request->validate([
+            'location_id' => 'required|exists:locations,id',
+            'remarks' => 'required|string|max:1000',
+        ]);
+
+
+        // Update the item's location
+        $item->update(['location_id' => $validated['location_id']]);
+
+        TransferData::create([
+            'item_id' => $item->id,
+            'from_location_id' => $item->location_id,
+            'to_location_id' => $validated['location_id'],
+            'remarks' => $validated['remarks'],
+        ]);
+
+        return redirect()->back()->with('success', 'Item moved successfully.');
     }
 
     /**

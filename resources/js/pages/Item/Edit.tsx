@@ -359,7 +359,7 @@ export default function Edit({ item, suppliers, locations }: PageProps) {
                 </div>
 
                 {/* Location */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
                     <Select
                     value={data.location_id.toString()}
@@ -379,7 +379,7 @@ export default function Edit({ item, suppliers, locations }: PageProps) {
                   {errors.location_id && (
                     <p className="text-sm text-destructive">{errors.location_id}</p>
                   )}
-                </div>
+                </div> */}
 
                 {/* Remarks */}
                 <div className="space-y-2 md:col-span-2">

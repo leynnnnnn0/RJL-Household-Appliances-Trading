@@ -46,6 +46,15 @@ export type Location = {
   remarks: string | null;
 };
 
+export type TransferData = {
+    id: number;
+    item_id: number;
+    from_location_id: number;
+    to_location_id: number;
+    remarks: string;
+    created_at: string;
+}
+
 
 export type Branch = {
     id: number;

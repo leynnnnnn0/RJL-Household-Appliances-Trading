@@ -141,6 +141,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/items/import/save', [ItemController::class, 'saveImportedItems'])->name('items.import.save');
         Route::post('/items/import/cancel', [ItemController::class, 'cancelImport'])->name('items.import.cancel');
         Route::resource('items', ItemController::class);
+        Route::put('/items/{id}/move', [ItemController::class, 'move'])->name('items.move');
     });
 
     /*

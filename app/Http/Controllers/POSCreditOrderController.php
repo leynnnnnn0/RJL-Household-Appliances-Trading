@@ -365,7 +365,7 @@ class POSCreditOrderController extends Controller
             'reason_for_cancellation' => 'required|string'
         ]);
         $transaction = InstallmentOrder::with('installment_order_items.item')->findOrFail($id);
-
+ 
         DB::beginTransaction();
         $transaction->update([
             'is_voided' => true,

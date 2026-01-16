@@ -28,6 +28,11 @@ class Item extends Model
         'remarks'
     ];
 
+    public function transfer_data()
+    {
+        return $this->hasMany(TransferData::class);
+    }
+
     public function supplier()
     {
         return $this->belongsTo(Supplier::class, 'supplier', 'slug');
