@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Item;
 use App\Models\Location;
@@ -22,7 +23,7 @@ class POSCashController extends Controller
     public function index()
     {
         return Inertia::render('POSCash/Index', [
-            'locations' => Location::dropdown(),
+            'locations' => Branch::dropdown(),
             'employees' => User::dropdown(),
             'transactions' => Order::with('order_items.item', 'location')->whereDate('transaction_date', today())->where('employee_id', Auth::id())->latest()->get()
         ]);
@@ -50,7 +51,7 @@ class POSCashController extends Controller
                     return $request->payment_method !== 'Cash';
                 })
             ],
-            'location_id' => 'required|exists:locations,id',
+            'location_id' => 'required|exists:branches,id',
             'employee_id' => 'required|exists:users,id',
             'orders' => 'required',
             'total_price' => 'required|numeric',
@@ -92,7 +93,8 @@ class POSCashController extends Controller
 
             $order = Order::create([
                 'customer_id' => $customer->id,
-                'location_id' => $validated['location_id'],
+                'location_id' => 1,
+                'branch_id' => $validated['location_id'],
                 'employee_id' => $validated['employee_id'],
                 'order_number' => $validated['order_number'],
                 'total_price' => $validated['total_price'],
@@ -101,6 +103,7 @@ class POSCashController extends Controller
                 'transaction_date' => now(),
                 'receipt_number' => $validated['receipt_number']
             ]);
+
 
             // Coming on this part
 

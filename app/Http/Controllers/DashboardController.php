@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\ExpenseRecord;
@@ -49,7 +50,7 @@ class DashboardController extends Controller
             // Get filter parameters
             $fromDate = $request->input('from_date', today()->toDateString());
             $toDate = $request->input('to_date', today()->toDateString());
-            $employeeId = $request->input('employee_id');
+            $employeeId = $request->input('branch_id');
 
             // Build base queries with date range filter
             $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
@@ -67,7 +68,7 @@ class DashboardController extends Controller
 
             // Apply employee filter if specified
             if ($employeeId) {
-                $cashOrdersQuery->where('employee_id', $employeeId);
+                $cashOrdersQuery->where('branch_id', $employeeId);
                 $installmentOrdersQuery->where('user_id', $employeeId);
                 $installmentPaymentsQuery->where('user_id', $employeeId);
             }
@@ -202,17 +203,7 @@ class DashboardController extends Controller
                 ->values();
 
             // Get all employees for filter dropdown
-            $employees = User::whereHas('roles', function ($q) {
-                $q->where('name', 'cashier');
-                $q->orWhere('name', 'super admin');
-            })
-                ->get()
-                ->map(function ($user) {
-                    return [
-                        'full_name' => $user->full_name,
-                        'id' => $user->id
-                    ];
-                });
+            $employees = Branch::dropdown();
 
             return Inertia::render('Dashboard/OwnerDashboard', [
                 'allTransactions' => $allTransactions,
@@ -403,7 +394,7 @@ class DashboardController extends Controller
         // Get filter parameters
         $fromDate = $request->input('from_date', today()->toDateString());
         $toDate = $request->input('to_date', today()->toDateString());
-        $employeeId = $request->input('employee_id');
+        $employeeId = $request->input('branch_id');
 
         if (Auth::user()->getRoleNames()->contains('cashier')) {
             $employeeId = Auth::id();
@@ -426,7 +417,7 @@ class DashboardController extends Controller
 
         // Apply employee filter if specified
         if ($employeeId && $employeeId != 'all') {
-            $cashOrdersQuery->where('employee_id', $employeeId);
+            $cashOrdersQuery->where('branch_id', $employeeId);
             $installmentOrdersQuery->where('user_id', $employeeId);
             $installmentPaymentsQuery->where('user_id', $employeeId);
         }

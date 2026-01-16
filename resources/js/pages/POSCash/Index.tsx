@@ -967,10 +967,10 @@ const handleSearchCustomer = (query: string) => {
               </div>
 
                 <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="branch">Branch</Label>
                 <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                  <SelectTrigger id="location">
-                    <SelectValue placeholder="Select a location" />
+                  <SelectTrigger id="branch">
+                    <SelectValue placeholder="Select a branch" />
                   </SelectTrigger>
                   <SelectContent>
                     {locations.map(location => (

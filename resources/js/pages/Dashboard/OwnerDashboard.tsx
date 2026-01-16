@@ -70,7 +70,7 @@ export default function OwnerDashboard({
     router.get('/dashboard', {
       from_date: fromDate,
       to_date: toDate,
-      employee_id: selectedEmployee !== 'all' ? selectedEmployee : null
+      branch_id: selectedEmployee !== 'all' ? selectedEmployee : null
     }, {
       preserveState: true,
       preserveScroll: true
@@ -157,17 +157,17 @@ export default function OwnerDashboard({
                 </div>
                 <div>
                   <Label htmlFor="employee" className="text-slate-700 font-semibold mb-2 block">
-                    Employee
+                    Branch
                   </Label>
                   <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select employee" />
+                      <SelectValue placeholder="Select a branch" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Employees</SelectItem>
+                      <SelectItem value="all">All Branches</SelectItem>
                       {employees.map((emp) => (
                         <SelectItem key={emp.id} value={emp.id.toString()}>
-                          {emp.full_name}
+                          {emp.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

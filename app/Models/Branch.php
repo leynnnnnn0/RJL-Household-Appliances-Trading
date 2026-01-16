@@ -16,5 +16,20 @@ class Branch extends Model
         'remarks'
     ];
 
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function scopeDropdown($query)
+    {
+        return $query->get()->map(function ($location) {
+            return [
+                'id' => $location->id,
+                'name' => $location->name,
+            ];
+        });
+    }
+
     
 }

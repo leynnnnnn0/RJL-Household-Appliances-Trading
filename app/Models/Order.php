@@ -20,6 +20,7 @@ class Order extends Model
         'reason_for_cancellation',
         'void_date',
         'user_id',
+        'branch_id'
     ];
 
     public function customer()
@@ -40,5 +41,10 @@ class Order extends Model
     public function location()
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }
