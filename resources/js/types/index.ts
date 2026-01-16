@@ -46,6 +46,14 @@ export type Location = {
   remarks: string | null;
 };
 
+
+export type Branch = {
+    id: number;
+    name: string;
+    address: string;
+    remarks: string | null;
+};
+
 export type Item = {
   id: number;
   supplier: string;

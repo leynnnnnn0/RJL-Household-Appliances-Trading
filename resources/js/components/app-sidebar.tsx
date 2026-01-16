@@ -27,6 +27,7 @@ import {
   Map, 
   PersonStandingIcon, 
   Settings, 
+  StoreIcon, 
   UserSquare2Icon, 
   UsersRoundIcon 
 } from 'lucide-react';
@@ -116,18 +117,24 @@ const peopleNavItem: NavItem[] = [
 ];
 
 const referencesNavItems: NavItem[] = [
-  {
-    title: 'Locations',
-    href: '/locations',
-    icon: Map,
-        permission: 'can manage locations'
-  },
-  {
-    title: 'Suppliers',
-    href: '/suppliers',
-    icon: Factory,
-    permission: 'can manage suppliers'
-  },
+    {
+        title: 'Locations',
+        href: '/locations',
+        icon: Map,
+        permission: 'can manage locations',
+    },
+    {
+        title: 'Suppliers',
+        href: '/suppliers',
+        icon: Factory,
+        permission: 'can manage suppliers',
+    },
+    {
+        title: 'Branches',
+        href: '/branches',
+        icon: StoreIcon,
+        permission: 'can manage branches',
+    },
 ];
 
 const footerNavItems: NavItem[] = [

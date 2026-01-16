@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BulkPaymentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -148,6 +149,9 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('permission:can manage locations')->resource('locations', LocationController::class);
+
+    Route::middleware('permission:can manage locations')->resource('branches', BranchController::class);
+
     Route::middleware('permission:can manage suppliers')->resource('suppliers', SupplierController::class);
 
     /*
