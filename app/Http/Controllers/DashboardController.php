@@ -69,8 +69,8 @@ class DashboardController extends Controller
             // Apply employee filter if specified
             if ($employeeId) {
                 $cashOrdersQuery->where('branch_id', $employeeId);
-                $installmentOrdersQuery->where('user_id', $employeeId);
-                $installmentPaymentsQuery->where('user_id', $employeeId);
+                $installmentOrdersQuery->where('branch_id', $employeeId);
+                $installmentPaymentsQuery->where('branch_id', $employeeId);
             }
 
             // Get cash orders
@@ -418,8 +418,8 @@ class DashboardController extends Controller
         // Apply employee filter if specified
         if ($employeeId && $employeeId != 'all') {
             $cashOrdersQuery->where('branch_id', $employeeId);
-            $installmentOrdersQuery->where('user_id', $employeeId);
-            $installmentPaymentsQuery->where('user_id', $employeeId);
+            $installmentOrdersQuery->where('branch_id', $employeeId);
+            $installmentPaymentsQuery->where('branch_id', $employeeId);
         }
 
 

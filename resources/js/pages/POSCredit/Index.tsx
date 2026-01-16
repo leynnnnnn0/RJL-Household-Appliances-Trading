@@ -2219,13 +2219,13 @@ const setProductToFree = (id) => {
                       </div>
 
                       <div className="space-y-2">
-                          <Label htmlFor="location">Location *</Label>
+                          <Label htmlFor="location">Branch *</Label>
                           <Select
                               value={selectedLocation}
                               onValueChange={setSelectedLocation}
                           >
                               <SelectTrigger>
-                                  <SelectValue placeholder="Select location" />
+                                  <SelectValue placeholder="Select Branch" />
                               </SelectTrigger>
                               <SelectContent>
                                   {locations.map((location) => (

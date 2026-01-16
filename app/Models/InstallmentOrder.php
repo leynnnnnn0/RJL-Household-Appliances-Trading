@@ -16,6 +16,7 @@ class InstallmentOrder extends Model
     protected $fillable = [
         'customer_id',
         'location_id',
+        'branch_id',
         'user_id',
         'order_number',
         'loan_contract_price',
@@ -63,6 +64,11 @@ class InstallmentOrder extends Model
         'total_advanced_payment',
         'total_rebate_amount'
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function getMonthlyPaymentAttribute()
     {

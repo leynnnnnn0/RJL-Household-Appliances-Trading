@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdditionalDocument;
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\InstallmentOrder;
@@ -37,7 +38,7 @@ class POSCreditController extends Controller
 
         return Inertia::render('POSCredit/Index', [
             'employees' => Employee::dropdown(),
-            'locations' => Location::dropdown(),
+            'locations' => Branch::dropdown(),
             'transactions' => $transactions
         ]);
     }
@@ -62,7 +63,7 @@ class POSCreditController extends Controller
         'home_visit_date' => 'required',
         'is_employment_verified' => 'required',
         'investigation_notes' => 'nullable|string',
-        'location_id' => 'required|exists:locations,id',
+        'location_id' => 'required|exists:branches,id',
         'items' => 'required|array', // Array of paid items
         'items.*.item_id' => 'required|exists:items,id',
         'items.*.serial' => 'required|string',
@@ -177,10 +178,13 @@ class POSCreditController extends Controller
             ]
         );
 
+ 
+
         // Create installment order
         $order = InstallmentOrder::create([
             'customer_id' => $customer->id,
-            'location_id' => $validated['location_id'],
+            'location_id' => 1,// todo
+            'branch_id' => $validated['location_id'],
             'user_id' => Auth::id(),
             'order_number' => $this->generateOrderNumber(),
             'loan_contract_price' => $validated['loan_contract_price'],

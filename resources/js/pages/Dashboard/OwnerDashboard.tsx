@@ -182,14 +182,7 @@ export default function OwnerDashboard({
                   </Button>
                 </div>
               </div>
-              {selectedEmployee !== 'all' && (
-                <div className="mt-4 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                  <User className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">
-                    Showing results for: <span className="font-bold">{selectedEmployeeName}</span>
-                  </span>
-                </div>
-              )}
+             
             </CardContent>
           </Card>
 

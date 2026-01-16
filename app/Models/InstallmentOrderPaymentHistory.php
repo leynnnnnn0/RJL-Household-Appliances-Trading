@@ -17,8 +17,14 @@ class InstallmentOrderPaymentHistory extends Model
         'reference_number',
         'paid_date',
         'collection_receipt_number',
-        'user_id'
+        'user_id',
+        'branch_id'
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function user()
     {
