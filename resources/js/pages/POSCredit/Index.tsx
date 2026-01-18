@@ -109,6 +109,32 @@ interface PageProps {
 }
 
 export default function Index({ locations, employees, transactions }: PageProps) {
+    const [isPullOutItems, setIsPullOutItems] = useState<boolean>(false);
+    const [editedSRPs, setEditedSRPs] = useState<Record<string, number>>({});
+
+    const handlePullOutToggle = (checked: boolean) => {
+        setIsPullOutItems(checked);
+        if (!checked) {
+            // Clear all selected products when unchecking pull-out
+            setSelectedProducts([]);
+            setEditedSRPs({});
+            setSearchTerm('');
+        }
+    };
+    const handleSRPChange = (productId: string, newSRP: string) => {
+        const numValue = parseFloat(newSRP) || 0;
+        setEditedSRPs((prev) => ({
+            ...prev,
+            [productId]: numValue,
+        }));
+
+        // Update the selected product's SRP
+        setSelectedProducts((prev) =>
+            prev.map((item) =>
+                item.id === productId ? { ...item, srp: numValue } : item,
+            ),
+        );
+    };
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [interestConfigOpen, setInterestConfigOpen] = useState<boolean>(false);
@@ -385,38 +411,43 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const [totalLCP, setTotalLCP] = useState(0);
 
   const handleProductSelect = (product: Product) => {
-    const lcp = calculateLCP(product.srp);
-    const downPaymentPercent = getDefaultDownPaymentPercent(product.item_type);
-    const defaultDownPayment = Math.round(lcp * downPaymentPercent);
+      const lcp = calculateLCP(product.srp);
+      const downPaymentPercent = getDefaultDownPaymentPercent(
+          product.item_type,
+      );
+      const defaultDownPayment = Math.round(lcp * downPaymentPercent);
 
+      setSelectedProducts((prev) => {
+          const alreadyExists = prev.some((p) => p.id === product.id);
 
+          if (alreadyExists) {
+              return prev;
+          }
 
-    setSelectedProducts(prev => {
-  const alreadyExists = prev.some(p => p.id === product.id);
-  
-  if (alreadyExists) {
-    return prev; 
-  }
-  
-  return [
-    ...prev,
-    {
-      ...product,
-      downPayment: 0,
-      selectedTerm: selectedTerm,
-      noDownPayment: false,
-      isFree: false
-    }
-  ];
-});
+          return [
+              ...prev,
+              {
+                  ...product,
+                  downPayment: 0,
+                  selectedTerm: selectedTerm,
+                  noDownPayment: false,
+                  isFree: false,
+              },
+          ];
+      });
 
-setSearchTerm("");
-    
-    setDownPayment(defaultDownPayment);
-    setNoDownPayment(false);
-    setShowDropdown(false);
+      // Initialize edited SRP if pull-out mode
+      if (isPullOutItems) {
+          setEditedSRPs((prev) => ({
+              ...prev,
+              [product.id]: product.srp,
+          }));
+      }
 
-
+      setSearchTerm('');
+      setDownPayment(defaultDownPayment);
+      setNoDownPayment(false);
+      setShowDropdown(false);
   };
 
  useEffect(() => {
@@ -530,12 +561,14 @@ setSearchTerm("");
     if (value.trim().length > 0) {
       setIsLoadingProducts(true);
     }
-    axios.get('/api/items', { params: { search: value } })
+    axios.get('/api/items', { params: { search: value, is_defaulted: isPullOutItems } })
       .then(response => {
+        console.log(response);
         const items = response.data?.data || [];
         setFilteredProducts(items);
         setShowDropdown(true);
         setIsLoadingProducts(false);
+
       })
       .catch(error => {
         console.error("Error fetching products:", error);
@@ -832,9 +865,14 @@ setSearchTerm("");
     setTempLcpAdditionalCharge(300);
   };
 
-  const handleRemoveItem = (productId: string | number) => {
-  setSelectedProducts(prev => prev.filter(p => p.id !== productId));
-};
+ const handleRemoveItem = (productId: string | number) => {
+     setSelectedProducts((prev) => prev.filter((p) => p.id !== productId));
+     setEditedSRPs((prev) => {
+         const newEdited = { ...prev };
+         delete newEdited[productId.toString()];
+         return newEdited;
+     });
+ };
 
 const setProductToFree = (id) => {
   setSelectedProducts(prevProducts =>
@@ -953,8 +991,21 @@ const setProductToFree = (id) => {
                   <Card className="lg:col-span-2">
                       <CardHeader>
                           <CardTitle className="flex items-center gap-2">
-                              <Briefcase className="h-5 w-5" />
-                              Item & Payment Details
+                              <div className="flex w-full items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                      <Briefcase className="h-5 w-5" />
+                                      Item & Payment Details
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                      <Label className="text-xs font-bold">
+                                          Pull out items
+                                      </Label>
+                                      <Checkbox
+                                          checked={isPullOutItems}
+                                          onCheckedChange={handlePullOutToggle}
+                                      />
+                                  </div>
+                              </div>
                           </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
@@ -1070,7 +1121,33 @@ const setProductToFree = (id) => {
                                                               </div>
                                                           </td>
                                                           <td className="p-3 text-start">
-                                                              {item.srp}
+                                                              {isPullOutItems ? (
+                                                                  <Input
+                                                                      type="number"
+                                                                      value={
+                                                                          editedSRPs[
+                                                                              item
+                                                                                  .id
+                                                                          ] ??
+                                                                          item.srp
+                                                                      }
+                                                                      onChange={(
+                                                                          e,
+                                                                      ) =>
+                                                                          handleSRPChange(
+                                                                              item.id,
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                          )
+                                                                      }
+                                                                      className="w-32"
+                                                                      min="0"
+                                                                      step="0.01"
+                                                                  />
+                                                              ) : (
+                                                                  item.srp
+                                                              )}
                                                           </td>
                                                           <td className="p-3 text-start">
                                                               {item.item_type}

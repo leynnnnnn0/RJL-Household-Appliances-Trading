@@ -571,7 +571,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                             </Alert>
                         )}
 
-                        {transaction.default_reason != null && (
+                        {transaction.is_reactivated == true && (
                             <Alert variant="destructive">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertDescription>
@@ -1462,9 +1462,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                         key={
                                                                             branch.id
                                                                         }
-                                                                        value={
-                                                                            branch.id.toString()
-                                                                        }
+                                                                        value={branch.id.toString()}
                                                                     >
                                                                         {
                                                                             branch.name
