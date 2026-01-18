@@ -277,6 +277,9 @@ class DashboardController extends Controller
             $installmentPayments = InstallmentOrderPaymentHistory::with('installment_order_payment.installment_order.customer', 'installment_order_payment.installment_order.installment_order_items.item')
                 ->whereDate('paid_date', today())
                 ->where('user_id', Auth::id())
+                ->whereHas('installment_order_payment.installment_order', function ($q) {
+                    $q->where('is_voided', false);
+                })
                 ->get()
                 ->map(function ($order) {
                     return [
