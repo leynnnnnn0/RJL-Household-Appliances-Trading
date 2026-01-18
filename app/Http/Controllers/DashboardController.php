@@ -63,7 +63,10 @@ class DashboardController extends Controller
                 'installment_order_payment.installment_order.customer',
                 'user'
             ])
-                ->whereBetween(DB::raw('DATE(paid_date)'), [$fromDate, $toDate]);
+                ->whereBetween(DB::raw('DATE(paid_date)'), [$fromDate, $toDate])
+                ->whereHas('installment_order_payment.installment_order', function ($q) {
+                    $q->where('is_voided', false);
+                });
 
 
             // Apply employee filter if specified
@@ -118,6 +121,8 @@ class DashboardController extends Controller
             // Get installment payments
             $installmentPayments = $installmentPaymentsQuery->get()
                 ->map(function ($order) {
+               
+
                     return [
                         'date' => Carbon::parse($order->paid_date)->format('F d, Y'),
                         'receipt_number' => $order->collection_receipt_number,
@@ -136,6 +141,7 @@ class DashboardController extends Controller
                 })
                 ->groupBy('receipt_number')
                 ->map(function ($group) {
+                 
                     return [
                         'date' => $group->first()['date'],
                         'receipt_number' => $group->first()['receipt_number'],
@@ -152,6 +158,7 @@ class DashboardController extends Controller
                 })
                 ->values();
 
+    
            
             // Combine all transactions
             $transactions = collect()
