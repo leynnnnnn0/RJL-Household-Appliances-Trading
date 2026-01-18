@@ -420,7 +420,10 @@ class DashboardController extends Controller
             'installment_order_payment.installment_order.customer',
             'user'
         ])
-            ->whereBetween(DB::raw('DATE(paid_date)'), [$fromDate, $toDate]);
+            ->whereBetween(DB::raw('DATE(paid_date)'), [$fromDate, $toDate])
+            ->whereHas('installment_order_payment.installment_order', function ($q) {
+                $q->where('is_voided', false);
+            });
 
         // Apply employee filter if specified
         if ($employeeId && $employeeId != 'all') {
