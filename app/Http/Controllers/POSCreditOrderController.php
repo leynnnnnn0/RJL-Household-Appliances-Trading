@@ -332,7 +332,8 @@ class POSCreditOrderController extends Controller
                         'reference_number' => $validated['reference_number'],
                         'paid_date' => $validated['paid_date'],
                         'user_id' => Auth::id(),
-                        'collection_receipt_number' => $validated['collection_receipt_number']
+                        'collection_receipt_number' => $validated['collection_receipt_number'],
+                        'branch_id' => $validated['branch_id']
                     ]);
 
                     $remainingPayment = 0;
