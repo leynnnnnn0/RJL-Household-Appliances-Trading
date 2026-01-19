@@ -24,7 +24,7 @@ interface PageProps {
 }
 
 export default function Index({inventoryData, potentialProfit, marginPercent, srpTotal, unitTotalCost, customers, employees, users} : PageProps) {
-    console.log(inventoryData);
+
     return (
         <AppLayout>
             <Head title="Super Admin Dashboard" />

@@ -226,7 +226,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
             },
             onError: (e) => {
                 toast.error("An error occurred while recording payment");
-                console.log(e);
+
             }
         });
     };
@@ -239,7 +239,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
             },
             onError: (e) => {
                 toast.error("An error occurred while voiding transaction");
-                console.log(e);
+
             }
         });
     };
@@ -252,7 +252,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
             },
             onError: (e) => {
                 toast.error("An error occurred while marking reactivating");
-                console.log(e);
+
             }
         });
     };
@@ -265,13 +265,13 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
             },
             onError: (e) => {
                 toast.error("An error occurred while marking as default");
-                console.log(e);
+   
             }
         });
     };
 
     const handleAccelerationSubmit = () => {
-        console.log("accelerate");
+
          accelerationForm.post(`/pos-installment-orders/${transaction.id}/accelerate`, {
             onSuccess: () => {
                 setAcceleratetDialog(false);
@@ -279,7 +279,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
             },
             onError: (e) => {
                 toast.error("An error occurred while marking as accelerated");
-                console.log(e);
+
             }
         });
     }
@@ -314,7 +314,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
             },
             onError: (e) => {
                 toast.error("An error occurred while adding rebate");
-                console.log(e);
+  
             }
         });
     };

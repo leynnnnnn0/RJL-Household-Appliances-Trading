@@ -563,7 +563,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     }
     axios.get('/api/items', { params: { search: value, is_defaulted: isPullOutItems } })
       .then(response => {
-        console.log(response);
+
         const items = response.data?.data || [];
         setFilteredProducts(items);
         setShowDropdown(true);
@@ -808,7 +808,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
               setValidationError(
                   'An error occurred while creating the account',
               );
-              console.log(e);
+
           },
           onFinish: () => {
               setIsSubmitting(false);

@@ -111,7 +111,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
     setIsLoadingProducts(true);
     axios.get('/api/items', { params: { search: value, location: locationId } })
       .then(response => {
-        console.log(response);
+
         const items = response.data?.data || [];
         setFilteredProducts(items);
         setShowDropdown(true);
@@ -151,7 +151,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
   }, [paymentMethod])
 
   const handleProductSelect = (product: Product) => {
-    console.log(orders);
+
     if(orders.some(item => item.id == product.serial) == true) {
       toast.info("This item is already on the order list");
       return;
@@ -267,7 +267,7 @@ export default function Index({locations, employees, transactions} : PageProps) 
           setFormErrors(e as Record<string, string>);
         }
         toast.error("Please fix the errors in the form.");
-        console.log(e);
+
       }
     });
 }
@@ -319,7 +319,7 @@ const handleSearchCustomer = (query: string) => {
       setIsLoadingCustomers(false);
     })
     .catch(err => {
-      console.log(err);
+
       setSearchResults([]);
       setIsLoadingCustomers(false);
     })

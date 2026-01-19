@@ -70,7 +70,7 @@ export default function InstallmentOrderRemarksSection({ transactionId, remarks 
       },
       onError: (errors) => {
         toast.error('Failed to add remark');
-        console.log(errors);
+
       }
     });
   };
@@ -92,7 +92,7 @@ export default function InstallmentOrderRemarksSection({ transactionId, remarks 
       },
       onError: (errors) => {
         toast.error('Failed to delete remark');
-        console.log(errors);
+
       }
     });
   };

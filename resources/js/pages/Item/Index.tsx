@@ -84,7 +84,7 @@ export default function Index({ items, suppliers, locations }: PageProps) {
           },
           onError: (e) => {
               toast.error('Failed to move item. Please check the form for errors.');
-              console.log(e);
+
           }
       });
   };

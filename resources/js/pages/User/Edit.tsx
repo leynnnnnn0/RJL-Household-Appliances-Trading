@@ -56,7 +56,7 @@ export default function Edit({ user, roles }: EditProps) {
   };
 
   const confirmUpdate = () => {
-    console.log(data);
+ 
     put(route('users.update', user.id), {
       onSuccess: () => {
         setShowConfirmDialog(false)
@@ -64,7 +64,7 @@ export default function Edit({ user, roles }: EditProps) {
     },
     onError: (e) => {
         toast.error("Error");
-        console.log(e);
+
     }
     });
   };

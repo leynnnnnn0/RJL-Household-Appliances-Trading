@@ -36,7 +36,7 @@ interface PageProps {
 }
 
 export default function CashierDashboard({expenses, totalCashOnHand, totalOtherMop, allTransactions, mops, miCollection, dpCollection, cashCollection, netCollection} : PageProps) {
-  console.log(allTransactions);
+
      const getTodayDate = () => new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(getTodayDate);
 

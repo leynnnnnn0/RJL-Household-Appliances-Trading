@@ -78,9 +78,9 @@ export default function BulkPayments() {
       setIsSearching(true);
       axios.get(`/api/installment-orders?search=${searchQuery}`)
       .then(res => {
-        console.log(res.data.data);
+
         setSearchResults(res.data.data || []);
-        console.log(searchResults);
+
       })
       .catch(err => {
         console.error("Search error:", err);
