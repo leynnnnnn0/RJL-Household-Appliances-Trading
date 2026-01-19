@@ -35,7 +35,6 @@ class DashboardController extends Controller
                 ];
             })
             ->values();
-
         $srpTotal = $data->sum('srp');
         $unitCostTotal = $data->sum('unitCost');
         $customers = Customer::count();
@@ -44,9 +43,8 @@ class DashboardController extends Controller
         $marginPercent = $unitCostTotal > 0
             ? (($srpTotal - $unitCostTotal) / $unitCostTotal) * 100
             : 0;
-  
-        if (Auth::user()->getRoleNames()->contains('super admin')) {
 
+        if (Auth::user()->getRoleNames()->contains('super admin')) {
             // Get filter parameters
             $fromDate = $request->input('from_date', today()->toDateString());
             $toDate = $request->input('to_date', today()->toDateString());
@@ -55,10 +53,8 @@ class DashboardController extends Controller
             // Build base queries with date range filter
             $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
                 ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
-
             $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user'])
                 ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
-
             $installmentPaymentsQuery = InstallmentOrderPaymentHistory::with([
                 'installment_order_payment.installment_order.customer',
                 'user'
@@ -67,7 +63,6 @@ class DashboardController extends Controller
                 ->whereHas('installment_order_payment.installment_order', function ($q) {
                     $q->where('is_voided', false);
                 });
-
 
             // Apply employee filter if specified
             if ($employeeId) {
@@ -116,13 +111,10 @@ class DashboardController extends Controller
                             ->implode(', ')
                     ];
                 });
-               
 
-            // Get installment payments
+            // Get installment payments (keep individual records for accurate MOP calculation)
             $installmentPayments = $installmentPaymentsQuery->get()
                 ->map(function ($order) {
-               
-
                     return [
                         'date' => Carbon::parse($order->paid_date)->format('F d, Y'),
                         'receipt_number' => $order->collection_receipt_number,
@@ -138,10 +130,15 @@ class DashboardController extends Controller
                         'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)
                             ->implode(', ')
                     ];
-                })
+                });
+
+            // Create grouped version for display (shows split payments clearly)
+            $groupedInstallmentPayments = $installmentPayments
                 ->groupBy('receipt_number')
                 ->map(function ($group) {
-                 
+                    $paymentMethods = $group->pluck('payment_method')->unique();
+                    $amounts = $group->groupBy('payment_method')->map(fn($items) => $items->sum('m_i'));
+
                     return [
                         'date' => $group->first()['date'],
                         'receipt_number' => $group->first()['receipt_number'],
@@ -149,7 +146,9 @@ class DashboardController extends Controller
                         'm_i' => $group->sum('m_i'),
                         'd_p' => null,
                         'amount_paid' => null,
-                        'payment_method' => $group->first()['payment_method'],
+                        'payment_method' => $paymentMethods->count() > 1
+                            ? 'Split: ' . $amounts->map(fn($amt, $method) => ucfirst($method) . ' ₱' . number_format($amt, 2))->implode(', ')
+                            : $group->first()['payment_method'],
                         'reference_number' => $group->first()['reference_number'],
                         'is_voided' => false,
                         'employee_name' => $group->first()['employee_name'],
@@ -158,9 +157,7 @@ class DashboardController extends Controller
                 })
                 ->values();
 
-    
-           
-            // Combine all transactions
+            // Combine all transactions (use ungrouped installment payments for accurate MOP totals)
             $transactions = collect()
                 ->concat($cashOrders)
                 ->concat($installmentOrders)
@@ -171,7 +168,6 @@ class DashboardController extends Controller
                 ->where('m_i', '!=', null)
                 ->where('is_voided', false)
                 ->sum('m_i') ?? 0;
-
             $dpCollection = $transactions->where('d_p', '!=', null)
                 ->where('is_voided', false)
                 ->sum('d_p') ?? 0;
@@ -179,7 +175,7 @@ class DashboardController extends Controller
                 ->where('is_voided', false)
                 ->sum('amount_paid') ?? 0;
 
-            // Group by payment method
+            // Group by payment method (this will now correctly split cash and bank)
             $mops = $transactions
                 ->where('is_voided', false)
                 ->groupBy('payment_method')
@@ -189,24 +185,25 @@ class DashboardController extends Controller
                     });
                 });
 
-            $totalCashOnHand = $mops->where('is_voided', false)->get('cash', 0);
+            $totalCashOnHand = $mops->get('cash', 0);
             $totalOtherMop = $mops
-                ->where('is_voided', false)
                 ->except(['cash'])
                 ->sum();
 
             // Get expenses within date range
             $expensesQuery = ExpenseRecord::where('status', 'approved')
                 ->whereBetween('expense_date', [$fromDate, $toDate]);
-
             if ($employeeId) {
                 $expensesQuery->where('user_id', $employeeId);
             }
-
             $expenses = $expensesQuery->sum('amount');
 
-            // Sort transactions by date
-            $allTransactions = $transactions->sortByDesc('created_at')
+            // Use grouped version for display
+            $allTransactions = collect()
+                ->concat($cashOrders)
+                ->concat($installmentOrders)
+                ->concat($groupedInstallmentPayments)
+                ->sortByDesc('created_at')
                 ->values();
 
             // Get all employees for filter dropdown
@@ -273,7 +270,7 @@ class DashboardController extends Controller
                     ];
                 });
 
-
+            // Get installment payments (keep individual records)
             $installmentPayments = InstallmentOrderPaymentHistory::with('installment_order_payment.installment_order.customer', 'installment_order_payment.installment_order.installment_order_items.item')
                 ->whereDate('paid_date', today())
                 ->where('user_id', Auth::id())
@@ -295,9 +292,15 @@ class DashboardController extends Controller
                         'created_at' => $order->created_at,
                         'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)->implode(', ')
                     ];
-                })
+                });
+
+            // Create grouped version for display
+            $groupedInstallmentPayments = $installmentPayments
                 ->groupBy('receipt_number')
                 ->map(function ($group) {
+                    $paymentMethods = $group->pluck('payment_method')->unique();
+                    $amounts = $group->groupBy('payment_method')->map(fn($items) => $items->sum('m_i'));
+
                     return [
                         'date' => $group->first()['date'],
                         'receipt_number' => $group->first()['receipt_number'],
@@ -305,7 +308,9 @@ class DashboardController extends Controller
                         'm_i' => $group->sum('m_i'),
                         'd_p' => null,
                         'amount_paid' => null,
-                        'payment_method' => $group->first()['payment_method'],
+                        'payment_method' => $paymentMethods->count() > 1
+                            ? 'Split: ' . $amounts->map(fn($amt, $method) => ucfirst($method) . ' ₱' . number_format($amt, 2))->implode(', ')
+                            : $group->first()['payment_method'],
                         'reference_number' => $group->first()['reference_number'],
                         'is_voided' => false,
                         'remarks' => $group->first()['remarks'],
@@ -313,7 +318,7 @@ class DashboardController extends Controller
                 })
                 ->values();
 
-
+            // Use ungrouped payments for accurate MOP calculation
             $transactions = collect()
                 ->concat($cashOrders)
                 ->concat($installmentOrders)
@@ -323,8 +328,6 @@ class DashboardController extends Controller
                 ->where('is_voided', false)
                 ->where('m_i', '!=', null)
                 ->sum('m_i') ?? 0;
-
-
             $dpCollection = $transactions->where('is_voided', false)->where('d_p', '!=', null)->sum('d_p') ?? 0;
             $cashCollection = $transactions->where('is_voided', false)->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
 
@@ -337,20 +340,22 @@ class DashboardController extends Controller
                     });
                 });
 
-            $totalCashOnHand = $mops->where('is_voided', false)->get('cash', 0);
+            $totalCashOnHand = $mops->get('cash', 0);
             $totalOtherMop = $mops
-                ->where('is_voided', false)
                 ->except(['cash'])
                 ->sum();
-
 
             $expenses = ExpenseRecord::where('user_id', Auth::id())
                 ->where('status', 'approved')
                 ->whereDate('expense_date', today())
                 ->sum('amount');
 
-
-            $allTransactions = $transactions->sortByDesc('created_at')
+            // Use grouped version for display
+            $allTransactions = collect()
+                ->concat($cashOrders)
+                ->concat($installmentOrders)
+                ->concat($groupedInstallmentPayments)
+                ->sortByDesc('created_at')
                 ->values();
 
             return Inertia::render('Dashboard/CashierDashboard', [
@@ -365,7 +370,6 @@ class DashboardController extends Controller
                 'totalOtherMop' => $totalOtherMop
             ]);
         }
-
 
         if (!Auth::user()->getRoleNames()->contains('super admin')) {
             return Inertia::render('Dashboard/NonAdminDashboard');
@@ -410,15 +414,11 @@ class DashboardController extends Controller
             $employeeId = Auth::id();
         }
 
-
         // Build base queries with date range filter
         $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
             ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
-
-
         $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user'])
             ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
-
         $installmentPaymentsQuery = InstallmentOrderPaymentHistory::with([
             'installment_order_payment.installment_order.customer',
             'user'
@@ -434,9 +434,6 @@ class DashboardController extends Controller
             $installmentOrdersQuery->where('branch_id', $employeeId);
             $installmentPaymentsQuery->where('branch_id', $employeeId);
         }
-
-
-
 
         // Get cash orders
         $cashOrders = $cashOrdersQuery->get()
@@ -459,8 +456,6 @@ class DashboardController extends Controller
                 ];
             });
 
-
-
         // Get installment orders
         $installmentOrders = $installmentOrdersQuery->get()
             ->map(function ($order) {
@@ -477,15 +472,15 @@ class DashboardController extends Controller
                     'created_at' => $order->created_at,
                     'employee_name' => $order->user->full_name ?? 'N/A',
                     'remarks' => $order->installment_order_items->map(fn($item) => $item->item->model)
-                            ->implode(', ')
+                        ->implode(', ')
                 ];
             });
 
-        // Get installment payments
+        // Get installment payments (keep individual records for accurate MOP calculation)
         $installmentPayments = $installmentPaymentsQuery->get()
             ->map(function ($order) {
                 return [
-                    'date' => Carbon::parse($order->created_at)->format('F d, Y'),
+                    'date' => Carbon::parse($order->paid_date)->format('F d, Y'),
                     'receipt_number' => $order->collection_receipt_number,
                     'customer' => $order->installment_order_payment->installment_order->customer->full_name,
                     'm_i' => $order->amount,
@@ -497,11 +492,17 @@ class DashboardController extends Controller
                     'created_at' => $order->created_at,
                     'employee_name' => $order->user->full_name ?? 'N/A',
                     'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)
-                            ->implode(', ')
+                        ->implode(', ')
                 ];
-            })
+            });
+
+        // Create grouped version for display (shows split payments clearly)
+        $groupedInstallmentPayments = $installmentPayments
             ->groupBy('receipt_number')
             ->map(function ($group) {
+                $paymentMethods = $group->pluck('payment_method')->unique();
+                $amounts = $group->groupBy('payment_method')->map(fn($items) => $items->sum('m_i'));
+
                 return [
                     'date' => $group->first()['date'],
                     'receipt_number' => $group->first()['receipt_number'],
@@ -509,7 +510,9 @@ class DashboardController extends Controller
                     'm_i' => $group->sum('m_i'),
                     'd_p' => null,
                     'amount_paid' => null,
-                    'payment_method' => $group->first()['payment_method'],
+                    'payment_method' => $paymentMethods->count() > 1
+                        ? 'Split: ' . $amounts->map(fn($amt, $method) => ucfirst($method) . ' ₱' . number_format($amt, 2))->implode(', ')
+                        : $group->first()['payment_method'],
                     'reference_number' => $group->first()['reference_number'],
                     'is_voided' => false,
                     'employee_name' => $group->first()['employee_name'],
@@ -518,7 +521,7 @@ class DashboardController extends Controller
             })
             ->values();
 
-        // Combine all transactions
+        // Combine transactions using ungrouped installment payments for accurate MOP totals
         $transactions = collect()
             ->concat($cashOrders)
             ->concat($installmentOrders)
@@ -529,7 +532,7 @@ class DashboardController extends Controller
         $dpCollection = $transactions->where('is_voided', false)->where('d_p', '!=', null)->sum('d_p') ?? 0;
         $cashCollection = $transactions->where('is_voided', false)->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
 
-        // Group by payment method
+        // Group by payment method (this will now correctly split cash and bank)
         $mops = $transactions
             ->where('is_voided', false)
             ->groupBy('payment_method')
@@ -539,34 +542,31 @@ class DashboardController extends Controller
                 });
             });
 
-        $totalCashOnHand = $mops->where('is_voided', false)->get('cash', 0);
-        $totalOtherMop = $mops->where('is_voided', false)->except(['cash'])->sum();
+        $totalCashOnHand = $mops->get('cash', 0);
+        $totalOtherMop = $mops->except(['cash'])->sum();
 
         // Get expenses within date range
         $expensesQuery = ExpenseRecord::where('status', 'approved')
             ->whereDate('expense_date', '>=', $fromDate)
             ->whereDate('expense_date', '<=', $toDate);
 
-
-        if ($employeeId != 'all') {
+        if ($employeeId && $employeeId != 'all') {
             $expensesQuery->where('user_id', $employeeId);
         }
 
-
-
-
-
         $expenses = $expensesQuery->sum('amount');
 
-
-
-
-        // Sort transactions by date
-        $allTransactions = $transactions->sortByDesc('created_at')->values();
+        // Use grouped version for display in PDF
+        $allTransactions = collect()
+            ->concat($cashOrders)
+            ->concat($installmentOrders)
+            ->concat($groupedInstallmentPayments)
+            ->sortByDesc('created_at')
+            ->values();
 
         // Get employee name if filtered
         $employeeName = null;
-        if ($employeeId) {
+        if ($employeeId && $employeeId != 'all') {
             $employee = User::find($employeeId);
             $employeeName = $employee ? $employee->full_name : 'N/A';
         }
@@ -587,8 +587,6 @@ class DashboardController extends Controller
             'employeeName' => $employeeName,
             'generatedAt' => now()->format('F d, Y h:i A')
         ];
-
-
 
         // Generate PDF
         $pdf = Pdf::loadView('pdf.transactions', $data)
