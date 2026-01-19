@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
@@ -341,6 +342,93 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
     const isValidAmount = () => {
         const amount = Number(data.amount_paid);
         return amount > 0 && amount <= nextPaymentRemaining;
+    };
+
+    const [showEditPaymentHistoryDialog, setShowEditPaymentHistoryDialog] =
+        useState(false);
+    const [showDeletePaymentHistoryDialog, setShowDeletePaymentHistoryDialog] =
+        useState(false);
+    const [editingPaymentHistory, setEditingPaymentHistory] =
+        useState<InstallmentOrderPaymentHistory | null>(null);
+
+    // Add edit form (after other useForm declarations)
+    const editPaymentHistoryForm = useForm({
+        amount: '',
+        payment_method: 'cash',
+        reference_number: '',
+        paid_date: new Date().toISOString().split('T')[0],
+        collection_receipt_number: '',
+        branch_id: branches[0]?.id.toString() || '',
+    });
+
+    // Add handlers
+    const handleEditPaymentHistoryClick = (
+        history: InstallmentOrderPaymentHistory,
+    ) => {
+     
+
+        setEditingPaymentHistory(history);
+        editPaymentHistoryForm.setData({
+            amount: history.amount.toString(),
+            payment_method: history.payment_method,
+            reference_number: history.reference_number || '',
+            paid_date: history.paid_date.slice(0,10),
+            collection_receipt_number: history.collection_receipt_number,
+            branch_id: history.branch_id.toString(),
+        });
+
+        console.log(history);
+        setShowEditPaymentHistoryDialog(true);
+    };
+
+    const handleEditPaymentHistorySubmit = () => {
+        if (!editingPaymentHistory) return;
+
+        editPaymentHistoryForm.put(
+            `/pos-installment-orders/payment-history/${editingPaymentHistory.id}`,
+            {
+                onSuccess: () => {
+                    setShowEditPaymentHistoryDialog(false);
+                    setEditingPaymentHistory(null);
+                    editPaymentHistoryForm.reset();
+                    toast.success('Payment record updated successfully');
+                },
+                onError: (e) => {
+                    toast.error(
+                        'An error occurred while updating payment record',
+                    );
+                },
+            },
+        );
+    };
+
+    const handleDeletePaymentHistoryClick = (
+        history: InstallmentOrderPaymentHistory,
+    ) => {
+     
+
+        setEditingPaymentHistory(history);
+        setShowDeletePaymentHistoryDialog(true);
+    };
+
+    const handleDeletePaymentHistorySubmit = () => {
+        if (!editingPaymentHistory) return;
+
+        editPaymentHistoryForm.delete(
+            `/pos-installment-orders/payment-history/${editingPaymentHistory.id}`,
+            {
+                onSuccess: () => {
+                    setShowDeletePaymentHistoryDialog(false);
+                    setEditingPaymentHistory(null);
+                    toast.success('Payment record deleted successfully');
+                },
+                onError: (e) => {
+                    toast.error(
+                        'An error occurred while deleting payment record',
+                    );
+                },
+            },
+        );
     };
 
 
@@ -1590,10 +1678,45 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                         )}
                                                                     </p>
                                                                 </div>
-                                                                <div className="text-right text-xs text-muted-foreground">
-                                                                    {formatDate(
-                                                                        history.paid_date,
-                                                                    )}
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="text-right text-xs text-muted-foreground">
+                                                                        {formatDate(
+                                                                            history.paid_date,
+                                                                        )}
+                                                                    </div>
+                                                                    {!transaction.is_voided &&
+                                                                        !transaction.is_completed &&
+                                                                        !transaction.is_accelerated && (
+                                                                            <div className="flex gap-1">
+                                                                               
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        onClick={() =>
+                                                                                            handleEditPaymentHistoryClick(
+                                                                                                history,
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <Pencil className="h-3 w-3" />
+                                                                                    </Button>
+                                                                            
+                                                                             
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        onClick={() =>
+                                                                                            handleDeletePaymentHistoryClick(
+                                                                                                history,
+                                                                                            )
+                                                                                        }
+                                                                                        className="text-red-600 hover:text-red-700"
+                                                                                    >
+                                                                                        <XCircle className="h-3 w-3" />
+                                                                                    </Button>
+                                                                              
+                                                                            </div>
+                                                                        )}
                                                                 </div>
                                                             </div>
                                                             <Separator className="my-2" />
@@ -1629,6 +1752,22 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                         {
                                                                             history.collection_receipt_number
                                                                         }
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-muted-foreground">
+                                                                        Branch:
+                                                                    </span>
+                                                                    <p className="font-medium">
+                                                                        {branches.find(
+                                                                            (
+                                                                                b,
+                                                                            ) =>
+                                                                                b.id ===
+                                                                                history.branch_id,
+                                                                        )
+                                                                            ?.name ||
+                                                                            'N/A'}
                                                                     </p>
                                                                 </div>
                                                                 {history.reference_number && (
@@ -1683,6 +1822,338 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                     </div>
                 </div>
             </div>
+
+            {/* Edit Payment History Dialog */}
+            <Dialog
+                open={showEditPaymentHistoryDialog}
+                onOpenChange={setShowEditPaymentHistoryDialog}
+            >
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Pencil className="h-5 w-5" />
+                            Edit Payment Record
+                        </DialogTitle>
+                        <DialogDescription>
+                            Correct the payment transaction details
+                        </DialogDescription>
+                    </DialogHeader>
+                    {editingPaymentHistory && (
+                        <div className="space-y-4 py-4">
+                            <Alert>
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription className="text-xs">
+                                    Editing this record will automatically
+                                    adjust the installment's total paid amount.
+                                </AlertDescription>
+                            </Alert>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit_history_amount">
+                                        Payment Amount *
+                                    </Label>
+                                    <Input
+                                        id="edit_history_amount"
+                                        type="number"
+                                        step="0.01"
+                                        value={
+                                            editPaymentHistoryForm.data.amount
+                                        }
+                                        onChange={(e) =>
+                                            editPaymentHistoryForm.setData(
+                                                'amount',
+                                                e.target.value,
+                                            )
+                                        }
+                                        className={
+                                            editPaymentHistoryForm.errors.amount
+                                                ? 'border-red-500'
+                                                : ''
+                                        }
+                                    />
+                                    {editPaymentHistoryForm.errors.amount && (
+                                        <p className="text-xs text-red-500">
+                                            {
+                                                editPaymentHistoryForm.errors
+                                                    .amount
+                                            }
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit_history_payment_method">
+                                        Payment Method *
+                                    </Label>
+                                    <Select
+                                        value={
+                                            editPaymentHistoryForm.data
+                                                .payment_method
+                                        }
+                                        onValueChange={(value) =>
+                                            editPaymentHistoryForm.setData(
+                                                'payment_method',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="cash">
+                                                Cash
+                                            </SelectItem>
+                                            <SelectItem value="gcash">
+                                                GCash
+                                            </SelectItem>
+                                            <SelectItem value="bank_transfer">
+                                                Bank Transfer
+                                            </SelectItem>
+                                            <SelectItem value="credit_card">
+                                                Credit Card
+                                            </SelectItem>
+                                            <SelectItem value="debit_card">
+                                                Debit Card
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {editPaymentHistoryForm.errors
+                                        .payment_method && (
+                                        <p className="text-xs text-red-500">
+                                            {
+                                                editPaymentHistoryForm.errors
+                                                    .payment_method
+                                            }
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit_history_reference">
+                                        Reference Number
+                                    </Label>
+                                    <Input
+                                        id="edit_history_reference"
+                                        type="text"
+                                        value={
+                                            editPaymentHistoryForm.data
+                                                .reference_number
+                                        }
+                                        onChange={(e) =>
+                                            editPaymentHistoryForm.setData(
+                                                'reference_number',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit_history_paid_date">
+                                        Payment Date *
+                                    </Label>
+                                    <Input
+                                        id="edit_history_paid_date"
+                                        type="date"
+                                        value={
+                                            editPaymentHistoryForm.data
+                                                .paid_date
+                                        }
+                                        onChange={(e) =>
+                                            editPaymentHistoryForm.setData(
+                                                'paid_date',
+                                                e.target.value,
+                                            )
+                                        }
+                                        className={
+                                            editPaymentHistoryForm.errors
+                                                .paid_date
+                                                ? 'border-red-500'
+                                                : ''
+                                        }
+                                    />
+                                    {editPaymentHistoryForm.errors
+                                        .paid_date && (
+                                        <p className="text-xs text-red-500">
+                                            {
+                                                editPaymentHistoryForm.errors
+                                                    .paid_date
+                                            }
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit_history_collection_receipt">
+                                        Collection Receipt Number *
+                                    </Label>
+                                    <Input
+                                        id="edit_history_collection_receipt"
+                                        type="text"
+                                        value={
+                                            editPaymentHistoryForm.data
+                                                .collection_receipt_number
+                                        }
+                                        onChange={(e) =>
+                                            editPaymentHistoryForm.setData(
+                                                'collection_receipt_number',
+                                                e.target.value,
+                                            )
+                                        }
+                                        className={
+                                            editPaymentHistoryForm.errors
+                                                .collection_receipt_number
+                                                ? 'border-red-500'
+                                                : ''
+                                        }
+                                    />
+                                    {editPaymentHistoryForm.errors
+                                        .collection_receipt_number && (
+                                        <p className="text-xs text-red-500">
+                                            {
+                                                editPaymentHistoryForm.errors
+                                                    .collection_receipt_number
+                                            }
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit_history_branch">
+                                        Branch *
+                                    </Label>
+                                    <Select
+                                        value={
+                                            editPaymentHistoryForm.data
+                                                .branch_id
+                                        }
+                                        onValueChange={(value) =>
+                                            editPaymentHistoryForm.setData(
+                                                'branch_id',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {branches.map((branch) => (
+                                                <SelectItem
+                                                    key={branch.id}
+                                                    value={branch.id.toString()}
+                                                >
+                                                    {branch.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {editPaymentHistoryForm.errors
+                                        .branch_id && (
+                                        <p className="text-xs text-red-500">
+                                            {
+                                                editPaymentHistoryForm.errors
+                                                    .branch_id
+                                            }
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setShowEditPaymentHistoryDialog(false);
+                                setEditingPaymentHistory(null);
+                                editPaymentHistoryForm.reset();
+                            }}
+                            disabled={editPaymentHistoryForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleEditPaymentHistorySubmit}
+                            disabled={editPaymentHistoryForm.processing}
+                        >
+                            {editPaymentHistoryForm.processing
+                                ? 'Updating...'
+                                : 'Update Record'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Payment History Dialog */}
+            <Dialog
+                open={showDeletePaymentHistoryDialog}
+                onOpenChange={setShowDeletePaymentHistoryDialog}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <Trash2 className="h-5 w-5" />
+                            Delete Payment Record
+                        </DialogTitle>
+                        <DialogDescription>
+                            This will permanently delete this payment
+                            transaction.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                <strong>Warning:</strong> This action cannot be
+                                undone. The payment amount will be deducted from
+                                the installment's total paid amount.
+                            </AlertDescription>
+                        </Alert>
+                        {editingPaymentHistory && (
+                            <div className="rounded-lg bg-muted p-4">
+                                <p className="mb-2 text-sm text-muted-foreground">
+                                    Payment Details:
+                                </p>
+                                <p className="text-lg font-bold text-green-600">
+                                    {formatCurrency(
+                                        editingPaymentHistory.amount,
+                                    )}
+                                </p>
+                                <p className="text-sm">
+                                    {formatDate(
+                                        editingPaymentHistory.paid_date,
+                                    )}{' '}
+                                    • {editingPaymentHistory.payment_method}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setShowDeletePaymentHistoryDialog(false);
+                                setEditingPaymentHistory(null);
+                            }}
+                            disabled={editPaymentHistoryForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDeletePaymentHistorySubmit}
+                            disabled={editPaymentHistoryForm.processing}
+                        >
+                            {editPaymentHistoryForm.processing
+                                ? 'Deleting...'
+                                : 'Delete Payment'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Payment Confirmation Dialog */}
             <Dialog

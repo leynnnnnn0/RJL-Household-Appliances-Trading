@@ -606,4 +606,122 @@ class POSCreditOrderController extends Controller
             return back()->withErrors(['error' => 'Payment processing failed: ' . $e->getMessage()]);
         }
     }
+
+    public function updatePaymentHistory(Request $request, $historyId)
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_method' => ['required', 'string', 'in:cash,gcash,bank_transfer,credit_card,debit_card'],
+            'reference_number' => ['nullable', 'string', 'max:255'],
+            'paid_date' => ['required', 'date'],
+            'collection_receipt_number' => ['required', 'string'],
+            'branch_id' => ['required', 'exists:branches,id']
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $paymentHistory = InstallmentOrderPaymentHistory::findOrFail($historyId);
+            $payment = InstallmentOrderPayment::findOrFail($paymentHistory->payment_id);
+            $installmentOrder = InstallmentOrder::findOrFail($payment->installment_order_id);
+
+            // Calculate the difference in payment amount
+            $oldAmount = $paymentHistory->amount;
+            $newAmount = $validated['amount'];
+            $amountDifference = $newAmount - $oldAmount;
+
+            // Update the payment history record
+            $paymentHistory->update([
+                'amount' => $validated['amount'],
+                'payment_method' => $validated['payment_method'],
+                'reference_number' => $validated['reference_number'],
+                'paid_date' => $validated['paid_date'],
+                'collection_receipt_number' => $validated['collection_receipt_number'],
+                'branch_id' => $validated['branch_id']
+            ]);
+
+            // Adjust the payment's amount_paid
+            $newTotalPaid = $payment->amount_paid + $amountDifference;
+
+            // Calculate new status
+            $effectiveAmountDue = $payment->amount_due - $payment->rebate_amount;
+
+            if ($newTotalPaid >= $effectiveAmountDue) {
+                $newStatus = 'paid';
+            } elseif ($newTotalPaid > 0) {
+                $newStatus = 'partial';
+            } else {
+                $newStatus = now()->gt($payment->due_date) ? 'overdue' : 'pending';
+            }
+
+            $payment->update([
+                'amount_paid' => $newTotalPaid,
+                'status' => $newStatus,
+                'payment_method' => $validated['payment_method'],
+                'reference_number' => $validated['reference_number'],
+                'paid_date' => $validated['paid_date'],
+            ]);
+
+            // Recalculate order completion status
+            $unpaidCount = $installmentOrder->installment_order_payments()
+                ->where('status', '!=', 'paid')
+                ->count();
+
+            $installmentOrder->update(['is_completed' => $unpaidCount === 0]);
+
+            DB::commit();
+
+            return back()->with('success', 'Payment record updated successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Update failed: ' . $e->getMessage()]);
+        }
+    }
+
+    public function deletePaymentHistory(Request $request, $historyId)
+    {
+        DB::beginTransaction();
+
+        try {
+            $paymentHistory = InstallmentOrderPaymentHistory::findOrFail($historyId);
+            $payment = InstallmentOrderPayment::findOrFail($paymentHistory->payment_id);
+            $installmentOrder = InstallmentOrder::findOrFail($payment->installment_order_id);
+
+            // Subtract the payment amount from the installment payment
+            $newTotalPaid = $payment->amount_paid - $paymentHistory->amount;
+
+            // Calculate new status
+            $effectiveAmountDue = $payment->amount_due - $payment->rebate_amount;
+
+            if ($newTotalPaid >= $effectiveAmountDue) {
+                $newStatus = 'paid';
+            } elseif ($newTotalPaid > 0) {
+                $newStatus = 'partial';
+            } else {
+                $newStatus = now()->gt($payment->due_date) ? 'overdue' : 'pending';
+            }
+
+            $payment->update([
+                'amount_paid' => max(0, $newTotalPaid), // Ensure it doesn't go negative
+                'status' => $newStatus,
+            ]);
+
+            // Delete the payment history record
+            $paymentHistory->delete();
+
+            // Recalculate order completion status
+            $unpaidCount = $installmentOrder->installment_order_payments()
+                ->where('status', '!=', 'paid')
+                ->count();
+
+            $installmentOrder->update(['is_completed' => $unpaidCount === 0]);
+
+            DB::commit();
+
+            return back()->with('success', 'Payment record deleted successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Delete failed: ' . $e->getMessage()]);
+        }
+    }
 }

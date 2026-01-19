@@ -87,6 +87,12 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/pos-installment-orders/remarks', [InstallmentOrderRemarkController::class, 'store']);
         Route::delete('/pos-installment-orders/remarks/{id}', [InstallmentOrderRemarkController::class, 'destroy']);
+
+        Route::put('/pos-installment-orders/payment-history/{history}', [POSCreditOrderController::class, 'updatePaymentHistory'])
+            ->name('pos-installment-orders.payment-history.update');
+
+        Route::delete('/pos-installment-orders/payment-history/{history}', [POSCreditOrderController::class, 'deletePaymentHistory'])
+            ->name('pos-installment-orders.payment-history.delete');
     });
 
     Route::put('/pos-installment-orders/{id}/rebate', [POSCreditOrderController::class, 'rebate'])
