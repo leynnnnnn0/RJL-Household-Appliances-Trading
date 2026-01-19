@@ -280,6 +280,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
             },
             onError: (e) => {
                 toast.error("An error occurred while marking as accelerated");
+                console.log(e);
 
             }
         });
@@ -1678,7 +1679,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                         )}
                                                                     </p>
                                                                 </div>
-                                                                <div className="flex items-center gap-2">
+                                                                <div className="flex items-center gap-1">
                                                                     <div className="text-right text-xs text-muted-foreground">
                                                                         {formatDate(
                                                                             history.paid_date,
@@ -1688,33 +1689,30 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                         !transaction.is_completed &&
                                                                         !transaction.is_accelerated && (
                                                                             <div className="flex gap-1">
-                                                                               
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="sm"
-                                                                                        onClick={() =>
-                                                                                            handleEditPaymentHistoryClick(
-                                                                                                history,
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        <Pencil className="h-3 w-3" />
-                                                                                    </Button>
-                                                                            
-                                                                             
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="sm"
-                                                                                        onClick={() =>
-                                                                                            handleDeletePaymentHistoryClick(
-                                                                                                history,
-                                                                                            )
-                                                                                        }
-                                                                                        className="text-red-600 hover:text-red-700"
-                                                                                    >
-                                                                                        <XCircle className="h-3 w-3" />
-                                                                                    </Button>
-                                                                              
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    onClick={() =>
+                                                                                        handleEditPaymentHistoryClick(
+                                                                                            history,
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <Pencil className="h-3 w-3" />
+                                                                                </Button>
+
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    onClick={() =>
+                                                                                        handleDeletePaymentHistoryClick(
+                                                                                            history,
+                                                                                        )
+                                                                                    }
+                                                                                    className="text-red-600 hover:text-red-700"
+                                                                                >
+                                                                                    <XCircle className="h-3 w-3" />
+                                                                                </Button>
                                                                             </div>
                                                                         )}
                                                                 </div>
@@ -2649,6 +2647,36 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                     )
                                 }
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="receipt_number">
+                                Receipt Number
+                            </Label>
+                            <Input
+                                id="receipt_number"
+                                type="text"
+                                placeholder="Optional"
+                                value={
+                                    accelerationForm.data
+                                        .collection_receipt_number
+                                }
+                                onChange={(e) =>
+                                    accelerationForm.setData(
+                                        'collection_receipt_number',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                            {accelerationForm.errors
+                                .collection_receipt_number && (
+                                <p className="text-xs text-red-500">
+                                    {
+                                        accelerationForm.errors
+                                            .collection_receipt_number
+                                    }
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
