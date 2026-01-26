@@ -438,18 +438,6 @@ export default function Index({ transactions, locations, employees }: Props) {
                                           <SelectItem value="due_loans">
                                               Due Loans
                                           </SelectItem>
-                                          <SelectItem value="missed_repayments">
-                                              Missed Repayments
-                                          </SelectItem>
-                                          <SelectItem value="loans_in_arrears">
-                                              Loans in Arrears
-                                          </SelectItem>
-                                          <SelectItem value="no_repayments">
-                                              No Repayments
-                                          </SelectItem>
-                                          <SelectItem value="past_maturity">
-                                              Past Maturity Dates
-                                          </SelectItem>
                                       </SelectContent>
                                   </Select>
                               </div>

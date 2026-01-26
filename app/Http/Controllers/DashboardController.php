@@ -203,7 +203,7 @@ class DashboardController extends Controller
                 ->concat($cashOrders)
                 ->concat($installmentOrders)
                 ->concat($groupedInstallmentPayments)
-                ->sortByDesc('created_at')
+                ->sortByDesc('date')
                 ->values();
 
             // Get all employees for filter dropdown
@@ -355,7 +355,7 @@ class DashboardController extends Controller
                 ->concat($cashOrders)
                 ->concat($installmentOrders)
                 ->concat($groupedInstallmentPayments)
-                ->sortByDesc('created_at')
+                ->sortByDesc('date')
                 ->values();
 
             return Inertia::render('Dashboard/CashierDashboard', [
@@ -567,9 +567,9 @@ class DashboardController extends Controller
         ->concat($cashOrders)
         ->concat($installmentOrders)
         ->concat($groupedInstallmentPayments)
-        ->sortByDesc('created_at')
+        ->sortByDesc('date')
         ->values();
-    
+
     // Get employee name if filtered
     $employeeName = null;
     if ($employeeId && $employeeId != 'all') {

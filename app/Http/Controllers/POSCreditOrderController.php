@@ -110,8 +110,8 @@ class POSCreditOrderController extends Controller
                 case '30_days_aging':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
                         $q->whereRaw('amount_paid < amount_due')
-                            ->where('due_date', '<=', $today->copy()->subDays(30))
-                            ->where('due_date', '>', $today->copy()->subDays(60));
+                            ->where('due_date', '<=', $today->copy()->subDays(1))
+                            ->where('due_date', '>=', $today->copy()->subDays(30));
                     });
                     break;
 
