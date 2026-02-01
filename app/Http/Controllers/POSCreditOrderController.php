@@ -19,7 +19,7 @@ class POSCreditOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = InstallmentOrder::with(['customer', 'user', 'location', 'installment_order_items.item'])
+        $query = InstallmentOrder::with(['customer', 'user', 'location', 'installment_order_items.item', 'installment_order_payments'])
             ->latest('transaction_date');
 
     // ============================================
@@ -83,9 +83,9 @@ class POSCreditOrderController extends Controller
             });
         }
 
-    // ============================================
-    // ADVANCED FILTERS (Only when advanced_filter is provided)
-    // ============================================
+   // ============================================
+// ADVANCED FILTERS (Only when advanced_filter is provided)
+// ============================================
 
         /**
          * Advanced Loan Analytics Filter
@@ -103,28 +103,41 @@ class POSCreditOrderController extends Controller
 
             switch ($advancedFilter) {
                 /**
-                 * 30 Days Aging
-                 * Shows orders with payments overdue between 30-59 days
-                 * Logic: Has at least one payment where due_date is 30-59 days in the past and not fully paid
+                 * 1-30 Days Aging
+                 * Shows orders with payments overdue between 1-30 days
+                 * Logic: Has at least one payment where due_date is 1-30 days in the past and not fully paid
                  */
-                case '30_days_aging':
+                case '1_30_days_aging':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
-                        $q->whereRaw('amount_paid < amount_due')
-                            ->where('due_date', '<=', $today->copy()->subDays(1))
+                        $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
+                            ->where('due_date', '<', $today)
                             ->where('due_date', '>=', $today->copy()->subDays(30));
                     });
                     break;
 
                 /**
-                 * 60 Days Aging
-                 * Shows orders with payments overdue between 60-89 days
-                 * Logic: Has at least one payment where due_date is 60-89 days in the past and not fully paid
+                 * 31-60 Days Aging
+                 * Shows orders with payments overdue between 31-60 days
+                 * Logic: Has at least one payment where due_date is 31-60 days in the past and not fully paid
                  */
-                case '60_days_aging':
+                case '31_60_days_aging':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
-                        $q->whereRaw('amount_paid < amount_due')
-                            ->where('due_date', '<=', $today->copy()->subDays(60))
-                            ->where('due_date', '>', $today->copy()->subDays(90));
+                        $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
+                            ->where('due_date', '<', $today->copy()->subDays(30))
+                            ->where('due_date', '>=', $today->copy()->subDays(60));
+                    });
+                    break;
+
+                /**
+                 * 61-90 Days Aging
+                 * Shows orders with payments overdue between 61-90 days
+                 * Logic: Has at least one payment where due_date is 61-90 days in the past and not fully paid
+                 */
+                case '61_90_days_aging':
+                    $query->whereHas('installment_order_payments', function ($q) use ($today) {
+                        $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
+                            ->where('due_date', '<', $today->copy()->subDays(60))
+                            ->where('due_date', '>=', $today->copy()->subDays(90));
                     });
                     break;
 
@@ -134,83 +147,23 @@ class POSCreditOrderController extends Controller
                  * Logic: Has at least one payment where due_date is 90+ days in the past and not fully paid
                  * These are high-risk accounts that may need collection action
                  */
-                case '90_days_aging':
+                case '90+_days_aging':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
-                        $q->whereRaw('amount_paid < amount_due')
+                        $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
                             ->where('due_date', '<=', $today->copy()->subDays(90));
                     });
                     break;
 
                 /**
                  * Due Loans
-                 * Shows orders with payments due within the next 7 days
-                 * Logic: Has at least one payment where due_date is within 7 days and not yet fully paid
+                 * Shows orders with payments due within the next 30 days
+                 * Logic: Has at least one payment where due_date is within 30 days and not yet fully paid
                  * Useful for proactive customer reminders
                  */
                 case 'due_loans':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
                         $q->whereRaw('amount_paid < amount_due')
-                            ->where('due_date', '>=', $today)
-                            ->where('due_date', '<=', $today->copy()->addDays(29));
-                    });
-                    break;
-
-                /**
-                 * Missed Repayments
-                 * Shows orders with at least one overdue payment
-                 * Logic: Has at least one payment where due_date has passed and not fully paid
-                 * Identifies customers who have missed at least one payment
-                 */
-                case 'missed_repayments':
-                    $query->whereHas('installment_order_payments', function ($q) use ($today) {
-                        $q->whereRaw('amount_paid < amount_due')
-                            ->where('due_date', '<', $today);
-                    });
-                    break;
-
-                /**
-                 * Loans in Arrears
-                 * Shows orders with 2 or more consecutive missed payments
-                 * Logic: Has at least 2 consecutive payments that are overdue and unpaid
-                 * These are serious delinquencies that need immediate attention
-                 */
-                case 'loans_in_arrears':
-                    $query->whereHas('installment_order_payments', function ($q) use ($today) {
-                        $q->select('installment_order_id')
-                            ->whereRaw('amount_paid < amount_due')
-                            ->where('due_date', '<', $today)
-                            ->groupBy('installment_order_id')
-                            ->havingRaw('COUNT(*) >= 2');
-                    });
-                    break;
-
-                /**
-                 * No Repayments
-                 * Shows orders where no payments have been made at all
-                 * Logic: All payments have amount_paid = 0
-                 * Identifies customers who haven't started paying despite having an active loan
-                 */
-                case 'no_repayments':
-                    $query->whereDoesntHave('installment_order_payments', function ($q) {
-                        $q->where('amount_paid', '>', 0);
-                    });
-                    break;
-
-                /**
-                 * Past Maturity Dates
-                 * Shows orders where the final payment due date has passed but loan is not completed
-                 * Logic: The last payment's due_date is in the past and order is still not marked as completed
-                 * These loans should have been fully paid but aren't
-                 */
-                case 'past_maturity':
-                    $query->whereHas('installment_order_payments', function ($q) use ($today) {
-                        $q->whereRaw('installment_number = (
-                        SELECT MAX(installment_number) 
-                        FROM installment_order_payments AS iop 
-                        WHERE iop.installment_order_id = installment_order_payments.installment_order_id
-                    )')
-                            ->where('due_date', '<', $today)
-                            ->whereRaw('amount_paid < amount_due');
+                            ->where('due_date', $today);
                     });
                     break;
             }
@@ -225,6 +178,8 @@ class POSCreditOrderController extends Controller
          * withQueryString() preserves all filter parameters in pagination links
          */
         $transactions = $query->paginate(8)->withQueryString();
+
+       
 
         return Inertia::render('POSCreditOrder/Index', [
             'transactions' => $transactions,
@@ -366,7 +321,7 @@ class POSCreditOrderController extends Controller
             'reason_for_cancellation' => 'required|string'
         ]);
         $transaction = InstallmentOrder::with('installment_order_items.item')->findOrFail($id);
- 
+
         DB::beginTransaction();
         $transaction->update([
             'is_voided' => true,
@@ -436,9 +391,9 @@ class POSCreditOrderController extends Controller
         ]);
 
 
-          $transaction->installment_order_items->map(function ($item) use($transaction) {
+        $transaction->installment_order_items->map(function ($item) use ($transaction) {
             $item->item->update([
-               'date_out' => $transaction->transaction_date
+                'date_out' => $transaction->transaction_date
             ]);
         });
 

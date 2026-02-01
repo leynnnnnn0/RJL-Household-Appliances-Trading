@@ -426,17 +426,20 @@ export default function Index({ transactions, locations, employees }: Props) {
                                           <SelectItem value="all">
                                               All Loans
                                           </SelectItem>
-                                          <SelectItem value="30_days_aging">
-                                              30 Days Aging
-                                          </SelectItem>
-                                          <SelectItem value="60_days_aging">
-                                              60 Days Aging
-                                          </SelectItem>
-                                          <SelectItem value="90_days_aging">
-                                              90 Days Aging
-                                          </SelectItem>
                                           <SelectItem value="due_loans">
-                                              Due Loans
+                                              Due Today
+                                          </SelectItem>
+                                          <SelectItem value="1_30_days_aging">
+                                              1-30 Days Aging
+                                          </SelectItem>
+                                          <SelectItem value="31_60_days_aging">
+                                              31-60 Days Aging
+                                          </SelectItem>
+                                          <SelectItem value="61_90_days_aging">
+                                              61-90 Days Aging
+                                          </SelectItem>
+                                          <SelectItem value="90+_days_aging">
+                                              90+ Days Aging
                                           </SelectItem>
                                       </SelectContent>
                                   </Select>
@@ -552,7 +555,9 @@ export default function Index({ transactions, locations, employees }: Props) {
                                       </TableCell>
                                       <TableCell>
                                           ₱
-                                          {transaction.remaining_balance > 1 ? transaction.remaining_balance.toLocaleString() : "0"}
+                                          {transaction.remaining_balance > 1
+                                              ? transaction.remaining_balance.toLocaleString()
+                                              : '0'}
                                       </TableCell>
                                       <TableCell>
                                           {getStatusBadge(transaction)}
