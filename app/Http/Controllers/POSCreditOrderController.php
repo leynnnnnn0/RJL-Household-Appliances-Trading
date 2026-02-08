@@ -101,72 +101,100 @@ class POSCreditOrderController extends Controller
                 ->where('is_accelerated', false)
                 ->where('is_completed', false);
 
-                
-      
+
+
             switch ($advancedFilter) {
-              
+
                 /**
                  * 1-30 Days Aging
-                 * Shows orders with payments overdue between 1-30 days
-                 * Logic: Has at least one payment where due_date is 1-30 days in the past and not fully paid
                  */
                 case '1_30_days_aging':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
                         $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
                             ->where('due_date', '<', $today)
-                            ->where('due_date', '>=', $today->copy()->subDays(30));
+                            ->where('due_date', '>=', $today->copy()->subDays(30))
+                            ->whereRaw('id = (
+                  SELECT id 
+                  FROM installment_order_payments AS iop 
+                  WHERE iop.installment_order_id = installment_order_payments.installment_order_id 
+                    AND iop.amount_paid < (iop.amount_due - iop.rebate_amount)
+                  ORDER BY iop.due_date ASC 
+                  LIMIT 1
+              )');
                     });
                     break;
 
                 /**
                  * 31-60 Days Aging
-                 * Shows orders with payments overdue between 31-60 days
-                 * Logic: Has at least one payment where due_date is 31-60 days in the past and not fully paid
                  */
                 case '31_60_days_aging':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
                         $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
                             ->where('due_date', '<', $today->copy()->subDays(30))
-                            ->where('due_date', '>=', $today->copy()->subDays(60));
+                            ->where('due_date', '>=', $today->copy()->subDays(60))
+                            ->whereRaw('id = (
+                  SELECT id 
+                  FROM installment_order_payments AS iop 
+                  WHERE iop.installment_order_id = installment_order_payments.installment_order_id 
+                    AND iop.amount_paid < (iop.amount_due - iop.rebate_amount)
+                  ORDER BY iop.due_date ASC 
+                  LIMIT 1
+              )');
                     });
                     break;
 
                 /**
                  * 61-90 Days Aging
-                 * Shows orders with payments overdue between 61-90 days
-                 * Logic: Has at least one payment where due_date is 61-90 days in the past and not fully paid
                  */
                 case '61_90_days_aging':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
                         $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
                             ->where('due_date', '<', $today->copy()->subDays(60))
-                            ->where('due_date', '>=', $today->copy()->subDays(90));
+                            ->where('due_date', '>=', $today->copy()->subDays(90))
+                            ->whereRaw('id = (
+                  SELECT id 
+                  FROM installment_order_payments AS iop 
+                  WHERE iop.installment_order_id = installment_order_payments.installment_order_id 
+                    AND iop.amount_paid < (iop.amount_due - iop.rebate_amount)
+                  ORDER BY iop.due_date ASC 
+                  LIMIT 1
+              )');
                     });
                     break;
 
                 /**
                  * 90+ Days Aging
-                 * Shows orders with payments overdue 90 or more days
-                 * Logic: Has at least one payment where due_date is 90+ days in the past and not fully paid
-                 * These are high-risk accounts that may need collection action
                  */
                 case '90+_days_aging':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
                         $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
-                            ->where('due_date', '<=', $today->copy()->subDays(90));
+                            ->where('due_date', '<=', $today->copy()->subDays(90))
+                            ->whereRaw('id = (
+                  SELECT id 
+                  FROM installment_order_payments AS iop 
+                  WHERE iop.installment_order_id = installment_order_payments.installment_order_id 
+                    AND iop.amount_paid < (iop.amount_due - iop.rebate_amount)
+                  ORDER BY iop.due_date ASC 
+                  LIMIT 1
+              )');
                     });
                     break;
 
                 /**
                  * Due Loans
-                 * Shows orders with payments due within the next 30 days
-                 * Logic: Has at least one payment where due_date is within 30 days and not yet fully paid
-                 * Useful for proactive customer reminders
                  */
                 case 'due_loans':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
                         $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
-                            ->where('due_date', $today->copy()->format('Y-m-d'));
+                            ->where('due_date', $today->copy()->format('Y-m-d'))
+                            ->whereRaw('id = (
+                  SELECT id 
+                  FROM installment_order_payments AS iop 
+                  WHERE iop.installment_order_id = installment_order_payments.installment_order_id 
+                    AND iop.amount_paid < (iop.amount_due - iop.rebate_amount)
+                  ORDER BY iop.due_date ASC 
+                  LIMIT 1
+              )');
                     });
                     break;
             }
