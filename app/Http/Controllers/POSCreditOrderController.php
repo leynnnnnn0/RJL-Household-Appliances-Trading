@@ -101,7 +101,10 @@ class POSCreditOrderController extends Controller
                 ->where('is_accelerated', false)
                 ->where('is_completed', false);
 
+                
+      
             switch ($advancedFilter) {
+              
                 /**
                  * 1-30 Days Aging
                  * Shows orders with payments overdue between 1-30 days
@@ -162,8 +165,8 @@ class POSCreditOrderController extends Controller
                  */
                 case 'due_loans':
                     $query->whereHas('installment_order_payments', function ($q) use ($today) {
-                        $q->whereRaw('amount_paid < amount_due')
-                            ->where('due_date', $today);
+                        $q->whereRaw('amount_paid < (amount_due - rebate_amount)')
+                            ->where('due_date', $today->copy()->format('Y-m-d'));
                     });
                     break;
             }
