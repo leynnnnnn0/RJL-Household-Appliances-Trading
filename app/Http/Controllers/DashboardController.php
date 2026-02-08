@@ -44,7 +44,7 @@ class DashboardController extends Controller
             ? (($srpTotal - $unitCostTotal) / $unitCostTotal) * 100
             : 0;
 
-        if (Auth::user()->getRoleNames()->contains('super admin')) {
+        if (Auth::user()->getRoleNames()->contains('super admin') || Auth::user()->getRoleNames()->contains('cashier')) {
             // Get filter parameters
             $fromDate = $request->input('from_date', today()->toDateString());
             $toDate = $request->input('to_date', today()->toDateString());
@@ -228,148 +228,148 @@ class DashboardController extends Controller
             ]);
         }
 
-        if (Auth::user()->getRoleNames()->contains('cashier')) {
-            $cashOrders = Order::with(['customer', 'order_items.item'])->whereDate('transaction_date', today())
-                ->where('employee_id', Auth::id())
-                ->get()
-                ->map(function ($order) {
-                    return [
-                        'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                        'receipt_number' => $order->receipt_number,
-                        'customer' => $order->customer->full_name,
-                        'm_i' => null,
-                        'd_p' => null,
-                        'amount_paid' => $order->total_price,
-                        'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
-                        'reference_number' => $order->reference_number,
-                        'is_voided' => $order->is_void,
-                        'created_at' => $order->created_at,
-                        'remarks' => $order->order_items
-                            ->map(fn($item) => $item->item->model)
-                            ->implode(', ')
-                    ];
-                });
+        // if (Auth::user()->getRoleNames()->contains('cashier')) {
+        //     $cashOrders = Order::with(['customer', 'order_items.item'])->whereDate('transaction_date', today())
+        //         ->where('employee_id', Auth::id())
+        //         ->get()
+        //         ->map(function ($order) {
+        //             return [
+        //                 'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
+        //                 'receipt_number' => $order->receipt_number,
+        //                 'customer' => $order->customer->full_name,
+        //                 'm_i' => null,
+        //                 'd_p' => null,
+        //                 'amount_paid' => $order->total_price,
+        //                 'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
+        //                 'reference_number' => $order->reference_number,
+        //                 'is_voided' => $order->is_void,
+        //                 'created_at' => $order->created_at,
+        //                 'remarks' => $order->order_items
+        //                     ->map(fn($item) => $item->item->model)
+        //                     ->implode(', ')
+        //             ];
+        //         });
 
-            $installmentOrders = InstallmentOrder::with(['customer', 'installment_order_items.item'])->whereDate('transaction_date', today())
-                ->where('user_id', Auth::id())
-                ->get()
-                ->map(function ($order) {
-                    return [
-                        'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                        'receipt_number' => $order->receipt_number,
-                        'customer' => $order->customer->full_name,
-                        'm_i' => null,
-                        'd_p' => $order->down_payment,
-                        'amount_paid' => null,
-                        'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
-                        'reference_number' => $order->reference_number,
-                        'is_voided' => $order->is_voided,
-                        'created_at' => $order->created_at,
-                        'remarks' => $order->installment_order_items->map(fn($item) => $item->item->model)
-                            ->implode(', ')
-                    ];
-                });
+        //     $installmentOrders = InstallmentOrder::with(['customer', 'installment_order_items.item'])->whereDate('transaction_date', today())
+        //         ->where('user_id', Auth::id())
+        //         ->get()
+        //         ->map(function ($order) {
+        //             return [
+        //                 'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
+        //                 'receipt_number' => $order->receipt_number,
+        //                 'customer' => $order->customer->full_name,
+        //                 'm_i' => null,
+        //                 'd_p' => $order->down_payment,
+        //                 'amount_paid' => null,
+        //                 'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
+        //                 'reference_number' => $order->reference_number,
+        //                 'is_voided' => $order->is_voided,
+        //                 'created_at' => $order->created_at,
+        //                 'remarks' => $order->installment_order_items->map(fn($item) => $item->item->model)
+        //                     ->implode(', ')
+        //             ];
+        //         });
 
-            // Get installment payments (keep individual records)
-            $installmentPayments = InstallmentOrderPaymentHistory::with('installment_order_payment.installment_order.customer', 'installment_order_payment.installment_order.installment_order_items.item')
-                ->whereDate('paid_date', today())
-                ->where('user_id', Auth::id())
-                ->whereHas('installment_order_payment.installment_order', function ($q) {
-                    $q->where('is_voided', false);
-                })
-                ->get()
-                ->map(function ($order) {
-                    return [
-                        'date' => Carbon::parse($order->paid_date)->format('F d, Y'),
-                        'receipt_number' => $order->collection_receipt_number,
-                        'customer' => $order->installment_order_payment->installment_order->customer->full_name,
-                        'm_i' => $order->amount,
-                        'd_p' => null,
-                        'amount_paid' => null,
-                        'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
-                        'reference_number' => $order->reference_number,
-                        'is_voided' => false,
-                        'created_at' => $order->created_at,
-                        'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)->implode(', ')
-                    ];
-                });
+        //     // Get installment payments (keep individual records)
+        //     $installmentPayments = InstallmentOrderPaymentHistory::with('installment_order_payment.installment_order.customer', 'installment_order_payment.installment_order.installment_order_items.item')
+        //         ->whereDate('paid_date', today())
+        //         ->where('user_id', Auth::id())
+        //         ->whereHas('installment_order_payment.installment_order', function ($q) {
+        //             $q->where('is_voided', false);
+        //         })
+        //         ->get()
+        //         ->map(function ($order) {
+        //             return [
+        //                 'date' => Carbon::parse($order->paid_date)->format('F d, Y'),
+        //                 'receipt_number' => $order->collection_receipt_number,
+        //                 'customer' => $order->installment_order_payment->installment_order->customer->full_name,
+        //                 'm_i' => $order->amount,
+        //                 'd_p' => null,
+        //                 'amount_paid' => null,
+        //                 'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
+        //                 'reference_number' => $order->reference_number,
+        //                 'is_voided' => false,
+        //                 'created_at' => $order->created_at,
+        //                 'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)->implode(', ')
+        //             ];
+        //         });
 
-            // Create grouped version for display
-            $groupedInstallmentPayments = $installmentPayments
-                ->groupBy('receipt_number')
-                ->map(function ($group) {
-                    $paymentMethods = $group->pluck('payment_method')->unique();
-                    $amounts = $group->groupBy('payment_method')->map(fn($items) => $items->sum('m_i'));
+        //     // Create grouped version for display
+        //     $groupedInstallmentPayments = $installmentPayments
+        //         ->groupBy('receipt_number')
+        //         ->map(function ($group) {
+        //             $paymentMethods = $group->pluck('payment_method')->unique();
+        //             $amounts = $group->groupBy('payment_method')->map(fn($items) => $items->sum('m_i'));
 
-                    return [
-                        'date' => $group->first()['date'],
-                        'receipt_number' => $group->first()['receipt_number'],
-                        'customer' => $group->first()['customer'],
-                        'm_i' => $group->sum('m_i'),
-                        'd_p' => null,
-                        'amount_paid' => null,
-                        'payment_method' => $paymentMethods->count() > 1
-                            ? 'Split: ' . $amounts->map(fn($amt, $method) => ucfirst($method) . ' ₱' . number_format($amt, 2))->implode(', ')
-                            : $group->first()['payment_method'],
-                        'reference_number' => $group->first()['reference_number'],
-                        'is_voided' => false,
-                        'remarks' => $group->first()['remarks'],
-                    ];
-                })
-                ->values();
+        //             return [
+        //                 'date' => $group->first()['date'],
+        //                 'receipt_number' => $group->first()['receipt_number'],
+        //                 'customer' => $group->first()['customer'],
+        //                 'm_i' => $group->sum('m_i'),
+        //                 'd_p' => null,
+        //                 'amount_paid' => null,
+        //                 'payment_method' => $paymentMethods->count() > 1
+        //                     ? 'Split: ' . $amounts->map(fn($amt, $method) => ucfirst($method) . ' ₱' . number_format($amt, 2))->implode(', ')
+        //                     : $group->first()['payment_method'],
+        //                 'reference_number' => $group->first()['reference_number'],
+        //                 'is_voided' => false,
+        //                 'remarks' => $group->first()['remarks'],
+        //             ];
+        //         })
+        //         ->values();
 
-            // Use ungrouped payments for accurate MOP calculation
-            $transactions = collect()
-                ->concat($cashOrders)
-                ->concat($installmentOrders)
-                ->concat($installmentPayments);
+        //     // Use ungrouped payments for accurate MOP calculation
+        //     $transactions = collect()
+        //         ->concat($cashOrders)
+        //         ->concat($installmentOrders)
+        //         ->concat($installmentPayments);
 
-            $miCollection = $transactions
-                ->where('is_voided', false)
-                ->where('m_i', '!=', null)
-                ->sum('m_i') ?? 0;
-            $dpCollection = $transactions->where('is_voided', false)->where('d_p', '!=', null)->sum('d_p') ?? 0;
-            $cashCollection = $transactions->where('is_voided', false)->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
+        //     $miCollection = $transactions
+        //         ->where('is_voided', false)
+        //         ->where('m_i', '!=', null)
+        //         ->sum('m_i') ?? 0;
+        //     $dpCollection = $transactions->where('is_voided', false)->where('d_p', '!=', null)->sum('d_p') ?? 0;
+        //     $cashCollection = $transactions->where('is_voided', false)->where('amount_paid', '!=', null)->sum('amount_paid') ?? 0;
 
-            $mops = $transactions
-                ->where('is_voided', false)
-                ->groupBy('payment_method')
-                ->map(function ($group) {
-                    return $group->sum(function ($t) {
-                        return ($t['m_i'] ?? 0) + ($t['d_p'] ?? 0) + ($t['amount_paid'] ?? 0);
-                    });
-                });
+        //     $mops = $transactions
+        //         ->where('is_voided', false)
+        //         ->groupBy('payment_method')
+        //         ->map(function ($group) {
+        //             return $group->sum(function ($t) {
+        //                 return ($t['m_i'] ?? 0) + ($t['d_p'] ?? 0) + ($t['amount_paid'] ?? 0);
+        //             });
+        //         });
 
-            $totalCashOnHand = $mops->get('cash', 0);
-            $totalOtherMop = $mops
-                ->except(['cash'])
-                ->sum();
+        //     $totalCashOnHand = $mops->get('cash', 0);
+        //     $totalOtherMop = $mops
+        //         ->except(['cash'])
+        //         ->sum();
 
-            $expenses = ExpenseRecord::where('user_id', Auth::id())
-                ->where('status', 'approved')
-                ->whereDate('expense_date', today())
-                ->sum('amount');
+        //     $expenses = ExpenseRecord::where('user_id', Auth::id())
+        //         ->where('status', 'approved')
+        //         ->whereDate('expense_date', today())
+        //         ->sum('amount');
 
-            // Use grouped version for display
-            $allTransactions = collect()
-                ->concat($cashOrders)
-                ->concat($installmentOrders)
-                ->concat($groupedInstallmentPayments)
-                ->sortByDesc('date')
-                ->values();
+        //     // Use grouped version for display
+        //     $allTransactions = collect()
+        //         ->concat($cashOrders)
+        //         ->concat($installmentOrders)
+        //         ->concat($groupedInstallmentPayments)
+        //         ->sortByDesc('date')
+        //         ->values();
 
-            return Inertia::render('Dashboard/CashierDashboard', [
-                'allTransactions' => $allTransactions,
-                'mops' => $mops,
-                'miCollection' => $miCollection,
-                'dpCollection' => $dpCollection,
-                'cashCollection' => $cashCollection,
-                'netCollection' => $miCollection + $dpCollection + $cashCollection,
-                'expenses' => $expenses,
-                'totalCashOnHand' => $totalCashOnHand,
-                'totalOtherMop' => $totalOtherMop
-            ]);
-        }
+        //     return Inertia::render('Dashboard/CashierDashboard', [
+        //         'allTransactions' => $allTransactions,
+        //         'mops' => $mops,
+        //         'miCollection' => $miCollection,
+        //         'dpCollection' => $dpCollection,
+        //         'cashCollection' => $cashCollection,
+        //         'netCollection' => $miCollection + $dpCollection + $cashCollection,
+        //         'expenses' => $expenses,
+        //         'totalCashOnHand' => $totalCashOnHand,
+        //         'totalOtherMop' => $totalOtherMop
+        //     ]);
+        // }
 
         if (!Auth::user()->getRoleNames()->contains('super admin')) {
             return Inertia::render('Dashboard/NonAdminDashboard');
