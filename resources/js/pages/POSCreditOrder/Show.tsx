@@ -919,11 +919,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-sm text-muted-foreground">
-                                            Location
+                                            Branch
                                         </span>
                                         <span className="flex items-center gap-1 font-medium">
                                             <MapPin className="h-4 w-4" />
-                                            {transaction.location?.name}
+                                            {transaction.branch?.name}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
