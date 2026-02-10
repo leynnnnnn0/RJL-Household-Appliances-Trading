@@ -332,7 +332,7 @@ export default function OwnerDashboard({
                 </CardTitle>
                 <Button variant='link'>
                   <IconFileExport/>
-                    <a href={`/transactions/download-pdf?from_date=${fromDate}&to_date=${toDate}&employee_id=${selectedEmployee}`}
+                    <a href={`/transactions/download-pdf?from_date=${fromDate}&to_date=${toDate}&branch_id=${selectedEmployee}`}
    className="btn btn-primary" target='_blank'>
     Download PDF
 </a>
