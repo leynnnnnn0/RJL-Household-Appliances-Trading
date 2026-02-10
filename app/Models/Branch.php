@@ -41,5 +41,10 @@ class Branch extends Model
         });
     }
 
+    public function expense_records()
+    {
+        return $this->hasMany(ExpenseRecord::class);
+    }
+
     
 }

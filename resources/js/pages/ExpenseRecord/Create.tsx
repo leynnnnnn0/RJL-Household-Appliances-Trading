@@ -24,21 +24,23 @@ interface User {
 
 interface PageProps {
   users: User[];
+    branches: Location[];
 }
 
-export default function Create({ users }: PageProps) {
+export default function Create({ users, branches }: PageProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const {auth} = usePage().props as any;
 
   const { data, setData, post, processing, errors, reset } = useForm({
-    user_id: auth.user?.id.toString(),
-    amount: "",
-    category: "",
-    payment_method: "",
-    reference_number: "",
-    remarks: "",
-    receipt_path: null as File | null,
-    expense_date: "",
+      user_id: auth.user?.id.toString(),
+      amount: '',
+      category: '',
+      payment_method: '',
+      reference_number: '',
+      remarks: '',
+      receipt_path: null as File | null,
+      expense_date: '',
+      branch_id: branches[0]?.id.toString(),
   });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -282,6 +284,34 @@ export default function Create({ users }: PageProps) {
                                   {errors.expense_date && (
                                       <p className="text-sm text-red-500">
                                           {errors.expense_date}
+                                      </p>
+                                  )}
+                              </div>
+
+                              {/* Branch */}
+                              <div className="space-y-2 md:col-span-2">
+                                  <Label htmlFor="expense_date">Branch</Label>
+                                  <Select
+                                      value={data.branch_id}
+                                      onValueChange={(value) => setData('branch_id', value)}
+                                  >
+                                      <SelectTrigger id="branch">
+                                          <SelectValue placeholder="Select a branch" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          {branches.map((branch) => (
+                                              <SelectItem
+                                                  key={branch.id}
+                                                  value={branch.id.toString()}
+                                              >
+                                                  {branch.name}
+                                              </SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                  </Select>
+                                  {errors.branch_id && (
+                                      <p className="text-sm text-red-500">
+                                          {errors.branch_id}
                                       </p>
                                   )}
                               </div>

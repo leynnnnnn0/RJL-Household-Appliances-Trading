@@ -194,8 +194,13 @@ class DashboardController extends Controller
             $expensesQuery = ExpenseRecord::where('status', 'approved')
                 ->whereBetween('expense_date', [$fromDate, $toDate]);
             if ($employeeId) {
-                $expensesQuery->where('user_id', $employeeId);
+                $expensesQuery->where('branch_id', $employeeId);
             }
+            // if($employeeId){
+    
+            //     $expensesQuery->where('branch_id', $employeeId);
+            // }
+         
             $expenses = $expensesQuery->sum('amount');
 
             // Use grouped version for display test
@@ -557,7 +562,7 @@ class DashboardController extends Controller
         ->whereDate('expense_date', '<=', $toDate);
     
     if ($employeeId && $employeeId != 'all') {
-        $expensesQuery->where('user_id', $employeeId);
+        $expensesQuery->where('branch_id', $employeeId);
     }
     
     $expenses = $expensesQuery->sum('amount');

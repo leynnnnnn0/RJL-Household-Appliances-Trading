@@ -292,6 +292,14 @@ export default function Show({ expense_record }: PageProps) {
                                       {expense_record.expense_date || '—'}
                                   </p>
                               </div>
+                              <div>
+                                  <p className="text-sm text-gray-500">
+                                      Branch
+                                  </p>
+                                  <p className="font-medium">
+                                      {expense_record.branch?.name || '—'}
+                                  </p>
+                              </div>
                               <div className="font-medium">
                                   <p className="text-sm text-gray-500">
                                       Remarks

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Employee;
 use App\Models\ExpenseRecord;
 use App\Models\User;
@@ -67,7 +68,8 @@ class ExpenseRecordController extends Controller
         $users = User::dropdown();
         
         return Inertia::render('ExpenseRecord/Create', [
-            'users' => $users
+            'users' => $users,
+            'branches' => Branch::dropdown(),
         ]);
     }
 
@@ -82,7 +84,10 @@ class ExpenseRecordController extends Controller
             'remarks' => 'nullable|string',
             'receipt_path' => 'nullable|image|mimes:jpeg,png,jpg|max:10240', // 10MB max
             'expense_date' => 'required|date',
+            'branch_id' => 'required'
         ]);
+
+    
 
         // Handle image upload
         if ($request->hasFile('receipt_path')) {
@@ -103,7 +108,7 @@ class ExpenseRecordController extends Controller
 
     public function show(ExpenseRecord $expenseRecord)
     {
-        $expenseRecord->load(['user', 'approved_by']);
+        $expenseRecord->load(['user', 'approved_by', 'branch']);
         
         return Inertia::render('ExpenseRecord/Show', [
             'expense_record' => $expenseRecord
@@ -117,7 +122,8 @@ class ExpenseRecordController extends Controller
         
         return Inertia::render('ExpenseRecord/Edit', [
             'users' => $users,
-            'expense_record' => $expenseRecord
+            'expense_record' => $expenseRecord,
+            'branches' => Branch::dropdown(),
         ]);
     }
 
@@ -132,7 +138,9 @@ class ExpenseRecordController extends Controller
             'remarks' => 'nullable|string',
             'receipt_path' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
             'expense_date' => 'required|date',
+            'branch_id' => 'required|exists:branches,id'
         ]);
+
 
         // Remove receipt_path from validated if no new file uploaded
         // This prevents overwriting existing receipt with null

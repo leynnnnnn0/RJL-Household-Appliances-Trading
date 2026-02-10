@@ -24,6 +24,7 @@ class ExpenseRecord extends Model
         'reference_number',
         'receipt_path',
         'expense_date',
+        'branch_id',
     ];
 
     protected $casts = [
@@ -39,5 +40,10 @@ class ExpenseRecord extends Model
     public function approved_by()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }
