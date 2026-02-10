@@ -142,14 +142,14 @@ export default function Index({ transactions, locations, employees }: Props) {
       {/* Location */}
       <div className="space-y-2">
         <label className="text-sm font-medium flex items-center gap-1.5">
-          <MapPin className="h-4 w-4" /> Location
+          <MapPin className="h-4 w-4" /> Branch
         </label>
         <Select value={selectedLocation} onValueChange={setSelectedLocation}>
           <SelectTrigger>
-            <SelectValue placeholder="All Locations" />
+            <SelectValue placeholder="All Branches" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Locations</SelectItem>
+            <SelectItem value="all">All Branches</SelectItem>
             {locations.map((loc) => (
               <SelectItem key={loc.id} value={loc.id.toString()}>{loc.name}</SelectItem>
             ))}
@@ -319,21 +319,21 @@ export default function Index({ transactions, locations, employees }: Props) {
                                   />
                               </div>
 
-                              {/* Location */}
+                              {/* Branch */}
                               <div className="space-y-1.5">
                                   <label className="flex items-center gap-1 text-xs font-medium">
-                                      <MapPin className="h-3 w-3" /> Location
+                                      <MapPin className="h-3 w-3" /> Branch
                                   </label>
                                   <Select
                                       value={selectedLocation}
                                       onValueChange={setSelectedLocation}
                                   >
                                       <SelectTrigger className="h-9 text-sm">
-                                          <SelectValue placeholder="All Locations" />
+                                          <SelectValue placeholder="All Branches" />
                                       </SelectTrigger>
                                       <SelectContent>
                                           <SelectItem value="all">
-                                              All Locations
+                                              All Branches
                                           </SelectItem>
                                           {locations.map((loc) => (
                                               <SelectItem

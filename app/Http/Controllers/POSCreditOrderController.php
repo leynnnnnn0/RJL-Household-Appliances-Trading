@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\InstallmentOrder;
 use App\Models\InstallmentOrderPayment;
 use App\Models\InstallmentOrderPaymentHistory;
@@ -57,7 +58,7 @@ class POSCreditOrderController extends Controller
          * Filters orders by branch/location
          */
         if ($request->filled('location_id') && $request->location_id !== 'all') {
-            $query->where('location_id', $request->location_id);
+            $query->where('branch_id', $request->location_id);
         }
 
         /**
@@ -214,7 +215,7 @@ class POSCreditOrderController extends Controller
 
         return Inertia::render('POSCreditOrder/Index', [
             'transactions' => $transactions,
-            'locations' => Location::dropdown(),
+            'locations' => Branch::dropdown(),
             'employees' => User::dropdown(),
         ]);
     }
