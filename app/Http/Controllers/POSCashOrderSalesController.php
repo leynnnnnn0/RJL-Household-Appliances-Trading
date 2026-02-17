@@ -1,6 +1,8 @@
 <?php
+
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Location;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -16,8 +18,8 @@ class POSCashOrderSalesController extends Controller
         $dateTo = $request->input('date_to', Carbon::now()->format('Y-m-d'));
         $locationId = $request->input('location_id', 'all');
 
-        $query = Order::with(['order_items.item.location', 'order_items.item.supplier'])
-        ->where('is_void', 0);
+        $query = Order::with(['branch', 'order_items.item.location', 'order_items.item.supplier'])
+            ->where('is_void', 0);
 
 
         if ($dateFrom) {
@@ -28,7 +30,7 @@ class POSCashOrderSalesController extends Controller
         }
 
         if ($locationId !== 'all') {
-            $query->where('location_id', $locationId);
+            $query->where('branch_id', $locationId);
         }
 
         $orders = $query->get();
@@ -43,7 +45,7 @@ class POSCashOrderSalesController extends Controller
             'total_profit' => $total_profit,
             'sales_per_category' => $this->getSalesByCategoryData($orders),
             'sales_by_location' => $this->getSalesByLocation($orders),
-            'locations' => Location::dropdown(),
+            'locations' => Branch::dropdown(),
             'filters' => [
                 'date_from' => $dateFrom,
                 'date_to' => $dateTo,
@@ -54,7 +56,7 @@ class POSCashOrderSalesController extends Controller
 
     public function getSalesByLocation($orders)
     {
-        $locations = Location::select(['id', 'name'])
+        $locations = Branch::select(['id', 'name'])
             ->get()
             ->mapWithKeys(function ($location) {
                 return [
@@ -68,8 +70,8 @@ class POSCashOrderSalesController extends Controller
             ->toArray();
 
         $orders->each(function ($order) use (&$locations) {
-            if (isset($locations[$order->location_id])) {
-                $locations[$order->location_id]['revenue'] += $order->total_price;
+            if (isset($locations[$order->branch_id])) {
+                $locations[$order->branch_id]['revenue'] += $order->total_price;
             }
         });
 
@@ -114,6 +116,8 @@ class POSCashOrderSalesController extends Controller
                 'color' => 'hsl(var(--chart-3))'
             ]
         ];
+
+
 
         $orders->each(function ($order) use (&$category_types) {
             $order->order_items->each(function ($orderItem) use (&$category_types) {

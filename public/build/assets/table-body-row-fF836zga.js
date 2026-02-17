@@ -1,0 +1,1 @@
+import{c as r,j as i}from"./app-Dlf8NuHk.js";import{T as n}from"./table-DGhu8xkQ.js";function m(e){const o=r.c(2),{children:s}=e;let t;return o[0]!==s?(t=i.jsx(n,{className:"hover:bg-muted/50 transition-colors",children:s}),o[0]=s,o[1]=t):t=o[1],t}export{m as T};

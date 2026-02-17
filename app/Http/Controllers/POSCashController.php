@@ -25,7 +25,7 @@ class POSCashController extends Controller
         return Inertia::render('POSCash/Index', [
             'locations' => Branch::dropdown(),
             'employees' => User::dropdown(),
-            'transactions' => Order::with('order_items.item', 'location')->whereDate('transaction_date', today())->where('employee_id', Auth::id())->latest()->get()
+            'transactions' => Order::with('order_items.item', 'location', 'branch')->whereDate('transaction_date',  today())->where('employee_id', Auth::id())->latest()->get()
         ]);
     }
 
@@ -101,7 +101,7 @@ class POSCashController extends Controller
                 'payment_method' => $validated['payment_method'],
                 'reference_number' => $validated['reference_number'],
                 'transaction_date' => now(),
-                'receipt_number' => $validated['receipt_number']
+                'receipt_number' => $validated['receipt_number'],
             ]);
 
 

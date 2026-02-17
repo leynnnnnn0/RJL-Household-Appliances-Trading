@@ -217,9 +217,9 @@ export default function Show({ transaction }: ShowProps) {
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">Location</p>
+                        <p className="text-xs text-muted-foreground">Branch</p>
                         <p className="font-medium text-sm truncate">
-                          {transaction.location?.name || "N/A"}
+                          {transaction.branch?.name || "N/A"}
                         </p>
                       </div>
                     </div>
