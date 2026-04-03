@@ -110,7 +110,7 @@ class POSCreditController extends Controller
             throw new Exception('At least one paid item is required');
         }
 
-        // Create or update customer
+        // Create or update customers
         $customer = null;
         if ($validated['customer_id'] == null) {
             $customer = Customer::create([
