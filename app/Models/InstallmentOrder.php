@@ -50,7 +50,7 @@ class InstallmentOrder extends Model
         'default_date',
         'defaulter_id',
 
-          'is_reactivated',
+        'is_reactivated',
         'reactivation_reason',
         'reactivation_date',
         'reactivator_id'

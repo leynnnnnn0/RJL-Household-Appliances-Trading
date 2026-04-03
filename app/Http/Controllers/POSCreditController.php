@@ -201,8 +201,11 @@ class POSCreditController extends Controller
             'receipt_number' => $validated['receipt_number'],
         ]);
 
-        // Calculate total sale amount for paid items
-        $total = $validated['is_no_interest'] ? $validated['loan_contract_price']  : $order->promisory_note_value * $order->promisory_note_value_interest + floatval($order->promisory_note_value_interest_additional_charge);
+            // Calculate total sale amount for paid items
+            $total = $validated['is_no_interest']
+                ? $validated['loan_contract_price'] - floatval($validated['down_payment'])
+                : $order->promisory_note_value * $order->promisory_note_value_interest
+                + floatval($order->promisory_note_value_interest_additional_charge);
 
         // Create paid items
         foreach ($items as $item) {
@@ -238,9 +241,10 @@ class POSCreditController extends Controller
 
         // Create installment payment schedule
         $monthlyPayment = $total / $order->number_of_terms;
-        $startCount = $validated['is_no_interest'] ? 0 : 1;
-        $numberOfTerms = $validated['is_no_interest'] ? $order->number_of_terms - 1 : $order->number_of_terms;
-    
+            // If no interest but HAS a down payment, schedule should start at month 1
+            $startCount = 1;
+            $numberOfTerms = $order->number_of_terms;
+
 
         for ($i = $startCount; $i <= $numberOfTerms; $i++) {
             InstallmentOrderPayment::create([

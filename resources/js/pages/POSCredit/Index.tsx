@@ -524,37 +524,36 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   const handleNoInterestRateToggle = (checked: boolean) => {
-    setNoInterestRate(checked);
-    if(noDownPayment && checked) setNoDownPayment(false);
-    if(checked){
-      setDownPayment(0);
-      const paidProducts = selectedProducts.filter(item => !item.isFree);
-  
-    const total = paidProducts.length > 0
-    ? paidProducts.reduce((sum, item) => sum + Number.parseFloat(item.srp.toString()), 0)
-    : 0;
-    
-    setTotalLCP(total);
-    
-    }else {
-       const paidProducts = selectedProducts.filter(item => !item.isFree);
-  
-  const total = paidProducts.length > 0
-    ? paidProducts.reduce((sum, item) => sum + Number.parseFloat(item.srp.toString()), 0)
-    : 0;
+      setNoInterestRate(checked);
+      if (noDownPayment && checked) setNoDownPayment(false);
 
+      const paidProducts = selectedProducts.filter((item) => !item.isFree);
+      const total =
+          paidProducts.length > 0
+              ? paidProducts.reduce(
+                    (sum, item) => sum + Number.parseFloat(item.srp.toString()),
+                    0,
+                )
+              : 0;
 
-
-  const lcp = total > 0 ? calculateLCP(total) : 0;
-
-  setTotalLCP(Number.parseFloat(lcp.toFixed(2)));
-
-  const downPaymentPercent = getDefaultDownPaymentPercent(selectedProducts[0].item_type);
-  const defaultDownPayment = Math.round(lcp * downPaymentPercent);
-
-  setDownPayment(defaultDownPayment);
-    }
-  }
+      if (checked) {
+          // Use SRP directly as LCP (no markup), but still allow down payment
+          setTotalLCP(total);
+          const downPaymentPercent = getDefaultDownPaymentPercent(
+              selectedProducts[0]?.item_type,
+          );
+          const defaultDownPayment = Math.round(total * downPaymentPercent);
+          setDownPayment(defaultDownPayment); // ← restore default DP instead of 0
+      } else {
+          const lcp = total > 0 ? calculateLCP(total) : 0;
+          setTotalLCP(Number.parseFloat(lcp.toFixed(2)));
+          const downPaymentPercent = getDefaultDownPaymentPercent(
+              selectedProducts[0]?.item_type,
+          );
+          const defaultDownPayment = Math.round(lcp * downPaymentPercent);
+          setDownPayment(defaultDownPayment);
+      }
+  };
 
   const handleProductSearch = (value: string) => {
     setSearchTerm(value);
@@ -772,11 +771,13 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
           lcp_markup_rate: noInterestRate ? 0 : lcpMarkupRate,
           lcp_additional_charge: noInterestRate ? 0 : lcpAdditionalCharge,
           down_payment: breakdown.downPaymentAmount,
-          promisory_note_value: noInterestRate ? 0 : breakdown.pnv,
+          promisory_note_value: breakdown.pnv,
           number_of_terms: selectedTerm,
           promisory_note_value_interest: noInterestRate
-              ? 0
-              : breakdown.multiplier,
+              ? 1
+              : breakdown.multiplier
+                ? 0
+                : breakdown.multiplier,
           promisory_note_value_interest_additional_charge: noInterestRate
               ? 0
               : breakdown.fixedCharge,
@@ -808,7 +809,6 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
               setValidationError(
                   'An error occurred while creating the account',
               );
-
           },
           onFinish: () => {
               setIsSubmitting(false);
@@ -1300,8 +1300,7 @@ const setProductToFree = (id) => {
                                                       )
                                                   }
                                                   disabled={
-                                                      noDownPayment ||
-                                                      noInterestRate
+                                                      noDownPayment
                                                   }
                                               />
                                           </div>
