@@ -201,7 +201,8 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                        payment_method: 'cash',
         reference_number: '',
         paid_date: new Date().toISOString().split('T')[0],
-        collection_receipt_number: ''
+        collection_receipt_number: '',
+        branch_id: '',
         
     });
 
@@ -1685,36 +1686,34 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                             history.paid_date,
                                                                         )}
                                                                     </div>
-                                                                    {!transaction.is_voided &&
-                                                                        !transaction.is_completed &&
-                                                                        !transaction.is_accelerated && (
-                                                                            <div className="flex gap-1">
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    onClick={() =>
-                                                                                        handleEditPaymentHistoryClick(
-                                                                                            history,
-                                                                                        )
-                                                                                    }
-                                                                                >
-                                                                                    <Pencil className="h-3 w-3" />
-                                                                                </Button>
+                                                                    {!transaction.is_voided && (
+                                                                        <div className="flex gap-1">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                onClick={() =>
+                                                                                    handleEditPaymentHistoryClick(
+                                                                                        history,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Pencil className="h-3 w-3" />
+                                                                            </Button>
 
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    onClick={() =>
-                                                                                        handleDeletePaymentHistoryClick(
-                                                                                            history,
-                                                                                        )
-                                                                                    }
-                                                                                    className="text-red-600 hover:text-red-700"
-                                                                                >
-                                                                                    <XCircle className="h-3 w-3" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        )}
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                onClick={() =>
+                                                                                    handleDeletePaymentHistoryClick(
+                                                                                        history,
+                                                                                    )
+                                                                                }
+                                                                                className="text-red-600 hover:text-red-700"
+                                                                            >
+                                                                                <XCircle className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                             <Separator className="my-2" />
@@ -2700,6 +2699,36 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                             {accelerationForm.errors.paid_date && (
                                 <p className="text-xs text-red-500">
                                     {accelerationForm.errors.paid_date}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="branch">Branch *</Label>
+                            <Select
+                                value={accelerationForm.data.branch_id}
+                                onValueChange={(value) =>
+                                    accelerationForm.setData('branch_id', value)
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {branches.map((branch) => (
+                                        <SelectItem
+                                            key={branch.id}
+                                            value={branch.id.toString()}
+                                        >
+                                            {branch.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {errors.branch_id && (
+                                <p className="text-xs text-red-500">
+                                    {errors.branch_id}
                                 </p>
                             )}
                         </div>

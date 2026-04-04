@@ -501,6 +501,7 @@ class POSCreditOrderController extends Controller
             'reference_number' => ['nullable', 'string', 'max:255'],
             'paid_date' => ['required', 'date'],
             'collection_receipt_number' => ['required', 'string'],
+            'branch_id' => ['required']
         ]);
 
         DB::beginTransaction();
@@ -547,7 +548,8 @@ class POSCreditOrderController extends Controller
                         'reference_number' => $validated['reference_number'],
                         'paid_date' => $validated['paid_date'],
                         'user_id' => Auth::id(),
-                        'collection_receipt_number' => $validated['collection_receipt_number']
+                        'collection_receipt_number' => $validated['collection_receipt_number'],
+                        'branch_id' => $validated['branch_id']
                     ]);
 
                     $remainingPayment -= $remainingDue;
@@ -571,7 +573,8 @@ class POSCreditOrderController extends Controller
                         'reference_number' => $validated['reference_number'],
                         'paid_date' => $validated['paid_date'],
                         'user_id' => Auth::id(),
-                        'collection_receipt_number' => $validated['collection_receipt_number']
+                        'collection_receipt_number' => $validated['collection_receipt_number'],
+                        'branch_id' => $validated['branch_id']
                     ]);
 
                     $remainingPayment = 0;

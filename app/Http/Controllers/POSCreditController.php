@@ -281,3 +281,4 @@ class POSCreditController extends Controller
         return 'IORD-' . $date . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 }
+ 
