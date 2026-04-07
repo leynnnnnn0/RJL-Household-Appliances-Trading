@@ -775,9 +775,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
           number_of_terms: selectedTerm,
           promisory_note_value_interest: noInterestRate
               ? 1
-              : breakdown.multiplier
-                ? 0
-                : breakdown.multiplier,
+              : breakdown.multiplier,
           promisory_note_value_interest_additional_charge: noInterestRate
               ? 0
               : breakdown.fixedCharge,

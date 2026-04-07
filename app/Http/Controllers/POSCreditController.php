@@ -202,10 +202,16 @@ class POSCreditController extends Controller
         ]);
 
             // Calculate total sale amount for paid items
+
+            // $total = $validated['is_no_interest'] ? $validated['loan_contract_price']  : $order->promisory_note_value * $order->promisory_note_value_interest + floatval($order->promisory_note_value_interest_additional_charge);
             $total = $validated['is_no_interest']
                 ? $validated['loan_contract_price'] - floatval($validated['down_payment'])
                 : $order->promisory_note_value * $order->promisory_note_value_interest
                 + floatval($order->promisory_note_value_interest_additional_charge);
+
+       
+
+
 
         // Create paid items
         foreach ($items as $item) {
