@@ -154,7 +154,7 @@ class InstallmentOrder extends Model
 
 
         if($interest < 0.01) {
-            return $this->loan_contract_price;
+            return $this->loan_contract_price - $this->down_payment;
         }
         return $noteValue * $interest + $additional;
     }

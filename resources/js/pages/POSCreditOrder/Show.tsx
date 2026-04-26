@@ -1084,14 +1084,32 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                         {/* Payment Schedule */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <TrendingUp className="h-5 w-5" />
-                                    Payment Schedule
-                                </CardTitle>
-                                <CardDescription>
-                                    Complete payment history and schedule. Click
-                                    on a row to add rebate.
-                                </CardDescription>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <TrendingUp className="h-5 w-5" />
+                                            Payment Schedule
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Complete payment history and
+                                            schedule. Click on a row to add
+                                            rebate.
+                                        </CardDescription>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            window.open(
+                                                `/pos-installment-orders/${transaction.id}/payment-schedule-pdf`,
+                                                '_blank',
+                                            )
+                                        }
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Print Schedule
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 {transaction.installment_order_payments &&

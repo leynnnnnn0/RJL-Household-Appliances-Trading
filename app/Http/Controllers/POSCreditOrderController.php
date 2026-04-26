@@ -15,6 +15,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class POSCreditOrderController extends Controller
 {
@@ -713,5 +714,46 @@ class POSCreditOrderController extends Controller
             DB::rollBack();
             return back()->withErrors(['error' => 'Delete failed: ' . $e->getMessage()]);
         }
+    }
+
+    public function printPaymentSchedule($id)
+    {
+        $order = InstallmentOrder::with([
+            'customer',
+            'branch',
+            'user',
+            'installment_order_items.item',
+            'installment_order_payments' => function ($q) {
+                $q->orderBy('installment_number');
+            },
+            'installment_order_payments.installment_order_payment_history.user',
+        ])->findOrFail($id);
+
+        // Compute financials (mirror your frontend logic)
+        $lcp  = $order->loan_contract_price;
+        $down = $order->down_payment;
+        $pnv  = $lcp - $down;
+        $pnvCharge = (float) $order->promisory_note_value_interest_additional_charge;
+        $finalPnv  = $pnv * $order->promisory_note_value_interest + $pnvCharge;
+        if ($finalPnv == 0) $finalPnv = $lcp;
+
+        $totalPaid       = (float) $order->total_amount_paid;
+        $totalRebate     = (float) $order->total_rebate_amount;
+        $remainingBalance = (float) $order->remaining_balance - $totalRebate;
+        $progress        = ($finalPnv > 0 && $totalPaid > 0)
+            ? round(($totalPaid / $finalPnv) * 100, 1)
+            : 0;
+
+        $pdf = Pdf::loadView('pdf.installment-payment-schedule', [
+                'order'            => $order,
+                'finalPnv'         => $finalPnv,
+                'totalPaid'        => $totalPaid,
+                'remainingBalance' => $remainingBalance,
+                'progress'         => $progress,
+                'generatedAt'      => now()->format('F d, Y h:i A'),
+            ])
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream("payment-schedule-{$order->order_number}.pdf");
     }
 }

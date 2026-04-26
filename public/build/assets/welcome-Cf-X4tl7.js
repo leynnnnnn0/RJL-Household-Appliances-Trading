@@ -1,0 +1,1 @@
+import{c as o,j as r}from"./app-CV_8Ob_f.js";/* empty css            */function m(){const t=o.c(1);let e;return t[0]===Symbol.for("react.memo_cache_sentinel")?(e=r.jsx(r.Fragment,{children:r.jsx("h1",{children:"Hello There!"})}),t[0]=e):e=t[0],e}export{m as default};

@@ -29,6 +29,7 @@ Route::get('/', fn() => redirect()->route('login'))->name('home');
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/pos-installment-orders/{id}/payment-schedule-pdf', [POSCreditOrderController::class, 'printPaymentSchedule']);
 
     Route::get('/installmentContract/{id}', [PDFController::class, 'installmentContract']);
     Route::get('/demandLetter/{id}', [PDFController::class, 'demandLetter']);
