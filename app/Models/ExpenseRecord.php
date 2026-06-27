@@ -16,7 +16,7 @@ class ExpenseRecord extends Model
         'user_id',
         'amount',
         'category',
-        'status',   
+        'status',
         'remarks',
         'approved_by',
         'approved_at',

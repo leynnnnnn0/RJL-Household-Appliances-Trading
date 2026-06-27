@@ -280,6 +280,8 @@ export type ExpenseRecord = {
     reference_number: string;
     receipt_path: string;
     user?: User;
+    branch_id: number | string | null;
+    branch?: Branch;
     created_at: string;
     updated_at: string;
     expense_date: string;
