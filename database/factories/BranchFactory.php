@@ -17,7 +17,9 @@ class BranchFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->unique()->company().' Branch',
+            'address' => fake()->streetAddress(),
+            'remarks' => fake()->optional()->sentence(),
         ];
     }
 }
