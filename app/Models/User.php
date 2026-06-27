@@ -37,7 +37,7 @@ class User extends Authenticatable
 
     public function scopeDropdown($query)
     {
-        return $query->get()->map(function($user)  {
+        return $query->orderBy('first_name')->orderBy('last_name')->get()->map(function ($user) {
             return [
                 'id' => $user->id,
                 'full_name' => $user->full_name

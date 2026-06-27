@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\References\UpsertLocationRequest;
 use App\Models\Location;
 use App\Services\References\LocationService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use RuntimeException;
 
@@ -23,16 +23,16 @@ class LocationController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(UpsertLocationRequest $request)
     {
-        $this->locations->create($this->validatedData($request));
+        $this->locations->create($request->validated());
 
         return redirect()->back()->with('success', 'Location created successfully.');
     }
 
-    public function update(Request $request, Location $location)
+    public function update(UpsertLocationRequest $request, Location $location)
     {
-        $this->locations->update($location, $this->validatedData($request, $location));
+        $this->locations->update($location, $request->validated());
 
         return redirect()->back()->with('success', 'Location updated successfully.');
     }
@@ -46,19 +46,5 @@ class LocationController extends Controller
         } catch (RuntimeException $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
-    }
-
-    private function validatedData(Request $request, ?Location $location = null): array
-    {
-        return $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('locations', 'name')->ignore($location?->id),
-            ],
-            'address' => ['nullable', 'string', 'max:500'],
-            'remarks' => ['nullable', 'string', 'max:1000'],
-        ]);
     }
 }

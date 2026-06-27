@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\References\UpsertBranchRequest;
 use App\Models\Branch;
 use App\Services\References\BranchService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use RuntimeException;
 
@@ -23,16 +23,16 @@ class BranchController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(UpsertBranchRequest $request)
     {
-        $this->branches->create($this->validatedData($request));
+        $this->branches->create($request->validated());
 
         return redirect()->back()->with('success', 'Branch created successfully.');
     }
 
-    public function update(Request $request, Branch $branch)
+    public function update(UpsertBranchRequest $request, Branch $branch)
     {
-        $this->branches->update($branch, $this->validatedData($request, $branch));
+        $this->branches->update($branch, $request->validated());
 
         return redirect()->back()->with('success', 'Branch updated successfully.');
     }
@@ -46,19 +46,5 @@ class BranchController extends Controller
         } catch (RuntimeException $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
-    }
-
-    private function validatedData(Request $request, ?Branch $branch = null): array
-    {
-        return $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('branches', 'name')->ignore($branch?->id),
-            ],
-            'address' => ['nullable', 'string', 'max:500'],
-            'remarks' => ['nullable', 'string', 'max:1000'],
-        ]);
     }
 }

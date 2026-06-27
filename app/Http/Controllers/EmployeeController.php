@@ -2,80 +2,49 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\People\UpsertEmployeeRequest;
 use App\Models\Employee;
-use Exception;
-use Illuminate\Database\QueryException;
+use App\Services\People\EmployeeService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use RuntimeException;
 
 class EmployeeController extends Controller
 {
+    public function __construct(private EmployeeService $employees) {}
+
     public function index(Request $request)
     {
-        $query = Employee::query();
         $search = $request->input('search');
-        
-        $query->when($search, fn($q) => $q->whereAny(['first_name', 'last_name'], 'like', "%{$search}%"));
-        
-        $employees = $query->latest()->paginate(8);
-        
+
         return Inertia::render('Employee/Index', [
-            'employees' => $employees
+            'employees' => $this->employees->paginate($search),
+            'filters' => ['search' => $search],
         ]);
     }
 
-    public function store(Request $request)
+    public function store(UpsertEmployeeRequest $request)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'remarks' => 'nullable|string|max:1000',
-        ], [
-            'first_name.required' => 'First name is required.',
-            'first_name.max' => 'First name cannot exceed 255 characters.',
-            'last_name.required' => 'Last name is required.',
-            'last_name.max' => 'Last name cannot exceed 255 characters.',
-            'remarks.max' => 'Remarks cannot exceed 1000 characters.',
-        ]);
-
-        Employee::create($validated);
+        $this->employees->create($request->validated());
 
         return redirect()->back()->with('success', 'Employee created successfully.');
     }
 
-    public function update(Request $request, Employee $employee)
+    public function update(UpsertEmployeeRequest $request, Employee $employee)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'remarks' => 'nullable|string|max:1000',
-        ], [
-            'first_name.required' => 'First name is required.',
-            'first_name.max' => 'First name cannot exceed 255 characters.',
-            'last_name.required' => 'Last name is required.',
-            'last_name.max' => 'Last name cannot exceed 255 characters.',
-            'remarks.max' => 'Remarks cannot exceed 1000 characters.',
-        ]);
-
-        $employee->update($validated);
+        $this->employees->update($employee, $request->validated());
 
         return redirect()->back()->with('success', 'Employee updated successfully.');
     }
 
+    public function destroy(Employee $employee)
+    {
+        try {
+            $this->employees->delete($employee);
+        } catch (RuntimeException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
 
-public function destroy(Employee $employee)
-{
-    try {
-        $employee->delete();
-    } catch (QueryException $e) {
-
-        throw ValidationException::withMessages([
-            'error' => 'Cannot delete employee because it is referenced somewhere.',
-        ]);
+        return back()->with('success', 'Employee deleted successfully.');
     }
-
-    return back()->with('success', 'Employee deleted successfully.');
-}
-
 }

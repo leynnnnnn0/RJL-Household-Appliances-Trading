@@ -1,93 +1,71 @@
-import ShowButton from '@/components/buttons/show-button';
-import ModuleHeading from '@/components/cards/module-heading';
-import NoResult from '@/components/cards/no-result';
-import SearchBox from '@/components/cards/search-box';
-import TableBodyRow from '@/components/cards/table-body-row';
-import TableContainer from '@/components/cards/table-container';
+import PeopleIndexPage from '@/components/people/people-index-page';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import AppLayout from '@/layouts/app-layout';
-import { User, Paginated } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
-
-
+import { Paginated, User } from '@/types';
+import { router } from '@inertiajs/react';
+import { Eye } from 'lucide-react';
 
 interface PageProps {
-    users: Paginated<User>
+    users: Paginated<User>;
+    filters?: {
+        search?: string | null;
+    };
 }
-export default function Index({users} : PageProps ) {
-    const [searchQuery, setSearchQuery] = useState('');
-    useEffect(() => {
-       const delayDebounce = setTimeout(() => {
-         const params: Record<string, string> = {};
 
-        if(searchQuery) params.search  = searchQuery;
+export default function Index({ users, filters }: PageProps) {
+    const canViewDetails = window.can('can view user details');
 
-        router.get('/users', params, {
-            preserveState: true,
-            replace: true
-        })
-       }, 400)
-
-       return () => clearTimeout(delayDebounce);
-    }, [searchQuery])
     return (
-        <AppLayout>
-            <Head title="Users" />
-
-            <ModuleHeading
-                title="Users List"
-                description="Manage users data"
-            >
-              {window.can('can add user') &&   <Button onClick={() => router.get('/users/create')}>
-                  <Plus/>Add New User
-                    </Button>}
-            </ModuleHeading>
-
-            <SearchBox>
-                <Input
-                    placeholder="Search users..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                />
-            </SearchBox>
-
-            <TableContainer>
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-muted/50">
-                            <TableHead className="font-semibold">
-                                Full Name
-                            </TableHead>
-                            <TableHead className="font-semibold">
-                                Email
-                            </TableHead>
-                          {window.can('can view user details') &&    <TableHead className="font-semibold text-center">
-                                Actions
-                            </TableHead>}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {users.data.length === 0 ? (
-                            <NoResult count={3}/>
-                        ) : users.data.map(item => (
-                            <TableBodyRow key={item.id}>
-                                <TableCell>{item.full_name}</TableCell>
-                                <TableCell>{item.email}</TableCell>
-                              {window.can('can view user details') &&   <TableCell>
-                                    <div className="flex items-center justify-center gap-1">
-                                        <ShowButton onClick={() => router.visit(`/users/${item.id}`) }/>
-                                    </div>
-                                </TableCell>}
-                            </TableBodyRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </AppLayout>
+        <PeopleIndexPage
+            title="Users"
+            description="Manage system accounts and access roles"
+            records={users}
+            filters={filters}
+            routeBase="/users"
+            searchPlaceholder="Search users..."
+            emptyTitle="No users found"
+            emptyDescription="Try adjusting your search or create a new user"
+            action={{
+                label: 'Add New User',
+                href: '/users/create',
+                can: window.can('can add user'),
+            }}
+            columns={[
+                {
+                    header: 'Full Name',
+                    render: (user) => user.full_name,
+                },
+                {
+                    header: 'Email',
+                    render: (user) => user.email,
+                },
+                {
+                    header: 'Phone',
+                    render: (user) => user.phone_number || '-',
+                },
+                ...(canViewDetails
+                    ? [
+                          {
+                              header: 'Actions',
+                              className: 'text-center font-semibold',
+                              render: (user: User) => (
+                                  <div className="flex items-center justify-center gap-1">
+                                      <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() =>
+                                              router.visit(`/users/${user.id}`)
+                                          }
+                                          aria-label="View user"
+                                      >
+                                          <Eye className="h-4 w-4" />
+                                      </Button>
+                                  </div>
+                              ),
+                          },
+                      ]
+                    : []),
+            ]}
+        />
     );
 }

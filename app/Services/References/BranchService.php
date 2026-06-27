@@ -38,7 +38,7 @@ class BranchService
 
     public function delete(Branch $branch): void
     {
-     
+
         if ($this->isInUse($branch)) {
             throw new RuntimeException('Cannot delete branch. It is used by sales, payments, or expenses.');
         }

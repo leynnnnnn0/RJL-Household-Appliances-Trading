@@ -27,11 +27,16 @@ class Employee extends Model
 
     public function scopeDropdown($query)
     {
-        return $query->get()->map(function($user){
+        return $query->orderBy('first_name')->orderBy('last_name')->get()->map(function ($employee) {
             return [
-                'id' => $user->id,
-                'full_name' => $user->full_name
+                'id' => $employee->id,
+                'full_name' => $employee->full_name
             ];
         });
+    }
+
+    public function investigation_details()
+    {
+        return $this->hasMany(InvestigationDetail::class);
     }
 }

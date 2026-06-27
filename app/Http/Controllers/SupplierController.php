@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\References\UpsertSupplierRequest;
 use App\Models\Supplier;
 use App\Services\References\SupplierService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use RuntimeException;
 
@@ -23,16 +23,16 @@ class SupplierController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(UpsertSupplierRequest $request)
     {
-        $this->suppliers->create($this->validatedData($request));
+        $this->suppliers->create($request->validated());
 
         return redirect()->back()->with('success', 'Supplier created successfully.');
     }
 
-    public function update(Request $request, Supplier $supplier)
+    public function update(UpsertSupplierRequest $request, Supplier $supplier)
     {
-        $this->suppliers->update($supplier, $this->validatedData($request, $supplier));
+        $this->suppliers->update($supplier, $request->validated());
 
         return redirect()->back()->with('success', 'Supplier updated successfully.');
     }
@@ -46,18 +46,5 @@ class SupplierController extends Controller
         } catch (RuntimeException $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
-    }
-
-    private function validatedData(Request $request, ?Supplier $supplier = null): array
-    {
-        return $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('suppliers', 'name')->ignore($supplier?->id),
-            ],
-            'remarks' => ['nullable', 'string', 'max:1000'],
-        ]);
     }
 }

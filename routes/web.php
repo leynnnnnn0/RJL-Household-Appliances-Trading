@@ -3,6 +3,7 @@
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BulkPaymentController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseRecordController;
@@ -16,22 +17,17 @@ use App\Http\Controllers\POSCashOrderSalesController;
 use App\Http\Controllers\POSCreditController;
 use App\Http\Controllers\POSCreditOrderController;
 use App\Http\Controllers\POSCreditOrderSalesController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
-use App\Models\InstallmentOrderRemark;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', fn() => redirect()->route('login'))->name('home');
+Route::get('/', fn () => redirect()->route('login'))->name('home');
 
 // Dashboard
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-
 Route::middleware('auth')->group(function () {
-
 
     Route::get('/pos-installment-orders/{id}/payment-schedule-pdf', [POSCreditOrderController::class, 'printPaymentSchedule']);
 
@@ -182,18 +178,15 @@ Route::middleware('auth')->group(function () {
     */
     Route::resource('roles', RoleController::class)->middleware('permission:can manage roles');
 
-
-
     /*
     TODO
     */
 
     Route::get('/transactions/download-pdf', [DashboardController::class, 'downloadTransactionsPdf'])
-    ->name('transactions.download.pdf');
+        ->name('transactions.download.pdf');
 
-
-    Route::delete('/customers/{customer}/documents/{document}', [CustomerController::class, 'destroyDocument'])
-    ->name('customers.documents.destroy');
+    Route::delete('/customers/{customer}/documents/{document}', [CustomerDocumentController::class, 'destroy'])
+        ->name('customers.documents.destroy');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

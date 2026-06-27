@@ -1,357 +1,381 @@
-import ShowButton from "@/components/buttons/show-button";
-import ModuleHeading from "@/components/cards/module-heading";
-import NoResult from "@/components/cards/no-result";
-import SearchBox from "@/components/cards/search-box";
-import TableBodyRow from "@/components/cards/table-body-row";
-import TableContainer from "@/components/cards/table-container";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import ModuleHeading from '@/components/cards/module-heading';
+import Pagination from '@/components/pagination';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import AppLayout from "@/layouts/app-layout";
-import { Employee, Paginated } from "@/types";
-import { Head, router, useForm } from "@inertiajs/react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
+import { Employee, Paginated } from '@/types';
+import { Head, router, useForm } from '@inertiajs/react';
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+
+type EmployeeForm = {
+    first_name: string;
+    last_name: string;
+    remarks: string;
+};
 
 interface PageProps {
-  employees: Paginated<Employee>;
+    employees: Paginated<Employee>;
+    filters?: {
+        search?: string | null;
+    };
 }
 
-export default function Index({ employees }: PageProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+export default function Index({ employees, filters }: PageProps) {
+    const [search, setSearch] = useState(filters?.search ?? '');
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+    const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
+        null,
+    );
+    const hasMounted = useRef(false);
 
-  const createForm = useForm({
-    first_name: "",
-    last_name: "",
-    remarks: "",
-  });
+    const { data, setData, post, put, processing, errors, reset, clearErrors } =
+        useForm<EmployeeForm>({
+            first_name: '',
+            last_name: '',
+            remarks: '',
+        });
 
-  const editForm = useForm({
-    first_name: "",
-    last_name: "",
-    remarks: "",
-  });
+    useEffect(() => {
+        if (!hasMounted.current) {
+            hasMounted.current = true;
+            return;
+        }
 
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      const params: Record<string, string> = {};
-      if (searchQuery) params.search = searchQuery;
-      router.get("/employees", params, {
-        preserveState: true,
-        replace: true,
-      });
-    }, 400);
-    return () => clearTimeout(delayDebounce);
-  }, [searchQuery]);
+        const timer = window.setTimeout(() => {
+            router.get('/employees', search ? { search } : {}, {
+                preserveState: true,
+                replace: true,
+            });
+        }, 300);
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    createForm.post("/employees", {
-      onSuccess: () => {
-        setIsCreateOpen(false);
-        createForm.reset();
-         toast.success("Created Successfully.")
-      },
-    });
-  };
+        return () => window.clearTimeout(timer);
+    }, [search]);
 
-  const handleEdit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedEmployee) return;
-    editForm.put(`/employees/${selectedEmployee.id}`, {
-      onSuccess: () => {
-        setIsEditOpen(false);
-        editForm.reset();
-        setSelectedEmployee(null);
-        toast.success("Updated Successfully.")
-      },
-    });
-  };
+    const resetForm = () => {
+        reset();
+        clearErrors();
+        setEmployeeToEdit(null);
+    };
 
-  const handleDelete = () => {
-    if (!selectedEmployee) return;
-    router.delete(`/employees/${selectedEmployee.id}`, {
-      onSuccess: () => {
-        setIsDeleteOpen(false);
-        setSelectedEmployee(null);
-         toast.success("Deleted Successfully.")
-      },
-      onError: (e) => {
-          setIsDeleteOpen(false);
-        setSelectedEmployee(null);
-        toast.success("This user cannot be deleted. Please contact your administrator");
-      }
-    });
-  };
+    const openCreateDialog = () => {
+        resetForm();
+        setIsFormOpen(true);
+    };
 
-  const openEditDialog = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    editForm.setData({
-      first_name: employee.first_name,
-      last_name: employee.last_name,
-      remarks: employee.remarks || "",
-    });
-    setIsEditOpen(true);
-  };
+    const openEditDialog = (employee: Employee) => {
+        setEmployeeToEdit(employee);
+        clearErrors();
+        setData({
+            first_name: employee.first_name,
+            last_name: employee.last_name,
+            remarks: employee.remarks ?? '',
+        });
+        setIsFormOpen(true);
+    };
 
-  const openDeleteDialog = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setIsDeleteOpen(true);
-  };
+    const handleSubmit = (event: FormEvent) => {
+        event.preventDefault();
 
-  return (
-    <AppLayout>
-      <Head title="Employees" />
-      <ModuleHeading title="Employees List" description="Manage employees data">
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus /> Create New Employee
-        </Button>
-      </ModuleHeading>
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(
+                    `Employee ${employeeToEdit ? 'updated' : 'created'} successfully.`,
+                );
+                setIsFormOpen(false);
+                resetForm();
+            },
+            onError: () => {
+                toast.error(
+                    `Unable to ${employeeToEdit ? 'update' : 'create'} employee.`,
+                );
+            },
+        };
 
-      <SearchBox>
-        <Input
-          placeholder="Search employees..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </SearchBox>
+        if (employeeToEdit) {
+            put(`/employees/${employeeToEdit.id}`, options);
+            return;
+        }
 
-      <TableContainer>
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="font-semibold">Remarks</TableHead>
-              <TableHead className="font-semibold text-center">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {employees.data.length === 0 ? (
-              <NoResult count={3} />
-            ) : (
-              employees.data.map((item) => (
-                <TableBodyRow key={item.id}>
-                  <TableCell>{item.full_name}</TableCell>
-                  <TableCell>{item.remarks || "-"}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-center gap-2">
-                      <Button
-                          variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                        onClick={() => openEditDialog(item)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => openDeleteDialog(item)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableBodyRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+        post('/employees', options);
+    };
 
-      {/* Create Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Employee</DialogTitle>
-            <DialogDescription>
-              Add a new employee to the system. Fill in the required information below.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreate}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="first_name">
-                  First Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="first_name"
-                  value={createForm.data.first_name}
-                  onChange={(e) => createForm.setData("first_name", e.target.value)}
-                  className={createForm.errors.first_name ? "border-red-500" : ""}
-                />
-                {createForm.errors.first_name && (
-                  <p className="text-sm text-red-500">{createForm.errors.first_name}</p>
-                )}
-              </div>
+    const handleDelete = () => {
+        if (!employeeToDelete) return;
 
-              <div className="grid gap-2">
-                <Label htmlFor="last_name">
-                  Last Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="last_name"
-                  value={createForm.data.last_name}
-                  onChange={(e) => createForm.setData("last_name", e.target.value)}
-                  className={createForm.errors.last_name ? "border-red-500" : ""}
-                />
-                {createForm.errors.last_name && (
-                  <p className="text-sm text-red-500">{createForm.errors.last_name}</p>
-                )}
-              </div>
+        router.delete(`/employees/${employeeToDelete.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Employee deleted successfully.');
+                setEmployeeToDelete(null);
+            },
+            onError: (pageErrors) => {
+                toast.error(pageErrors.error ?? 'Unable to delete employee.');
+                setEmployeeToDelete(null);
+            },
+        });
+    };
 
-              <div className="grid gap-2">
-                <Label htmlFor="remarks">Remarks</Label>
-                <Textarea
-                  id="remarks"
-                  value={createForm.data.remarks}
-                  onChange={(e) => createForm.setData("remarks", e.target.value)}
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsCreateOpen(false);
-                  createForm.reset();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createForm.processing}>
-                {createForm.processing ? "Creating..." : "Create Employee"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Employee</DialogTitle>
-            <DialogDescription>
-              Update the employee information below.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleEdit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit_first_name">
-                  First Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="edit_first_name"
-                  value={editForm.data.first_name}
-                  onChange={(e) => editForm.setData("first_name", e.target.value)}
-                  className={editForm.errors.first_name ? "border-red-500" : ""}
-                />
-                {editForm.errors.first_name && (
-                  <p className="text-sm text-red-500">{editForm.errors.first_name}</p>
-                )}
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="edit_last_name">
-                  Last Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="edit_last_name"
-                  value={editForm.data.last_name}
-                  onChange={(e) => editForm.setData("last_name", e.target.value)}
-                  className={editForm.errors.last_name ? "border-red-500" : ""}
-                />
-                {editForm.errors.last_name && (
-                  <p className="text-sm text-red-500">{editForm.errors.last_name}</p>
-                )}
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="edit_remarks">Remarks</Label>
-                <Textarea
-                  id="edit_remarks"
-                  value={editForm.data.remarks}
-                  onChange={(e) => editForm.setData("remarks", e.target.value)}
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsEditOpen(false);
-                  editForm.reset();
-                  setSelectedEmployee(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={editForm.processing}>
-                {editForm.processing ? "Updating..." : "Update Employee"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the employee
-              {selectedEmployee && ` "${selectedEmployee.full_name}"`} from the system.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                setIsDeleteOpen(false);
-                setSelectedEmployee(null);
-              }}
+    return (
+        <AppLayout>
+            <Head title="Employees" />
+            <ModuleHeading
+                title="Employees"
+                description="Manage employees used for customer investigations"
             >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </AppLayout>
-  );
+                <Button onClick={openCreateDialog}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create New Employee
+                </Button>
+            </ModuleHeading>
+
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <div className="relative flex-1 sm:max-w-sm">
+                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+                        <Input
+                            placeholder="Search employees..."
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                </div>
+
+                <div className="overflow-hidden rounded-lg border">
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="font-semibold">
+                                        Name
+                                    </TableHead>
+                                    <TableHead className="font-semibold">
+                                        Remarks
+                                    </TableHead>
+                                    <TableHead className="text-center font-semibold">
+                                        Actions
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {employees.data.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={100}
+                                            className="h-56 w-full p-0 whitespace-normal"
+                                        >
+                                            <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-center text-muted-foreground">
+                                                <Search className="mb-2 h-8 w-8" />
+                                                <p className="font-medium">
+                                                    No employees found
+                                                </p>
+                                                <p className="px-4 text-sm">
+                                                    Try adjusting your search or
+                                                    create a new employee
+                                                </p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    employees.data.map((employee) => (
+                                        <TableRow
+                                            key={employee.id}
+                                            className="transition-colors hover:bg-muted/50"
+                                        >
+                                            <TableCell>
+                                                {employee.full_name}
+                                            </TableCell>
+                                            <TableCell>
+                                                {employee.remarks || '-'}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex justify-center gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() =>
+                                                            openEditDialog(
+                                                                employee,
+                                                            )
+                                                        }
+                                                        aria-label="Edit employee"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                                        onClick={() =>
+                                                            setEmployeeToDelete(
+                                                                employee,
+                                                            )
+                                                        }
+                                                        aria-label="Delete employee"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+
+                <Pagination data={employees} />
+            </div>
+
+            <Dialog
+                open={isFormOpen}
+                onOpenChange={(open) => {
+                    setIsFormOpen(open);
+                    if (!open) resetForm();
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {employeeToEdit
+                                ? 'Edit Employee'
+                                : 'Create New Employee'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {employeeToEdit
+                                ? 'Update the employee information below.'
+                                : 'Add a new employee to the system.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="first_name">First Name *</Label>
+                                <Input
+                                    id="first_name"
+                                    value={data.first_name}
+                                    onChange={(event) =>
+                                        setData(
+                                            'first_name',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                {errors.first_name && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.first_name}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="last_name">Last Name *</Label>
+                                <Input
+                                    id="last_name"
+                                    value={data.last_name}
+                                    onChange={(event) =>
+                                        setData('last_name', event.target.value)
+                                    }
+                                />
+                                {errors.last_name && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.last_name}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="remarks">Remarks</Label>
+                                <Textarea
+                                    id="remarks"
+                                    value={data.remarks}
+                                    onChange={(event) =>
+                                        setData('remarks', event.target.value)
+                                    }
+                                    rows={3}
+                                />
+                                {errors.remarks && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.remarks}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsFormOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={processing}>
+                                {employeeToEdit
+                                    ? 'Update Employee'
+                                    : 'Create Employee'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog
+                open={!!employeeToDelete}
+                onOpenChange={(open) => !open && setEmployeeToDelete(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. Employees assigned to
+                            customer investigations cannot be deleted.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-destructive text-white hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </AppLayout>
+    );
 }
