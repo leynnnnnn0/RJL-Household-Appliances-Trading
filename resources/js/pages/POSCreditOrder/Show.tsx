@@ -1,98 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import { InstallmentOrderWithRelations, InstallmentOrderPayment, InstallmentOrderPaymentHistory, Branch } from "@/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Pencil, Trash2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  CreditCard, 
-  User, 
-  MapPin, 
-  Calendar, 
-  DollarSign, 
-  FileText, 
-  TrendingUp,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Clock,
-  Check,
-  ArrowRight,
-  MoreVertical,
-  Ban,
-  AlertTriangle,
-  ArrowLeft,
-  Percent,
-  CloudLightning,
-  Download,
-  AlertCircleIcon,
-  InfoIcon
-} from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import ModuleHeading from '@/components/cards/module-heading';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { toast } from 'sonner';
+import {
+    Branch,
+    InstallmentOrderPayment,
+    InstallmentOrderPaymentHistory,
+    InstallmentOrderWithRelations,
+} from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { IconTopologyStarRing3 } from '@tabler/icons-react';
+import {
+    AlertCircle,
+    AlertCircleIcon,
+    AlertTriangle,
+    ArrowLeft,
+    ArrowRight,
+    Ban,
+    Calendar,
+    Check,
+    CheckCircle2,
+    Clock,
+    CloudLightning,
+    CreditCard,
+    DollarSign,
+    Download,
+    FileText,
+    InfoIcon,
+    MapPin,
+    MoreVertical,
+    Pencil,
+    Percent,
+    Trash2,
+    TrendingUp,
+    User,
+    XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import InstallmentOrderRemarksSection from './InstallmentOrderRemarkSection';
 
-
 interface InstallmentOrderRemark {
-  id: number;
-  installment_order_id: number;
-  user_id: number;
-  remarks: string;
-  created_at: string;
-  updated_at: string;
-  user: {
     id: number;
-    full_name: string;
-  };
+    installment_order_id: number;
+    user_id: number;
+    remarks: string;
+    created_at: string;
+    updated_at: string;
+    user: {
+        id: number;
+        full_name: string;
+    };
 }
-
 
 interface PageProps {
-    transaction: InstallmentOrderWithRelations,
-    paymentHistory: InstallmentOrderPaymentHistory[],
-    remarks: InstallmentOrderRemark[],
-    branches: Branch[]
+    transaction: InstallmentOrderWithRelations;
+    paymentHistory: InstallmentOrderPaymentHistory[];
+    remarks: InstallmentOrderRemark[];
+    branches: Branch[];
 }
 
-export default function Show({transaction, paymentHistory, branches} : PageProps){
-    const {previousUrl} = usePage().props as any;
-    const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+export default function Show({
+    transaction,
+    paymentHistory,
+    branches,
+}: PageProps) {
+    const { previousUrl } = usePage().props as any;
+    const [showPaymentConfirmation, setShowPaymentConfirmation] =
+        useState(false);
     const [showVoidDialog, setShowVoidDialog] = useState(false);
     const [showDefaultDialog, setShowDefaultDialog] = useState(false);
-     const [showAccelerateDialog, setAcceleratetDialog] = useState(false);
+    const [showAccelerateDialog, setAcceleratetDialog] = useState(false);
     const [showRebateDialog, setShowRebateDialog] = useState(false);
-        const [showReactivateDialog, setShowReactivateDialog] = useState(false);
-    const [selectedPayment, setSelectedPayment] = useState<InstallmentOrderPayment | null>(null);
+    const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+    const [selectedPayment, setSelectedPayment] =
+        useState<InstallmentOrderPayment | null>(null);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-PH', {
             style: 'currency',
-            currency: 'PHP'
+            currency: 'PHP',
         }).format(amount);
     };
 
@@ -100,7 +121,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
-            day: 'numeric'
+            day: 'numeric',
         });
     };
 
@@ -110,9 +131,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
     };
 
     // Find the next payment to be made (first unpaid/partial payment in order)
-    const nextPayment = transaction.installment_order_payments
-        ?.sort((a, b) => a.installment_number - b.installment_number)
-        .find(p => p.status !== 'paid' && p.status !== 'completed') || null;
+    const nextPayment =
+        transaction.installment_order_payments
+            ?.sort((a, b) => a.installment_number - b.installment_number)
+            .find((p) => p.status !== 'paid' && p.status !== 'completed') ||
+        null;
 
     const { data, setData, post, processing, errors, reset } = useForm({
         installment_order_payment_id: nextPayment?.id.toString() || '',
@@ -124,27 +147,26 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
         reference_number: '',
         paid_date: new Date().toISOString().split('T')[0],
         collection_receipt_number: '',
-        branch_id: branches[0].id.toString() // Default to the only branch if there's just one
+        branch_id: branches[0].id.toString(), // Default to the only branch if there's just one
     });
 
     // Void transaction form
     const voidForm = useForm({
         installment_order_id: transaction.id,
-        reason_for_cancellation: ''
+        reason_for_cancellation: '',
     });
 
     // Default transaction form
     const defaultForm = useForm({
         installment_order_id: transaction.id,
-        default_reason: ''
+        default_reason: '',
     });
 
-      // Reactivate transaction form
+    // Reactivate transaction form
     const reactivateForm = useForm({
         installment_order_id: transaction.id,
-        reactivation_reason: ''
+        reactivation_reason: '',
     });
-
 
     // Rebate form
     const rebateForm = useForm({
@@ -153,14 +175,15 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
         rebate_reason: '',
     });
 
-
-
     // Update form when nextPayment changes
     useEffect(() => {
         if (nextPayment) {
             const alreadyPaid = Number(nextPayment.amount_paid || 0);
-            const remainingAmount = Number(nextPayment.amount_due) - alreadyPaid - nextPayment.rebate_amount;
-            
+            const remainingAmount =
+                Number(nextPayment.amount_due) -
+                alreadyPaid -
+                nextPayment.rebate_amount;
+
             setData({
                 installment_order_payment_id: nextPayment.id.toString(),
                 installment_order_id: transaction.id,
@@ -170,7 +193,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                 payment_method: 'cash',
                 reference_number: '',
                 paid_date: new Date().toISOString().split('T')[0],
-                collection_receipt_number: ''
+                collection_receipt_number: '',
             });
         }
     }, [nextPayment?.id]);
@@ -180,56 +203,66 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
     const lcp = transaction.loan_contract_price;
     const down = transaction.down_payment;
     const pnv = lcp - down;
-    const pnvAdditionalCharge = Number(transaction.promisory_note_value_interest_additional_charge);
-    let final_pnv = pnv * transaction.promisory_note_value_interest + pnvAdditionalCharge;
-    if(final_pnv == 0) final_pnv = transaction.loan_contract_price;
+    const pnvAdditionalCharge = Number(
+        transaction.promisory_note_value_interest_additional_charge,
+    );
+    let final_pnv =
+        pnv * transaction.promisory_note_value_interest + pnvAdditionalCharge;
+    if (final_pnv == 0) final_pnv = transaction.loan_contract_price;
 
-    
     const totalToPay = final_pnv;
-    const remainingBalance = transaction.remaining_balance - transaction.total_rebate_amount;
+    const remainingBalance =
+        transaction.remaining_balance - transaction.total_rebate_amount;
     let paymentProgress = 0;
-    if(totalPaid > 0 && final_pnv > 0){
-        paymentProgress = (totalPaid / final_pnv) * 100
+    if (totalPaid > 0 && final_pnv > 0) {
+        paymentProgress = (totalPaid / final_pnv) * 100;
     }
 
-        // Acceleration form
+    // Acceleration form
     const accelerationForm = useForm({
-       installment_order_id: transaction.id,
-       acceleration_discount: "",
-       amount_paid: remainingBalance.toFixed(2),
-               reason_for_acceleration: '',
-                       payment_method: 'cash',
+        installment_order_id: transaction.id,
+        acceleration_discount: '',
+        amount_paid: remainingBalance.toFixed(2),
+        reason_for_acceleration: '',
+        payment_method: 'cash',
         reference_number: '',
         paid_date: new Date().toISOString().split('T')[0],
         collection_receipt_number: '',
         branch_id: '',
-        
     });
 
-    const pendingPayments = transaction.installment_order_payments?.filter(p => 
-        p.status === 'pending' || p.status === 'overdue' || p.status === 'partial'
-    ).length || 0;
+    const pendingPayments =
+        transaction.installment_order_payments?.filter(
+            (p) =>
+                p.status === 'pending' ||
+                p.status === 'overdue' ||
+                p.status === 'partial',
+        ).length || 0;
 
-    const overduePayments = transaction.installment_order_payments?.filter(p => 
-        isOverdue(p.due_date, p.status)
-    ).length || 0;
+    const overduePayments =
+        transaction.installment_order_payments?.filter((p) =>
+            isOverdue(p.due_date, p.status),
+        ).length || 0;
 
     const handlePaymentSubmit = () => {
-        if(!window.can('can record installment order payment')){
-            toast.info("You do not have an access for this action.");
+        if (!window.can('can record installment order payment')) {
+            toast.info('You do not have an access for this action.');
             return;
         }
         setShowPaymentConfirmation(false);
-        
+
         post(`/pos-installment-orders/record-payment`, {
             onSuccess: () => {
-                reset('amount_paid', 'reference_number', 'collection_receipt_number');
-                toast.success("Payment Recorded Successfully");
+                reset(
+                    'amount_paid',
+                    'reference_number',
+                    'collection_receipt_number',
+                );
+                toast.success('Payment Recorded Successfully');
             },
             onError: (e) => {
-                toast.error("An error occurred while recording payment");
-
-            }
+                toast.error('An error occurred while recording payment');
+            },
         });
     };
 
@@ -237,71 +270,74 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
         voidForm.post(`/pos-installment-orders/${transaction.id}/void`, {
             onSuccess: () => {
                 setShowVoidDialog(false);
-                toast.success("Transaction voided successfully");
+                toast.success('Transaction voided successfully');
             },
             onError: (e) => {
-                toast.error("An error occurred while voiding transaction");
-
-            }
+                toast.error('An error occurred while voiding transaction');
+            },
         });
     };
 
-     const handleReactivateSubmit = () => {
-        reactivateForm.post(`/pos-installment-orders/${transaction.id}/reactivate`, {
-            onSuccess: () => {
-                setShowReactivateDialog(false);
-                toast.success("Transaction reactivated.");
+    const handleReactivateSubmit = () => {
+        reactivateForm.post(
+            `/pos-installment-orders/${transaction.id}/reactivate`,
+            {
+                onSuccess: () => {
+                    setShowReactivateDialog(false);
+                    toast.success('Transaction reactivated.');
+                },
+                onError: (e) => {
+                    toast.error('An error occurred while marking reactivating');
+                },
             },
-            onError: (e) => {
-                toast.error("An error occurred while marking reactivating");
-
-            }
-        });
+        );
     };
 
     const handleDefaultSubmit = () => {
         defaultForm.post(`/pos-installment-orders/${transaction.id}/default`, {
             onSuccess: () => {
                 setShowDefaultDialog(false);
-                toast.success("Transaction marked as defaulted");
+                toast.success('Transaction marked as defaulted');
             },
             onError: (e) => {
-                toast.error("An error occurred while marking as default");
-   
-            }
+                toast.error('An error occurred while marking as default');
+            },
         });
     };
 
     const handleAccelerationSubmit = () => {
-
-         accelerationForm.post(`/pos-installment-orders/${transaction.id}/accelerate`, {
-            onSuccess: () => {
-                setAcceleratetDialog(false);
-                toast.success("Transaction marked as accelerated");
+        accelerationForm.post(
+            `/pos-installment-orders/${transaction.id}/accelerate`,
+            {
+                onSuccess: () => {
+                    setAcceleratetDialog(false);
+                    toast.success('Transaction marked as accelerated');
+                },
+                onError: (e) => {
+                    toast.error(
+                        'An error occurred while marking as accelerated',
+                    );
+                    console.log(e);
+                },
             },
-            onError: (e) => {
-                toast.error("An error occurred while marking as accelerated");
-                console.log(e);
-
-            }
-        });
-    }
+        );
+    };
 
     const handleRebateClick = (payment: InstallmentOrderPayment) => {
-        if(!window.can('can add rebate')){
+        if (!window.can('can add rebate')) {
             return;
         }
         const amountPaid = Number(payment.amount_paid || 0);
         const amountDue = Number(payment.amount_due);
         const remaining = amountDue - amountPaid;
-        
+
         // Only allow rebate if there's a remaining balance
         if (remaining > 0) {
             setSelectedPayment(payment);
             rebateForm.setData({
                 installment_order_payment_id: payment.id.toString(),
                 rebate_amount: '',
-                rebate_reason: ''
+                rebate_reason: '',
             });
             setShowRebateDialog(true);
         }
@@ -313,32 +349,54 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                 setShowRebateDialog(false);
                 setSelectedPayment(null);
                 rebateForm.reset();
-                toast.success("Rebate added successfully");
+                toast.success('Rebate added successfully');
             },
             onError: (e) => {
-                toast.error("An error occurred while adding rebate");
-  
-            }
+                toast.error('An error occurred while adding rebate');
+            },
         });
     };
 
     const getPaymentStatusBadge = (payment: InstallmentOrderPayment) => {
         if (payment.status === 'paid' || payment.status === 'completed') {
-            return <Badge className="bg-green-600"><CheckCircle2 className="w-3 h-3 mr-1" />Paid</Badge>;
+            return (
+                <Badge className="bg-green-600">
+                    <CheckCircle2 className="mr-1 h-3 w-3" />
+                    Paid
+                </Badge>
+            );
         }
         if (payment.status === 'partial') {
-            return <Badge className="bg-blue-600"><Clock className="w-3 h-3 mr-1" />Partial</Badge>;
+            return (
+                <Badge className="bg-blue-600">
+                    <Clock className="mr-1 h-3 w-3" />
+                    Partial
+                </Badge>
+            );
         }
         if (isOverdue(payment.due_date, payment.status)) {
-            return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Overdue</Badge>;
+            return (
+                <Badge variant="destructive">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Overdue
+                </Badge>
+            );
         }
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+        return (
+            <Badge variant="secondary">
+                <Clock className="mr-1 h-3 w-3" />
+                Pending
+            </Badge>
+        );
     };
 
     // Calculate remaining amount for next payment
-    const nextPaymentRemaining = nextPayment 
+    const nextPaymentRemaining = nextPayment
         ? Number(nextPayment.amount_due) - Number(nextPayment.amount_paid || 0)
         : 0;
+    const sortedPayments = [
+        ...(transaction.installment_order_payments || []),
+    ].sort((a, b) => a.installment_number - b.installment_number);
 
     // Validate payment amount
     const isValidAmount = () => {
@@ -367,14 +425,12 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
     const handleEditPaymentHistoryClick = (
         history: InstallmentOrderPaymentHistory,
     ) => {
-     
-
         setEditingPaymentHistory(history);
         editPaymentHistoryForm.setData({
             amount: history.amount.toString(),
             payment_method: history.payment_method,
             reference_number: history.reference_number || '',
-            paid_date: history.paid_date.slice(0,10),
+            paid_date: history.paid_date.slice(0, 10),
             collection_receipt_number: history.collection_receipt_number,
             branch_id: history.branch_id.toString(),
         });
@@ -407,8 +463,6 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
     const handleDeletePaymentHistoryClick = (
         history: InstallmentOrderPaymentHistory,
     ) => {
-     
-
         setEditingPaymentHistory(history);
         setShowDeletePaymentHistoryDialog(true);
     };
@@ -433,23 +487,31 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
         );
     };
 
-
     return (
         <AppLayout>
             <Head title="Installment Order Details" />
 
-            <div className="mx-auto max-w-[1800px]">
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="mx-auto w-full max-w-[1800px]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
                     {/* Main Content - Left Side */}
                     <div className="space-y-6 lg:col-span-2">
                         {/* Header */}
-                        <div className="flex items-center justify-between">
-                            <ModuleHeading
-                                title={`Order #${transaction.order_number}`}
-                                description="Installment order details and payment schedule"
-                            />
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" asChild>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 space-y-1">
+                                <h1 className="text-2xl font-bold tracking-tight break-all sm:text-3xl">
+                                    Order #{transaction.order_number}
+                                </h1>
+                                <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+                                    Installment order details and payment
+                                    schedule
+                                </p>
+                            </div>
+                            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 sm:flex-none"
+                                    asChild
+                                >
                                     <Link href={previousUrl}>
                                         <ArrowLeft className="mr-2 h-4 w-4" />
                                         Back to List
@@ -498,6 +560,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                 <Button
                                                     variant="outline"
                                                     size="icon"
+                                                    className="shrink-0"
                                                 >
                                                     <MoreVertical className="h-4 w-4" />
                                                 </Button>
@@ -684,14 +747,14 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                         )}
 
                         {/* Quick Stats */}
-                        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
                             <Card>
-                                <CardContent className="pt-6">
+                                <CardContent className="p-4 sm:pt-6">
                                     <div className="text-center">
                                         <p className="text-sm font-medium text-muted-foreground">
                                             Total Payments
                                         </p>
-                                        <p className="mt-2 text-3xl font-bold">
+                                        <p className="mt-2 text-2xl font-bold sm:text-3xl">
                                             {transaction
                                                 .installment_order_payments
                                                 ?.length || 0}
@@ -700,12 +763,12 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                 </CardContent>
                             </Card>
                             <Card>
-                                <CardContent className="pt-6">
+                                <CardContent className="p-4 sm:pt-6">
                                     <div className="text-center">
                                         <p className="text-sm font-medium text-muted-foreground">
                                             Paid
                                         </p>
-                                        <p className="mt-2 text-3xl font-bold text-green-600">
+                                        <p className="mt-2 text-2xl font-bold text-green-600 sm:text-3xl">
                                             {transaction.installment_order_payments?.filter(
                                                 (p) =>
                                                     p.status === 'paid' ||
@@ -716,24 +779,24 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                 </CardContent>
                             </Card>
                             <Card>
-                                <CardContent className="pt-6">
+                                <CardContent className="p-4 sm:pt-6">
                                     <div className="text-center">
                                         <p className="text-sm font-medium text-muted-foreground">
                                             Pending
                                         </p>
-                                        <p className="mt-2 text-3xl font-bold text-orange-600">
+                                        <p className="mt-2 text-2xl font-bold text-orange-600 sm:text-3xl">
                                             {pendingPayments}
                                         </p>
                                     </div>
                                 </CardContent>
                             </Card>
                             <Card>
-                                <CardContent className="pt-6">
+                                <CardContent className="p-4 sm:pt-6">
                                     <div className="text-center">
                                         <p className="text-sm font-medium text-muted-foreground">
                                             Overdue
                                         </p>
-                                        <p className="mt-2 text-3xl font-bold text-red-600">
+                                        <p className="mt-2 text-2xl font-bold text-red-600 sm:text-3xl">
                                             {overduePayments}
                                         </p>
                                     </div>
@@ -742,7 +805,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                         </div>
 
                         <Card>
-                            <CardHeader>
+                            <CardHeader className="px-4 sm:px-6">
                                 <CardTitle className="flex items-center gap-2">
                                     <IconTopologyStarRing3 className="h-5 w-5" />
                                     Item Details
@@ -751,7 +814,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                     Items included in this installment order
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="px-4 sm:px-6">
                                 {transaction.installment_order_items &&
                                 transaction.installment_order_items.length >
                                     0 ? (
@@ -760,7 +823,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                             (orderItem, index) => (
                                                 <div
                                                     key={orderItem.id}
-                                                    className={`rounded-lg border p-4 ${
+                                                    className={`rounded-lg border p-3 sm:p-4 ${
                                                         orderItem.discount_amount >
                                                             0 &&
                                                         orderItem.sale_amount ===
@@ -769,10 +832,10 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                             : 'bg-muted/30'
                                                     }`}
                                                 >
-                                                    <div className="mb-3 flex items-start justify-between">
-                                                        <div className="flex-1">
-                                                            <div className="mb-1 flex items-center gap-2">
-                                                                <h4 className="text-base font-semibold">
+                                                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                                                                <h4 className="text-base font-semibold break-words">
                                                                     {
                                                                         orderItem
                                                                             .item
@@ -796,12 +859,12 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                         </div>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                                                        <div>
+                                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                                                        <div className="min-w-0">
                                                             <p className="mb-1 text-xs text-muted-foreground">
                                                                 Model
                                                             </p>
-                                                            <p className="font-medium">
+                                                            <p className="font-medium break-words">
                                                                 {
                                                                     orderItem
                                                                         .item
@@ -809,21 +872,21 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                 }
                                                             </p>
                                                         </div>
-                                                        <div>
+                                                        <div className="min-w-0">
                                                             <p className="mb-1 text-xs text-muted-foreground">
                                                                 Serial
                                                             </p>
-                                                            <p className="font-medium">
+                                                            <p className="font-medium break-words">
                                                                 {orderItem.item
                                                                     .serial ||
                                                                     orderItem.serial}
                                                             </p>
                                                         </div>
-                                                        <div>
+                                                        <div className="min-w-0">
                                                             <p className="mb-1 text-xs text-muted-foreground">
                                                                 Sale Amount
                                                             </p>
-                                                            <p className="font-medium text-green-600">
+                                                            <p className="font-medium break-words text-green-600">
                                                                 {formatCurrency(
                                                                     Number(
                                                                         orderItem.sale_amount,
@@ -833,11 +896,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                         </div>
                                                         {orderItem.discount_amount >
                                                             0 && (
-                                                            <div>
+                                                            <div className="min-w-0">
                                                                 <p className="mb-1 text-xs text-muted-foreground">
                                                                     Discount
                                                                 </p>
-                                                                <p className="font-medium text-blue-600">
+                                                                <p className="font-medium break-words text-blue-600">
                                                                     {formatCurrency(
                                                                         Number(
                                                                             orderItem.discount_amount,
@@ -907,35 +970,35 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
-                                    <div className="flex justify-between">
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                                         <span className="text-sm text-muted-foreground">
                                             Transaction Date
                                         </span>
-                                        <span className="flex items-center gap-1 font-medium">
+                                        <span className="flex items-center gap-1 font-medium break-words">
                                             <Calendar className="h-4 w-4" />
                                             {formatDate(
                                                 transaction.transaction_date,
                                             )}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                                         <span className="text-sm text-muted-foreground">
                                             Branch
                                         </span>
-                                        <span className="flex items-center gap-1 font-medium">
+                                        <span className="flex items-center gap-1 font-medium break-words">
                                             <MapPin className="h-4 w-4" />
                                             {transaction.branch?.name}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                                         <span className="text-sm text-muted-foreground">
                                             Processed By
                                         </span>
-                                        <span className="font-medium">
+                                        <span className="font-medium break-words">
                                             {transaction.user?.full_name}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
+                                    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                                         <span className="text-sm text-muted-foreground">
                                             Terms
                                         </span>
@@ -956,12 +1019,12 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                    <div className="space-y-1">
+                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                    <div className="min-w-0 space-y-1">
                                         <p className="text-sm text-muted-foreground">
                                             Loan Contract Price
                                         </p>
-                                        <p className="text-2xl font-bold">
+                                        <p className="text-xl font-bold break-words sm:text-2xl">
                                             {formatCurrency(
                                                 transaction.loan_contract_price,
                                             )}
@@ -975,11 +1038,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                 : ''}
                                         </p>
                                     </div>
-                                    <div className="space-y-1">
+                                    <div className="min-w-0 space-y-1">
                                         <p className="text-sm text-muted-foreground">
                                             Down Payment
                                         </p>
-                                        <p className="text-2xl font-bold">
+                                        <p className="text-xl font-bold break-words sm:text-2xl">
                                             {formatCurrency(
                                                 transaction.down_payment,
                                             )}
@@ -990,11 +1053,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                             </p>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
+                                    <div className="min-w-0 space-y-1">
                                         <p className="text-sm text-muted-foreground">
                                             Total PNV
                                         </p>
-                                        <p className="text-2xl font-bold">
+                                        <p className="text-xl font-bold break-words sm:text-2xl">
                                             {formatCurrency(final_pnv)}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
@@ -1008,11 +1071,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                 : ''}
                                         </p>
                                     </div>
-                                    <div className="space-y-1">
+                                    <div className="min-w-0 space-y-1">
                                         <p className="text-sm text-muted-foreground">
                                             Remaining Balance
                                         </p>
-                                        <p className="text-2xl font-bold text-orange-600">
+                                        <p className="text-xl font-bold break-words text-orange-600 sm:text-2xl">
                                             {formatCurrency(remainingBalance)}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
@@ -1020,22 +1083,22 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                         </p>
                                     </div>
 
-                                    <div className="space-y-1">
+                                    <div className="min-w-0 space-y-1">
                                         <p className="text-sm text-muted-foreground">
                                             Total Rebate
                                         </p>
-                                        <p className="text-2xl font-bold">
+                                        <p className="text-xl font-bold break-words sm:text-2xl">
                                             {formatCurrency(
                                                 transaction.total_rebate_amount,
                                             )}
                                         </p>
                                     </div>
 
-                                    <div className="space-y-1">
+                                    <div className="min-w-0 space-y-1">
                                         <p className="text-sm text-muted-foreground">
                                             Total Advanced Payment
                                         </p>
-                                        <p className="text-2xl font-bold">
+                                        <p className="text-xl font-bold break-words sm:text-2xl">
                                             {formatCurrency(
                                                 transaction.total_advanced_payment,
                                             )}
@@ -1043,11 +1106,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                     </div>
 
                                     {transaction.is_accelerated == true && (
-                                        <div className="space-y-1">
+                                        <div className="min-w-0 space-y-1">
                                             <p className="text-sm text-muted-foreground">
                                                 Total Acceleration Discount
                                             </p>
-                                            <p className="text-2xl font-bold">
+                                            <p className="text-xl font-bold break-words sm:text-2xl">
                                                 {formatCurrency(
                                                     transaction.acceleration_discount,
                                                 )}
@@ -1060,11 +1123,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
 
                                 {/* Progress Bar */}
                                 <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
+                                    <div className="flex flex-col gap-1 text-sm sm:flex-row sm:justify-between">
                                         <span className="text-muted-foreground">
                                             Payment Progress
                                         </span>
-                                        <span className="font-medium">
+                                        <span className="font-medium break-words">
                                             {formatCurrency(totalPaid)} of{' '}
                                             {formatCurrency(final_pnv)}
                                         </span>
@@ -1083,9 +1146,9 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
 
                         {/* Payment Schedule */}
                         <Card>
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div>
+                            <CardHeader className="px-4 sm:px-6">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="min-w-0">
                                         <CardTitle className="flex items-center gap-2">
                                             <TrendingUp className="h-5 w-5" />
                                             Payment Schedule
@@ -1099,6 +1162,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                     <Button
                                         variant="outline"
                                         size="sm"
+                                        className="w-full sm:w-auto"
                                         onClick={() =>
                                             window.open(
                                                 `/pos-installment-orders/${transaction.id}/payment-schedule-pdf`,
@@ -1111,163 +1175,316 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                     </Button>
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                {transaction.installment_order_payments &&
-                                transaction.installment_order_payments.length >
-                                    0 ? (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b">
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                                                        #
-                                                    </th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                                                        Due Date
-                                                    </th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                                                        Amount Due
-                                                    </th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                                                        Amount Paid
-                                                    </th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                                                        Remaining
-                                                    </th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                                                        Rebate
-                                                    </th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                                                        Payment Date
-                                                    </th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                                                        Status
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {transaction.installment_order_payments
-                                                    .sort(
-                                                        (a, b) =>
-                                                            a.installment_number -
-                                                            b.installment_number,
-                                                    )
-                                                    .map((payment) => {
-                                                        const isPaid =
-                                                            payment.status ===
-                                                                'paid' ||
-                                                            payment.status ===
-                                                                'completed';
-                                                        const isNext =
-                                                            nextPayment?.id ===
-                                                            payment.id;
-                                                        const amountPaid =
-                                                            Number(
-                                                                payment.amount_paid ||
-                                                                    0,
-                                                            );
-                                                        const amountDue =
-                                                            Number(
-                                                                payment.amount_due,
-                                                            ) -
-                                                            payment.rebate_amount;
-                                                        let remaining =
-                                                            amountDue -
-                                                            amountPaid;
-                                                        const hasBalance =
-                                                            remaining > 0;
+                            <CardContent className="px-4 sm:px-6">
+                                {sortedPayments.length > 0 ? (
+                                    <>
+                                        <div className="space-y-3 md:hidden">
+                                            {sortedPayments.map((payment) => {
+                                                const isPaid =
+                                                    payment.status === 'paid' ||
+                                                    payment.status ===
+                                                        'completed';
+                                                const isNext =
+                                                    nextPayment?.id ===
+                                                    payment.id;
+                                                const amountPaid = Number(
+                                                    payment.amount_paid || 0,
+                                                );
+                                                const amountDue =
+                                                    Number(payment.amount_due) -
+                                                    payment.rebate_amount;
+                                                let remaining =
+                                                    amountDue - amountPaid;
+                                                const hasBalance =
+                                                    remaining > 0;
 
-                                                        if (
+                                                if (
+                                                    transaction.is_accelerated ==
+                                                    true
+                                                ) {
+                                                    remaining = 0;
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={payment.id}
+                                                        type="button"
+                                                        onClick={() =>
                                                             transaction.is_accelerated ==
-                                                            true
-                                                        )
-                                                            remaining = 0;
-
-                                                        return (
-                                                            <tr
-                                                                key={payment.id}
-                                                                onClick={() =>
-                                                                    transaction.is_accelerated ==
-                                                                        false &&
-                                                                    hasBalance &&
-                                                                    handleRebateClick(
-                                                                        payment,
-                                                                    )
-                                                                }
-                                                                className={`border-b transition-colors ${
-                                                                    isNext
-                                                                        ? 'bg-primary/10'
-                                                                        : ''
-                                                                } ${hasBalance && transaction.is_accelerated == false ? 'cursor-pointer hover:bg-muted/50' : 'cursor-not-allowed opacity-60'}`}
-                                                            >
-                                                                <td className="px-4 py-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        {isPaid && (
-                                                                            <Check className="h-4 w-4 text-green-600" />
-                                                                        )}
-                                                                        {isNext && (
-                                                                            <ArrowRight className="h-4 w-4 text-primary" />
-                                                                        )}
-                                                                        <span className="font-medium">
-                                                                            #
-                                                                            {
-                                                                                payment.installment_number
-                                                                            }
-                                                                        </span>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-3 text-sm">
+                                                                false &&
+                                                            hasBalance &&
+                                                            handleRebateClick(
+                                                                payment,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            !hasBalance ||
+                                                            transaction.is_accelerated ==
+                                                                true
+                                                        }
+                                                        className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                                                            isNext
+                                                                ? 'border-primary bg-primary/5'
+                                                                : 'bg-background'
+                                                        } ${
+                                                            hasBalance &&
+                                                            transaction.is_accelerated ==
+                                                                false
+                                                                ? 'hover:bg-muted/50'
+                                                                : 'opacity-70'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0 space-y-1">
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    {isPaid && (
+                                                                        <Check className="h-4 w-4 text-green-600" />
+                                                                    )}
+                                                                    {isNext && (
+                                                                        <ArrowRight className="h-4 w-4 text-primary" />
+                                                                    )}
+                                                                    <span className="font-semibold">
+                                                                        #
+                                                                        {
+                                                                            payment.installment_number
+                                                                        }
+                                                                    </span>
+                                                                    {isNext && (
+                                                                        <Badge
+                                                                            variant="outline"
+                                                                            className="text-[11px]"
+                                                                        >
+                                                                            Next
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    Due{' '}
                                                                     {formatDate(
                                                                         payment.due_date,
                                                                     )}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-sm font-medium">
-                                                                    {formatCurrency(
-                                                                        amountDue,
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-sm font-medium text-green-600">
-                                                                    {amountPaid >
+                                                                </p>
+                                                            </div>
+                                                            <div className="shrink-0">
+                                                                {getPaymentStatusBadge(
+                                                                    payment,
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="mt-4 grid grid-cols-2 gap-3">
+                                                            <PaymentScheduleMetric
+                                                                label="Amount Due"
+                                                                value={formatCurrency(
+                                                                    amountDue,
+                                                                )}
+                                                            />
+                                                            <PaymentScheduleMetric
+                                                                label="Amount Paid"
+                                                                value={
+                                                                    amountPaid >
                                                                     0
                                                                         ? formatCurrency(
                                                                               amountPaid,
                                                                           )
-                                                                        : '-'}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-sm font-medium text-orange-600">
-                                                                    {remaining >
+                                                                        : '-'
+                                                                }
+                                                                valueClassName="text-green-600"
+                                                            />
+                                                            <PaymentScheduleMetric
+                                                                label="Remaining"
+                                                                value={
+                                                                    remaining >
                                                                     0
                                                                         ? formatCurrency(
                                                                               remaining,
                                                                           )
-                                                                        : '-'}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-sm font-medium text-blue-600">
-                                                                    {payment.rebate_amount >
+                                                                        : '-'
+                                                                }
+                                                                valueClassName="text-orange-600"
+                                                            />
+                                                            <PaymentScheduleMetric
+                                                                label="Rebate"
+                                                                value={
+                                                                    payment.rebate_amount >
                                                                     0
                                                                         ? formatCurrency(
                                                                               payment.rebate_amount,
                                                                           )
-                                                                        : '-'}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-sm text-muted-foreground">
-                                                                    {payment.paid_date
+                                                                        : '-'
+                                                                }
+                                                                valueClassName="text-blue-600"
+                                                            />
+                                                            <PaymentScheduleMetric
+                                                                label="Payment Date"
+                                                                value={
+                                                                    payment.paid_date
                                                                         ? formatDate(
                                                                               payment.paid_date,
                                                                           )
-                                                                        : '-'}
-                                                                </td>
-                                                                <td className="px-4 py-3">
-                                                                    {getPaymentStatusBadge(
-                                                                        payment,
-                                                                    )}
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                                        : '-'
+                                                                }
+                                                                className="col-span-2"
+                                                                valueClassName="text-muted-foreground"
+                                                            />
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="hidden max-w-full overflow-x-auto rounded-md border md:block">
+                                            <table className="w-full min-w-[760px]">
+                                                <thead>
+                                                    <tr className="border-b">
+                                                        <th className="px-3 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                            #
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                            Due Date
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                            Amount Due
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                            Amount Paid
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                            Remaining
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                            Rebate
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                            Payment Date
+                                                        </th>
+                                                        <th className="px-3 py-3 text-left text-sm font-medium text-muted-foreground">
+                                                            Status
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {sortedPayments.map(
+                                                        (payment) => {
+                                                            const isPaid =
+                                                                payment.status ===
+                                                                    'paid' ||
+                                                                payment.status ===
+                                                                    'completed';
+                                                            const isNext =
+                                                                nextPayment?.id ===
+                                                                payment.id;
+                                                            const amountPaid =
+                                                                Number(
+                                                                    payment.amount_paid ||
+                                                                        0,
+                                                                );
+                                                            const amountDue =
+                                                                Number(
+                                                                    payment.amount_due,
+                                                                ) -
+                                                                payment.rebate_amount;
+                                                            let remaining =
+                                                                amountDue -
+                                                                amountPaid;
+                                                            const hasBalance =
+                                                                remaining > 0;
+
+                                                            if (
+                                                                transaction.is_accelerated ==
+                                                                true
+                                                            )
+                                                                remaining = 0;
+
+                                                            return (
+                                                                <tr
+                                                                    key={
+                                                                        payment.id
+                                                                    }
+                                                                    onClick={() =>
+                                                                        transaction.is_accelerated ==
+                                                                            false &&
+                                                                        hasBalance &&
+                                                                        handleRebateClick(
+                                                                            payment,
+                                                                        )
+                                                                    }
+                                                                    className={`border-b transition-colors ${
+                                                                        isNext
+                                                                            ? 'bg-primary/10'
+                                                                            : ''
+                                                                    } ${hasBalance && transaction.is_accelerated == false ? 'cursor-pointer hover:bg-muted/50' : 'cursor-not-allowed opacity-60'}`}
+                                                                >
+                                                                    <td className="px-3 py-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            {isPaid && (
+                                                                                <Check className="h-4 w-4 text-green-600" />
+                                                                            )}
+                                                                            {isNext && (
+                                                                                <ArrowRight className="h-4 w-4 text-primary" />
+                                                                            )}
+                                                                            <span className="font-medium">
+                                                                                #
+                                                                                {
+                                                                                    payment.installment_number
+                                                                                }
+                                                                            </span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-sm whitespace-nowrap">
+                                                                        {formatDate(
+                                                                            payment.due_date,
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-sm font-medium whitespace-nowrap">
+                                                                        {formatCurrency(
+                                                                            amountDue,
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-sm font-medium whitespace-nowrap text-green-600">
+                                                                        {amountPaid >
+                                                                        0
+                                                                            ? formatCurrency(
+                                                                                  amountPaid,
+                                                                              )
+                                                                            : '-'}
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-sm font-medium whitespace-nowrap text-orange-600">
+                                                                        {remaining >
+                                                                        0
+                                                                            ? formatCurrency(
+                                                                                  remaining,
+                                                                              )
+                                                                            : '-'}
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-sm font-medium whitespace-nowrap text-blue-600">
+                                                                        {payment.rebate_amount >
+                                                                        0
+                                                                            ? formatCurrency(
+                                                                                  payment.rebate_amount,
+                                                                              )
+                                                                            : '-'}
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-sm whitespace-nowrap text-muted-foreground">
+                                                                        {payment.paid_date
+                                                                            ? formatDate(
+                                                                                  payment.paid_date,
+                                                                              )
+                                                                            : '-'}
+                                                                    </td>
+                                                                    <td className="px-3 py-3">
+                                                                        {getPaymentStatusBadge(
+                                                                            payment,
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        },
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </>
                                 ) : (
                                     <p className="py-8 text-center text-muted-foreground">
                                         No payment schedule generated
@@ -1279,7 +1496,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
 
                     {/* Payment Form - Right Side (Sticky)s */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-6 space-y-6">
+                        <div className="space-y-6 lg:sticky lg:top-6">
                             {!transaction.is_voided &&
                             !transaction.is_completed &&
                             !transaction.is_defaulted &&
@@ -1680,8 +1897,8 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                             key={history.id}
                                                             className="rounded-lg border bg-muted/30 p-3 transition-colors hover:bg-muted/50"
                                                         >
-                                                            <div className="mb-2 flex items-start justify-between">
-                                                                <div>
+                                                            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                                                <div className="min-w-0">
                                                                     <Badge
                                                                         variant="outline"
                                                                         className="mb-1 text-xs"
@@ -1692,14 +1909,14 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                             payment?.installment_number
                                                                         }
                                                                     </Badge>
-                                                                    <p className="text-lg font-bold text-green-600">
+                                                                    <p className="text-lg font-bold break-words text-green-600">
                                                                         {formatCurrency(
                                                                             history.amount,
                                                                         )}
                                                                     </p>
                                                                 </div>
-                                                                <div className="flex items-center gap-1">
-                                                                    <div className="text-right text-xs text-muted-foreground">
+                                                                <div className="flex items-center justify-between gap-1 sm:justify-end">
+                                                                    <div className="text-xs text-muted-foreground sm:text-right">
                                                                         {formatDate(
                                                                             history.paid_date,
                                                                         )}
@@ -1735,23 +1952,23 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                 </div>
                                                             </div>
                                                             <Separator className="my-2" />
-                                                            <div className="grid grid-cols-3 gap-2 text-xs">
-                                                                <div>
+                                                            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 xl:grid-cols-3">
+                                                                <div className="min-w-0">
                                                                     <span className="text-muted-foreground">
                                                                         Method:
                                                                     </span>
-                                                                    <p className="font-medium capitalize">
+                                                                    <p className="font-medium break-words capitalize">
                                                                         {
                                                                             history.payment_method
                                                                         }
                                                                     </p>
                                                                 </div>
-                                                                <div>
+                                                                <div className="min-w-0">
                                                                     <span className="text-muted-foreground">
                                                                         Recorded
                                                                         by:
                                                                     </span>
-                                                                    <p className="font-medium">
+                                                                    <p className="font-medium break-words">
                                                                         {
                                                                             history
                                                                                 .user
@@ -1759,21 +1976,21 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                         }
                                                                     </p>
                                                                 </div>
-                                                                <div>
+                                                                <div className="min-w-0">
                                                                     <span className="text-muted-foreground">
                                                                         CR No.:
                                                                     </span>
-                                                                    <p className="font-medium">
+                                                                    <p className="font-medium break-words">
                                                                         {
                                                                             history.collection_receipt_number
                                                                         }
                                                                     </p>
                                                                 </div>
-                                                                <div>
+                                                                <div className="min-w-0">
                                                                     <span className="text-muted-foreground">
                                                                         Branch:
                                                                     </span>
-                                                                    <p className="font-medium">
+                                                                    <p className="font-medium break-words">
                                                                         {branches.find(
                                                                             (
                                                                                 b,
@@ -1786,11 +2003,11 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                                     </p>
                                                                 </div>
                                                                 {history.reference_number && (
-                                                                    <div className="col-span-2">
+                                                                    <div className="min-w-0 sm:col-span-2">
                                                                         <span className="text-muted-foreground">
                                                                             Reference:
                                                                         </span>
-                                                                        <p className="font-medium">
+                                                                        <p className="font-medium break-words">
                                                                             {
                                                                                 history.reference_number
                                                                             }
@@ -1804,7 +2021,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                         </div>
                                         <Separator className="my-3" />
                                         <div className="space-y-2">
-                                            <div className="flex items-center justify-between text-sm">
+                                            <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                                                 <span className="font-medium">
                                                     Total Transactions:
                                                 </span>
@@ -1812,7 +2029,7 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                                                     {paymentHistory.length}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center justify-between text-sm">
+                                            <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                                                 <span className="font-medium">
                                                     Total Amount:
                                                 </span>
@@ -2974,5 +3191,28 @@ export default function Show({transaction, paymentHistory, branches} : PageProps
                 </DialogContent>
             </Dialog>
         </AppLayout>
+    );
+}
+
+function PaymentScheduleMetric({
+    label,
+    value,
+    className = '',
+    valueClassName = '',
+}: {
+    label: string;
+    value: string;
+    className?: string;
+    valueClassName?: string;
+}) {
+    return (
+        <div className={className}>
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p
+                className={`mt-1 text-sm font-semibold break-words ${valueClassName}`}
+            >
+                {value}
+            </p>
+        </div>
     );
 }
