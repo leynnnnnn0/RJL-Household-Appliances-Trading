@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('items', function (Blueprint $table) {
             $table->id();
-             $table->string('supplier');
+            $table->string('supplier');
             $table->foreign('supplier')->references('slug')->on('suppliers');
             $table->foreignId('location_id')
-              ->constrained()
-              ->restrictOnDelete();
+                ->constrained()
+                ->restrictOnDelete();
             $table->string('item_type');
             $table->string('dr_no')->nullable();
             $table->string('description');
-            $table->string('model')->nullable();
+            $table->string('model');
             $table->string('serial')->unique();
             $table->integer('quantity');
             $table->decimal('srp', 10, 2);
