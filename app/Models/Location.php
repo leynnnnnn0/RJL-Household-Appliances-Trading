@@ -24,7 +24,7 @@ class Location extends Model
 
     public function scopeDropdown($query)
     {
-        return $query->get()->map(function ($location) {
+        return $query->orderBy('name')->get()->map(function ($location) {
             return [
                 'id' => $location->id,
                 'name' => $location->name,

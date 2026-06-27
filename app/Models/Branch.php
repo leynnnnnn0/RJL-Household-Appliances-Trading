@@ -21,9 +21,14 @@ class Branch extends Model
         return $this->hasMany(Order::class);
     }
 
-    public function instalment_orders()
+    public function installment_orders()
     {
         return $this->hasMany(InstallmentOrder::class);
+    }
+
+    public function instalment_orders()
+    {
+        return $this->installment_orders();
     }
 
     public function installment_order_payment_histories()
@@ -33,10 +38,10 @@ class Branch extends Model
 
     public function scopeDropdown($query)
     {
-        return $query->get()->map(function ($location) {
+        return $query->orderBy('name')->get()->map(function ($branch) {
             return [
-                'id' => $location->id,
-                'name' => $location->name,
+                'id' => $branch->id,
+                'name' => $branch->name,
             ];
         });
     }

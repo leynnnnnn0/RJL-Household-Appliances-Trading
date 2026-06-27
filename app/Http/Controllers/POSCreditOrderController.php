@@ -212,7 +212,7 @@ class POSCreditOrderController extends Controller
          */
         $transactions = $query->paginate(8)->withQueryString();
 
-       
+
 
         return Inertia::render('POSCreditOrder/Index', [
             'transactions' => $transactions,
@@ -224,7 +224,7 @@ class POSCreditOrderController extends Controller
 
     public function show($order_number)
     {
-        $transction = InstallmentOrder::with(['remarks.user', 'customer', 'location', 'user', 'voider', 'branch','installment_order_items.item', 'installment_order_payments.installment_order_payment_history.user'])
+        $transction = InstallmentOrder::with(['remarks.user', 'customer', 'location', 'user', 'voider', 'branch', 'installment_order_items.item', 'installment_order_payments.installment_order_payment_history.user'])
             ->where('order_number', $order_number)->firstOrFail();
 
         $paymentHistory = $transction->installment_order_payments
@@ -745,13 +745,13 @@ class POSCreditOrderController extends Controller
             : 0;
 
         $pdf = Pdf::loadView('pdf.installment-payment-schedule', [
-                'order'            => $order,
-                'finalPnv'         => $finalPnv,
-                'totalPaid'        => $totalPaid,
-                'remainingBalance' => $remainingBalance,
-                'progress'         => $progress,
-                'generatedAt'      => now()->format('F d, Y h:i A'),
-            ])
+            'order'            => $order,
+            'finalPnv'         => $finalPnv,
+            'totalPaid'        => $totalPaid,
+            'remainingBalance' => $remainingBalance,
+            'progress'         => $progress,
+            'generatedAt'      => now()->format('F d, Y h:i A'),
+        ])
             ->setPaper('a4', 'portrait');
 
         return $pdf->stream("payment-schedule-{$order->order_number}.pdf");

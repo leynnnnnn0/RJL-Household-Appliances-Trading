@@ -807,6 +807,7 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
               setValidationError(
                   'An error occurred while creating the account',
               );
+              console.log(e)
           },
           onFinish: () => {
               setIsSubmitting(false);

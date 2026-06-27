@@ -16,6 +16,7 @@ use App\Http\Controllers\POSCashOrderSalesController;
 use App\Http\Controllers\POSCreditController;
 use App\Http\Controllers\POSCreditOrderController;
 use App\Http\Controllers\POSCreditOrderSalesController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
@@ -28,7 +29,10 @@ Route::get('/', fn() => redirect()->route('login'))->name('home');
 // Dashboard
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+
 Route::middleware('auth')->group(function () {
+
+
     Route::get('/pos-installment-orders/{id}/payment-schedule-pdf', [POSCreditOrderController::class, 'printPaymentSchedule']);
 
     Route::get('/installmentContract/{id}', [PDFController::class, 'installmentContract']);

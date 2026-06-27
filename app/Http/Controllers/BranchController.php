@@ -3,53 +3,62 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
-use Exception;
+use App\Services\References\BranchService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use RuntimeException;
 
 class BranchController extends Controller
 {
-    public function index()
+    public function __construct(private BranchService $branches) {}
+
+    public function index(Request $request)
     {
-        $branches = Branch::latest()->paginate(8);
-   
         return Inertia::render('Branch/Index', [
-            'branches' => $branches,
+            'branches' => $this->branches->paginate($request->input('search')),
+            'filters' => [
+                'search' => $request->input('search'),
+            ],
         ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
-            'remarks' => 'nullable|string|max:1000',
-        ]);
-
-        Branch::create($validated);
+        $this->branches->create($this->validatedData($request));
 
         return redirect()->back()->with('success', 'Branch created successfully.');
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Branch $branch)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
-            'remarks' => 'nullable|string|max:1000',
-        ]);
+        $this->branches->update($branch, $this->validatedData($request, $branch));
 
-        Branch::findOrFail($id)->update($validated);
         return redirect()->back()->with('success', 'Branch updated successfully.');
     }
 
-    public function destroy($id)
+    public function destroy(Branch $branch)
     {
         try {
-            Branch::findOrFail($id)->delete();
+            $this->branches->delete($branch);
+
             return redirect()->back()->with('success', 'Branch deleted successfully.');
-        } catch (Exception $e) {
+        } catch (RuntimeException $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    private function validatedData(Request $request, ?Branch $branch = null): array
+    {
+        return $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('branches', 'name')->ignore($branch?->id),
+            ],
+            'address' => ['nullable', 'string', 'max:500'],
+            'remarks' => ['nullable', 'string', 'max:1000'],
+        ]);
     }
 }

@@ -24,10 +24,10 @@ class Supplier extends Model
 
     public function scopeDropdown($query)
     {
-        return $query->get()->map(function ($location) {
+        return $query->orderBy('name')->get()->map(function ($supplier) {
             return [
-                'slug' => $location->slug,
-                'name' => $location->name,
+                'slug' => $supplier->slug,
+                'name' => $supplier->name,
             ];
         });
     }

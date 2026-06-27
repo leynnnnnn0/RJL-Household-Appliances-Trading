@@ -3,51 +3,62 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
-use Exception;
+use App\Services\References\LocationService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use RuntimeException;
 
 class LocationController extends Controller
 {
-    public function index()
+    public function __construct(private LocationService $locations) {}
+
+    public function index(Request $request)
     {
-        $locations = Location::latest()->paginate(8);
         return Inertia::render('Location/Index', [
-            'locations' => $locations,
+            'locations' => $this->locations->paginate($request->input('search')),
+            'filters' => [
+                'search' => $request->input('search'),
+            ],
         ]);
     }
 
-    public function store(Request $request){
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
-            'remarks' => 'nullable|string|max:1000',
-        ]);
-
-        Location::create($validated);
+    public function store(Request $request)
+    {
+        $this->locations->create($this->validatedData($request));
 
         return redirect()->back()->with('success', 'Location created successfully.');
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Location $location)
     {
-         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
-            'remarks' => 'nullable|string|max:1000',
-        ]);
+        $this->locations->update($location, $this->validatedData($request, $location));
 
-        Location::findOrFail($id)->update($validated);
         return redirect()->back()->with('success', 'Location updated successfully.');
     }
 
-    public function destroy($id){
+    public function destroy(Location $location)
+    {
         try {
-            Location::findOrFail($id)->delete();
+            $this->locations->delete($location);
+
             return redirect()->back()->with('success', 'Location deleted successfully.');
-        }catch(Exception $e){
-             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        } catch (RuntimeException $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
-        
+    }
+
+    private function validatedData(Request $request, ?Location $location = null): array
+    {
+        return $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('locations', 'name')->ignore($location?->id),
+            ],
+            'address' => ['nullable', 'string', 'max:500'],
+            'remarks' => ['nullable', 'string', 'max:1000'],
+        ]);
     }
 }
