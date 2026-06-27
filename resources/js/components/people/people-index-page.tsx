@@ -19,6 +19,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 type PeopleColumn<TRecord> = {
     header: string;
     className?: string;
+    cellClassName?: string;
     render: (record: TRecord) => ReactNode;
 };
 
@@ -79,7 +80,10 @@ export default function PeopleIndexPage<
             <Head title={title} />
             <ModuleHeading title={title} description={description}>
                 {action && action.can !== false && (
-                    <Button onClick={() => router.visit(action.href)}>
+                    <Button
+                        onClick={() => router.visit(action.href)}
+                        className="min-h-11 w-full sm:w-auto"
+                    >
                         <Plus className="mr-2 h-4 w-4" />
                         {action.label}
                     </Button>
@@ -87,8 +91,8 @@ export default function PeopleIndexPage<
             </ModuleHeading>
 
             <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                    <div className="relative flex-1 sm:max-w-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="relative w-full sm:max-w-sm">
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                         <Input
                             placeholder={searchPlaceholder}
@@ -142,7 +146,12 @@ export default function PeopleIndexPage<
                                             className="transition-colors hover:bg-muted/50"
                                         >
                                             {columns.map((column) => (
-                                                <TableCell key={column.header}>
+                                                <TableCell
+                                                    key={column.header}
+                                                    className={
+                                                        column.cellClassName
+                                                    }
+                                                >
                                                     {column.render(record)}
                                                 </TableCell>
                                             ))}

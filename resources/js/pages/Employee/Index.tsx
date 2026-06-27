@@ -154,15 +154,18 @@ export default function Index({ employees, filters }: PageProps) {
                 title="Employees"
                 description="Manage employees used for customer investigations"
             >
-                <Button onClick={openCreateDialog}>
+                <Button
+                    onClick={openCreateDialog}
+                    className="min-h-11 w-full sm:w-auto"
+                >
                     <Plus className="mr-2 h-4 w-4" />
                     Create New Employee
                 </Button>
             </ModuleHeading>
 
             <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                    <div className="relative flex-1 sm:max-w-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="relative w-full sm:max-w-sm">
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                         <Input
                             placeholder="Search employees..."
@@ -178,13 +181,13 @@ export default function Index({ employees, filters }: PageProps) {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
-                                    <TableHead className="font-semibold">
+                                    <TableHead className="min-w-[160px] font-semibold">
                                         Name
                                     </TableHead>
-                                    <TableHead className="font-semibold">
+                                    <TableHead className="hidden min-w-[220px] font-semibold sm:table-cell">
                                         Remarks
                                     </TableHead>
-                                    <TableHead className="text-center font-semibold">
+                                    <TableHead className="min-w-[110px] text-center font-semibold">
                                         Actions
                                     </TableHead>
                                 </TableRow>
@@ -215,9 +218,17 @@ export default function Index({ employees, filters }: PageProps) {
                                             className="transition-colors hover:bg-muted/50"
                                         >
                                             <TableCell>
-                                                {employee.full_name}
+                                                <div className="flex min-w-0 flex-col">
+                                                    <span className="font-medium break-words">
+                                                        {employee.full_name}
+                                                    </span>
+                                                    <span className="mt-1 line-clamp-2 text-xs text-muted-foreground sm:hidden">
+                                                        {employee.remarks ||
+                                                            'No remarks'}
+                                                    </span>
+                                                </div>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="hidden sm:table-cell">
                                                 {employee.remarks || '-'}
                                             </TableCell>
                                             <TableCell>
@@ -225,7 +236,7 @@ export default function Index({ employees, filters }: PageProps) {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8"
+                                                        className="h-11 w-11 sm:h-9 sm:w-9"
                                                         onClick={() =>
                                                             openEditDialog(
                                                                 employee,
@@ -238,7 +249,7 @@ export default function Index({ employees, filters }: PageProps) {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                                        className="h-11 w-11 text-destructive hover:text-destructive sm:h-9 sm:w-9"
                                                         onClick={() =>
                                                             setEmployeeToDelete(
                                                                 employee,
@@ -268,7 +279,7 @@ export default function Index({ employees, filters }: PageProps) {
                     if (!open) resetForm();
                 }}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[calc(100svh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>
                             {employeeToEdit
@@ -335,15 +346,20 @@ export default function Index({ employees, filters }: PageProps) {
                                 )}
                             </div>
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsFormOpen(false)}
+                                className="min-h-11 w-full sm:w-auto"
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={processing}>
+                            <Button
+                                type="submit"
+                                disabled={processing}
+                                className="min-h-11 w-full sm:w-auto"
+                            >
                                 {employeeToEdit
                                     ? 'Update Employee'
                                     : 'Create Employee'}
@@ -357,7 +373,7 @@ export default function Index({ employees, filters }: PageProps) {
                 open={!!employeeToDelete}
                 onOpenChange={(open) => !open && setEmployeeToDelete(null)}
             >
-                <AlertDialogContent>
+                <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-[425px]">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -365,11 +381,13 @@ export default function Index({ employees, filters }: PageProps) {
                             customer investigations cannot be deleted.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+                        <AlertDialogCancel className="min-h-11 w-full sm:w-auto">
+                            Cancel
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
-                            className="bg-destructive text-white hover:bg-destructive/90"
+                            className="min-h-11 w-full bg-destructive text-white hover:bg-destructive/90 sm:w-auto"
                         >
                             Delete
                         </AlertDialogAction>

@@ -32,14 +32,32 @@ export default function Index({ users, filters }: PageProps) {
             columns={[
                 {
                     header: 'Full Name',
-                    render: (user) => user.full_name,
+                    render: (user) => (
+                        <div className="flex min-w-0 flex-col">
+                            <span className="font-medium break-words">
+                                {user.full_name}
+                            </span>
+                            <span className="mt-1 text-xs break-all text-muted-foreground sm:hidden">
+                                {user.email}
+                            </span>
+                            <span className="mt-1 text-xs text-muted-foreground md:hidden">
+                                {user.phone_number || 'No phone'}
+                            </span>
+                        </div>
+                    ),
                 },
                 {
                     header: 'Email',
+                    className:
+                        'hidden min-w-[220px] font-semibold sm:table-cell',
+                    cellClassName: 'hidden break-all sm:table-cell',
                     render: (user) => user.email,
                 },
                 {
                     header: 'Phone',
+                    className:
+                        'hidden min-w-[140px] font-semibold md:table-cell',
+                    cellClassName: 'hidden md:table-cell',
                     render: (user) => user.phone_number || '-',
                 },
                 ...(canViewDetails
@@ -52,7 +70,7 @@ export default function Index({ users, filters }: PageProps) {
                                       <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-8 w-8"
+                                          className="h-11 w-11 sm:h-9 sm:w-9"
                                           onClick={() =>
                                               router.visit(`/users/${user.id}`)
                                           }

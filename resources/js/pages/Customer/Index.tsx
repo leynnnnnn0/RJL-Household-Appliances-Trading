@@ -27,14 +27,32 @@ export default function Index({ customers, filters }: PageProps) {
             columns={[
                 {
                     header: 'Full Name',
-                    render: (customer) => customer.full_name,
+                    render: (customer) => (
+                        <div className="flex min-w-0 flex-col">
+                            <span className="font-medium break-words">
+                                {customer.full_name}
+                            </span>
+                            <span className="mt-1 line-clamp-2 text-xs text-muted-foreground sm:hidden">
+                                {customer.address || 'No address'}
+                            </span>
+                            <span className="mt-1 text-xs text-muted-foreground md:hidden">
+                                {customer.phone_number || 'No phone'}
+                            </span>
+                        </div>
+                    ),
                 },
                 {
                     header: 'Address',
+                    className:
+                        'hidden min-w-[240px] font-semibold sm:table-cell',
+                    cellClassName: 'hidden max-w-[360px] sm:table-cell',
                     render: (customer) => customer.address || '-',
                 },
                 {
                     header: 'Phone Number',
+                    className:
+                        'hidden min-w-[150px] font-semibold md:table-cell',
+                    cellClassName: 'hidden md:table-cell',
                     render: (customer) => customer.phone_number || '-',
                 },
                 ...(canViewDetails
@@ -47,7 +65,7 @@ export default function Index({ customers, filters }: PageProps) {
                                       <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-8 w-8"
+                                          className="h-11 w-11 sm:h-9 sm:w-9"
                                           onClick={() =>
                                               router.visit(
                                                   `/customers/${customer.id}`,
@@ -60,7 +78,7 @@ export default function Index({ customers, filters }: PageProps) {
                                       <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-8 w-8"
+                                          className="h-11 w-11 sm:h-9 sm:w-9"
                                           onClick={() =>
                                               router.visit(
                                                   `/customers/${customer.id}/edit`,

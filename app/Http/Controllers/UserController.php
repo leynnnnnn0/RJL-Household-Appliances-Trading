@@ -25,6 +25,7 @@ class UserController extends Controller
     public function create()
     {
         return Inertia::render('User/Create', [
+            'backUrl' => url()->previous(),
             'roles' => $this->users->roles(),
         ]);
     }
@@ -32,6 +33,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         return Inertia::render('User/Edit', [
+            'backUrl' => url()->previous(),
             'user' => $user->load('roles:id,name'),
             'roles' => $this->users->roles(),
         ]);
@@ -40,6 +42,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         return Inertia::render('User/Show', [
+            'backUrl' => url()->previous(),
             'user' => $user->load('roles:id,name'),
         ]);
     }

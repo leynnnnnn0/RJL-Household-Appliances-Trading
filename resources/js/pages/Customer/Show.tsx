@@ -1,36 +1,40 @@
-import { useState } from 'react';
+import BackButton from '@/components/buttons/back-button';
 import ModuleHeading from '@/components/cards/module-heading';
-import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-    User, 
-    MapPin, 
-    Phone, 
-    Calendar, 
-    CheckCircle2, 
-    XCircle, 
-    Package, 
-    CreditCard,
-    DollarSign,
-    FileText,
+import AppLayout from '@/layouts/app-layout';
+import { CustomerWithRelation } from '@/types';
+import { Head, Link } from '@inertiajs/react';
+import {
     AlertCircle,
-    Home,
-    Briefcase,
-    ShoppingCart,
-    TrendingUp,
-    Clock,
     Ban,
+    Briefcase,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    CreditCard,
     Download,
     Eye,
-    File
+    File,
+    FileText,
+    Home,
+    MapPin,
+    Package,
+    Phone,
+    User,
+    XCircle,
 } from 'lucide-react';
-import { CustomerWithRelation } from '@/types';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 interface AdditionalDocument {
     id: number;
@@ -43,12 +47,13 @@ interface AdditionalDocument {
 }
 
 interface Props {
+    backUrl?: string | null;
     customer: CustomerWithRelation & {
         additional_documents?: AdditionalDocument[];
     };
 }
 
-export default function Show({ customer }: Props) {
+export default function Show({ backUrl, customer }: Props) {
     const [activeTab, setActiveTab] = useState('overview');
 
     const getInitials = (firstName: string, lastName: string) => {
@@ -58,7 +63,7 @@ export default function Show({ customer }: Props) {
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-PH', {
             style: 'currency',
-            currency: 'PHP'
+            currency: 'PHP',
         }).format(amount);
     };
 
@@ -66,7 +71,7 @@ export default function Show({ customer }: Props) {
         return new Date(date).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
         });
     };
 
@@ -97,10 +102,18 @@ export default function Show({ customer }: Props) {
 
     const totalOrders = customer.orders?.length || 0;
     const totalInstallmentOrders = customer.installment_orders?.length || 0;
-    const activeOrders = customer.orders?.filter(o => !o.is_void).length || 0;
-    const activeInstallments = customer.installment_orders?.filter(i => !i.is_voided && !i.is_completed && !i.is_defaulted).length || 0;
-    const totalRevenue = (customer.orders?.filter(o => !o.is_void).reduce((sum, order) => sum + order.total_price, 0) || 0) +
-                        (customer.installment_orders?.filter(i => !i.is_voided).reduce((sum, order) => sum + order.total_amount_paid, 0) || 0);
+    const activeOrders = customer.orders?.filter((o) => !o.is_void).length || 0;
+    const activeInstallments =
+        customer.installment_orders?.filter(
+            (i) => !i.is_voided && !i.is_completed && !i.is_defaulted,
+        ).length || 0;
+    const totalRevenue =
+        (customer.orders
+            ?.filter((o) => !o.is_void)
+            .reduce((sum, order) => sum + order.total_price, 0) || 0) +
+        (customer.installment_orders
+            ?.filter((i) => !i.is_voided)
+            .reduce((sum, order) => sum + order.total_amount_paid, 0) || 0);
 
     return (
         <AppLayout>
@@ -112,12 +125,14 @@ export default function Show({ customer }: Props) {
                 <ModuleHeading
                     title="Customer Details"
                     description="Complete information about the customer"
-                />
+                >
+                    <BackButton backUrl={backUrl} />
+                </ModuleHeading>
 
                 {/* Compact Profile Header */}
                 <Card>
                     <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                             <Avatar className="h-16 w-16 border-2 border-black">
                                 <AvatarFallback className="bg-black text-xl font-bold text-white">
                                     {getInitials(
@@ -131,7 +146,7 @@ export default function Show({ customer }: Props) {
                                 <h2 className="truncate text-2xl font-bold text-gray-900">
                                     {customer.first_name} {customer.last_name}
                                 </h2>
-                                <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                                <div className="mt-1 flex flex-wrap items-center gap-3 text-sm break-words text-gray-600">
                                     <span className="flex items-center gap-1">
                                         <User className="h-3.5 w-3.5" />
                                         ID #{customer.id}
@@ -163,34 +178,34 @@ export default function Show({ customer }: Props) {
                     onValueChange={setActiveTab}
                     className="w-full"
                 >
-                    <TabsList className="grid h-9 w-full grid-cols-5 bg-gray-100">
+                    <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1 lg:grid lg:grid-cols-5 lg:overflow-visible">
                         <TabsTrigger
                             value="overview"
-                            className="text-sm data-[state=active]:bg-black data-[state=active]:text-white"
+                            className="min-h-10 min-w-max flex-none px-4 text-xs focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-background sm:text-sm lg:min-w-0 lg:flex-1"
                         >
                             Overview
                         </TabsTrigger>
                         <TabsTrigger
                             value="orders"
-                            className="text-sm data-[state=active]:bg-black data-[state=active]:text-white"
+                            className="min-h-10 min-w-max flex-none px-4 text-xs focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-background sm:text-sm lg:min-w-0 lg:flex-1"
                         >
                             Orders ({totalOrders})
                         </TabsTrigger>
                         <TabsTrigger
                             value="installments"
-                            className="text-sm data-[state=active]:bg-black data-[state=active]:text-white"
+                            className="min-h-10 min-w-max flex-none px-4 text-xs focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-background sm:text-sm lg:min-w-0 lg:flex-1"
                         >
                             Installments ({totalInstallmentOrders})
                         </TabsTrigger>
                         <TabsTrigger
                             value="investigation"
-                            className="text-sm data-[state=active]:bg-black data-[state=active]:text-white"
+                            className="min-h-10 min-w-max flex-none px-4 text-xs focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-background sm:text-sm lg:min-w-0 lg:flex-1"
                         >
                             Investigation
                         </TabsTrigger>
                         <TabsTrigger
                             value="documents"
-                            className="text-sm data-[state=active]:bg-black data-[state=active]:text-white"
+                            className="min-h-10 min-w-max flex-none px-4 text-xs focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-background sm:text-sm lg:min-w-0 lg:flex-1"
                         >
                             Documents (
                             {customer.additional_documents?.length || 0})
@@ -199,9 +214,9 @@ export default function Show({ customer }: Props) {
 
                     {/* Overview Tab */}
                     <TabsContent value="overview" className="mt-4 space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                             {/* Reference Information */}
-                            <Card className="col-span-1">
+                            <Card>
                                 <CardHeader className="pb-3">
                                     <CardTitle className="flex items-center gap-2 text-base">
                                         <User className="h-4 w-4" />
@@ -245,7 +260,7 @@ export default function Show({ customer }: Props) {
                             </Card>
 
                             {/* Investigation Summary */}
-                            <Card className="col-span-2">
+                            <Card className="lg:col-span-2">
                                 <CardHeader className="pb-3">
                                     <CardTitle className="flex items-center gap-2 text-base">
                                         <Briefcase className="h-4 w-4" />
@@ -254,7 +269,7 @@ export default function Show({ customer }: Props) {
                                 </CardHeader>
                                 <CardContent>
                                     {customer.investigation_detail ? (
-                                        <div className="grid grid-cols-3 gap-4 text-sm">
+                                        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
                                             <div>
                                                 <p className="mb-1 text-xs text-gray-500">
                                                     Employment
@@ -445,8 +460,8 @@ export default function Show({ customer }: Props) {
                             customer.installment_orders.map((installment) => (
                                 <Card key={installment.id}>
                                     <CardHeader className="pb-3">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 <CardTitle className="text-base">
                                                     <Link
                                                         className="underline"
@@ -509,7 +524,7 @@ export default function Show({ customer }: Props) {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
-                                        <div className="grid grid-cols-5 gap-3 text-sm">
+                                        <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
                                             <div className="rounded bg-gray-50 p-2">
                                                 <p className="text-xs text-gray-500">
                                                     Contract
@@ -585,7 +600,7 @@ export default function Show({ customer }: Props) {
                                                                     key={
                                                                         payment.id
                                                                     }
-                                                                    className="flex items-center justify-between rounded bg-gray-50 p-2 text-sm hover:bg-gray-100"
+                                                                    className="flex flex-col gap-2 rounded bg-gray-50 p-2 text-sm hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between"
                                                                 >
                                                                     <div className="flex items-center gap-2">
                                                                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black text-xs font-bold text-white">
@@ -672,7 +687,7 @@ export default function Show({ customer }: Props) {
                             <CardContent>
                                 {customer.investigation_detail ? (
                                     <div className="space-y-4">
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                             <div className="rounded bg-gray-50 p-3">
                                                 <p className="mb-1 text-xs text-gray-500">
                                                     Employee ID
@@ -731,7 +746,7 @@ export default function Show({ customer }: Props) {
                                                 <User className="h-4 w-4" />
                                                 Personal Information
                                             </h3>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                                 <div className="rounded bg-gray-50 p-3">
                                                     <p className="mb-1 text-xs text-gray-500">
                                                         ID Presented
@@ -763,7 +778,7 @@ export default function Show({ customer }: Props) {
                                                 <Home className="h-4 w-4" />
                                                 Civil Status
                                             </h3>
-                                            <div className="grid grid-cols-3 gap-4">
+                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                                 <div className="rounded bg-gray-50 p-3">
                                                     <p className="mb-1 text-xs text-gray-500">
                                                         Status
@@ -859,7 +874,7 @@ export default function Show({ customer }: Props) {
                                             (doc) => (
                                                 <div
                                                     key={doc.id}
-                                                    className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-gray-50"
+                                                    className="flex flex-col gap-3 rounded-lg border p-4 transition-colors hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between"
                                                 >
                                                     <div className="flex min-w-0 flex-1 items-center gap-3">
                                                         <div className="text-2xl">
@@ -871,7 +886,7 @@ export default function Show({ customer }: Props) {
                                                             <p className="truncate text-sm font-medium">
                                                                 {doc.file_name}
                                                             </p>
-                                                            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                                                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                                                 <span>
                                                                     {formatFileSize(
                                                                         doc.file_size,
@@ -886,12 +901,12 @@ export default function Show({ customer }: Props) {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
                                                             asChild
-                                                            className="h-8"
+                                                            className="min-h-11 w-full sm:h-9 sm:min-h-0 sm:w-auto"
                                                         >
                                                             <a
                                                                 href={`/storage/${doc.file_path}`}
@@ -906,7 +921,7 @@ export default function Show({ customer }: Props) {
                                                             size="sm"
                                                             variant="outline"
                                                             asChild
-                                                            className="h-8"
+                                                            className="min-h-11 w-full sm:h-9 sm:min-h-0 sm:w-auto"
                                                         >
                                                             <a
                                                                 href={`/storage/${doc.file_path}`}

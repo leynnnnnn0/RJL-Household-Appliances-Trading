@@ -26,6 +26,7 @@ class CustomerController extends Controller
     public function show(Customer $customer)
     {
         return Inertia::render('Customer/Show', [
+            'backUrl' => url()->previous(),
             'customer' => $customer->load(['additional_documents', 'orders.order_items.item', 'installment_orders.installment_order_items.item', 'customer_reference', 'investigation_detail.employee']),
         ]);
     }
@@ -33,6 +34,7 @@ class CustomerController extends Controller
     public function edit(Customer $customer)
     {
         return Inertia::render('Customer/Edit', [
+            'backUrl' => url()->previous(),
             'customer' => $customer->load(['additional_documents', 'customer_reference', 'investigation_detail']),
             'employees' => Employee::dropdown(),
         ]);
