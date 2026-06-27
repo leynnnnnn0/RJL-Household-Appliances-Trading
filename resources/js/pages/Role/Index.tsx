@@ -1,21 +1,7 @@
-import ModuleHeading from "@/components/cards/module-heading";
-import AppLayout from "@/layouts/app-layout";
-import { Head, Link, router } from "@inertiajs/react";
-import { Plus, Search, Eye, Pencil, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import {
-    Card,
-    CardContent,
-} from "@/components/ui/card";
+import ModuleHeading from '@/components/cards/module-heading';
+import SearchBox from '@/components/cards/search-box';
+import TableContainer from '@/components/cards/table-container';
+import Pagination from '@/components/pagination';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,21 +12,28 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import Pagination from "@/components/pagination";
-import { useState, useEffect } from "react";
-import { Paginated } from "@/types";
-import SearchBox from "@/components/cards/search-box";
-import TableContainer from "@/components/cards/table-container";
-import { toast } from "sonner";
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import AppLayout from '@/layouts/app-layout';
+import { formatRoleDate } from '@/lib/roles';
+import { Paginated } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-interface Permission {
-    id: number;
-    name: string;
-}
-
-interface Role {
+interface RoleIndexRecord {
     id: number;
     name: string;
     permissions_count: number;
@@ -48,126 +41,106 @@ interface Role {
 }
 
 interface Props {
-    roles: Paginated<Role>
+    roles: Paginated<RoleIndexRecord>;
     filters: {
         search?: string;
     };
 }
 
 export default function Index({ roles, filters }: Props) {
-    const [search, setSearch] = useState(filters.search || "");
+    const [search, setSearch] = useState(filters.search || '');
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            router.get(
-                route('roles.index'),
-                { search },
-                {
-                    preserveState: true,
-                    replace: true,
-                }
-            );
+            router.get('/roles', search ? { search } : {}, {
+                preserveState: true,
+                replace: true,
+            });
         }, 300);
 
         return () => clearTimeout(timer);
     }, [search]);
 
     const handleDelete = (id: number) => {
-        router.delete(route('roles.destroy', id), {
+        router.delete(`/roles/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success("Role Deleted Successfully.");
-            }
+                toast.success('Role Deleted Successfully.');
+            },
         });
     };
 
     return (
         <AppLayout>
             <Head title="Roles" />
-            <ModuleHeading title="Roles" description="Manage system roles and permissions">
-                <Link href={route('roles.create')}>
-                    <Button className="bg-black text-white hover:bg-gray-800">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create New Role
-                    </Button>
-                </Link>
+            <ModuleHeading
+                title="Roles"
+                description="Manage system roles and permissions"
+            >
+                <Button onClick={() => router.visit('/roles/create')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create New Role
+                </Button>
             </ModuleHeading>
 
-                     <SearchBox>
-                                   <Input
-                                       placeholder="Search users..."
-                                       value={search}
-                                       onChange={(e) => setSearch(e.target.value)}
-                                       className="pl-10"
-                                   />
-                               </SearchBox>
+            <div className="space-y-4">
+                <SearchBox>
+                    <Input
+                        placeholder="Search roles..."
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        className="pl-10"
+                    />
+                </SearchBox>
 
+                <div className="hidden md:block">
                     <TableContainer>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="font-semibold">Role Name</TableHead>
-                                    <TableHead className="font-semibold">Permissions</TableHead>
-                                    <TableHead className="font-semibold">Created At</TableHead>
-                                    <TableHead className="tont-semibold text-center">Actions</TableHead>
+                                    <TableHead className="font-semibold">
+                                        Role Name
+                                    </TableHead>
+                                    <TableHead className="font-semibold">
+                                        Permissions
+                                    </TableHead>
+                                    <TableHead className="font-semibold">
+                                        Created At
+                                    </TableHead>
+                                    <TableHead className="text-center font-semibold">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {roles.data.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                                            No roles found
-                                        </TableCell>
-                                    </TableRow>
+                                    <EmptyRoleRow />
                                 ) : (
                                     roles.data.map((role) => (
-                                        <TableRow key={role.id} className="hover:bg-gray-50">
-                                            <TableCell className="font-medium">{role.name}</TableCell>
+                                        <TableRow
+                                            key={role.id}
+                                            className="hover:bg-gray-50"
+                                        >
+                                            <TableCell className="font-medium">
+                                                {role.name}
+                                            </TableCell>
                                             <TableCell>
-                                                <Badge variant="outline" className="border-black text-black">
-                                                    {role.permissions_count} permissions
-                                                </Badge>
+                                                <PermissionCount
+                                                    count={
+                                                        role.permissions_count
+                                                    }
+                                                />
                                             </TableCell>
                                             <TableCell className="text-gray-600">
-                                                {new Date(role.created_at).toLocaleDateString()}
+                                                {formatRoleDate(
+                                                    role.created_at,
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <div className="flex items-center justify-center gap-5">
-                                                    <Link href={route('roles.show', role.id)}>
-                                                       
-                                                            <Eye className="w-4 h-4 cursor-pointer" />
-                                                
-                                                    </Link>
-                                                    <Link href={route('roles.edit', role.id)}>
-
-                                                            <Pencil className="w-4 h-4 cursor-pointer" />
-
-                                                    </Link>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger>
-
-                                                                <Trash2 className="w-4 h-4 cursor-pointer text-red-500" />
-  
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent className="border-black">
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Delete Role</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Are you sure you want to delete this role? This action cannot be undone.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel className="border-black">Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    onClick={() => handleDelete(role.id)}
-                                                                    className="bg-black text-white hover:bg-gray-800"
-                                                                >
-                                                                    Delete
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
+                                                <RoleActions
+                                                    role={role}
+                                                    onDelete={handleDelete}
+                                                />
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -175,9 +148,138 @@ export default function Index({ roles, filters }: Props) {
                             </TableBody>
                         </Table>
                     </TableContainer>
+                </div>
 
-                           <Pagination data={roles} />
+                <div className="space-y-3 md:hidden">
+                    {roles.data.length === 0 ? (
+                        <Card>
+                            <CardContent className="py-12">
+                                <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
+                                    <Search className="h-8 w-8" />
+                                    <p className="font-medium">
+                                        No roles found
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        roles.data.map((role) => (
+                            <Card key={role.id}>
+                                <CardContent className="space-y-4 pt-6">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold break-words">
+                                                {role.name}
+                                            </p>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                Created{' '}
+                                                {formatRoleDate(
+                                                    role.created_at,
+                                                )}
+                                            </p>
+                                        </div>
+                                        <PermissionCount
+                                            count={role.permissions_count}
+                                        />
+                                    </div>
+                                    <RoleActions
+                                        role={role}
+                                        onDelete={handleDelete}
+                                        mobile
+                                    />
+                                </CardContent>
+                            </Card>
+                        ))
+                    )}
+                </div>
 
+                <Pagination data={roles} />
+            </div>
         </AppLayout>
+    );
+}
+
+function PermissionCount({ count }: { count: number }) {
+    return (
+        <Badge variant="outline" className="border-black text-black">
+            {count} permissions
+        </Badge>
+    );
+}
+
+function EmptyRoleRow() {
+    return (
+        <TableRow>
+            <TableCell colSpan={4} className="py-10 text-center text-gray-500">
+                No roles found
+            </TableCell>
+        </TableRow>
+    );
+}
+
+function RoleActions({
+    role,
+    onDelete,
+    mobile = false,
+}: {
+    role: RoleIndexRecord;
+    onDelete: (id: number) => void;
+    mobile?: boolean;
+}) {
+    const buttonClass = mobile ? 'flex-1' : 'h-9 w-9';
+
+    return (
+        <div
+            className={
+                mobile
+                    ? 'flex items-center gap-2 border-t pt-3'
+                    : 'flex items-center justify-center gap-1'
+            }
+        >
+            <Button
+                variant="ghost"
+                size={mobile ? 'sm' : 'icon'}
+                className={buttonClass}
+                onClick={() => router.visit(`/roles/${role.id}`)}
+            >
+                <Eye className="h-4 w-4" />
+                {mobile && <span className="ml-2">View</span>}
+            </Button>
+            <Button
+                variant="ghost"
+                size={mobile ? 'sm' : 'icon'}
+                className={buttonClass}
+                onClick={() => router.visit(`/roles/${role.id}/edit`)}
+            >
+                <Pencil className="h-4 w-4" />
+                {mobile && <span className="ml-2">Edit</span>}
+            </Button>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size={mobile ? 'sm' : 'icon'}
+                        className={buttonClass}
+                    >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Role</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this role? This
+                            action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(role.id)}>
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
     );
 }
