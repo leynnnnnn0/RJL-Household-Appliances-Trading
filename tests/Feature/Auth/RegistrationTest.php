@@ -2,20 +2,22 @@
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
-test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
+test('registration screen is disabled', function () {
+    $response = $this->get('/register');
 
-    $response->assertStatus(200);
+    $response->assertNotFound();
 });
 
-test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
-        'name' => 'Test User',
+test('public users cannot register', function () {
+    $response = $this->post('/register', [
+        'first_name' => 'Test',
+        'last_name' => 'User',
         'email' => 'test@example.com',
+        'phone_number' => '09171234567',
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $this->assertGuest();
+    $response->assertNotFound();
 });
