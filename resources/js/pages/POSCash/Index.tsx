@@ -1,82 +1,12 @@
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet';
-import { Customer, Location, OrderWithrelations, User } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import OrdersCard from '@/components/pos-cash/orders-card';
+import ProductSearchCard from '@/components/pos-cash/product-search-card';
+import TransactionHistorySheet from '@/components/pos-cash/transaction-history-sheet';
+import { POSCashCartItem, POSCashProduct } from '@/lib/pos-cash';
+import { Location, OrderWithrelations, User } from '@/types';
+import { usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { debounce } from 'lodash';
-import {
-    History,
-    Loader2,
-    Menu,
-    Plus,
-    Search,
-    ShoppingCart,
-    Trash2,
-    TrendingUp,
-    Users,
-    X,
-} from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
-interface Product {
-    id: string;
-    supplier: string;
-    description: string;
-    serial: string;
-    model: string;
-    srp: number;
-    unit_cost: string;
-}
-
-interface Order {
-    id: string;
-    product: Product;
-    employee: User;
-    saleAmount: number;
-    timestamp: string;
-    date: string;
-}
 
 interface PageProps {
     employees: User[];
@@ -90,114 +20,70 @@ export default function Index({
     transactions,
 }: PageProps) {
     const { auth } = usePage().props as any;
-    const [searchTerm, setSearchTerm] = useState<string>('');
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(
-        null,
-    );
-    const [selectedEmployee, setSelectedEmployee] = useState<string>(
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedProduct, setSelectedProduct] =
+        useState<POSCashProduct | null>(null);
+    const [selectedEmployee, setSelectedEmployee] = useState(
         auth.user.id.toString(),
     );
-    const [selectedLocation, setSelectedLocation] = useState<string>(
-        locations[0]?.id.toString(),
+    const [selectedLocation, setSelectedLocation] = useState(
+        locations[0]?.id.toString() ?? '',
     );
-    const [saleAmount, setSaleAmount] = useState<string>('');
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [allTransactions, setAllTransactions] = useState<Order[]>([]);
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-    const [showDropdown, setShowDropdown] = useState<boolean>(false);
-    const [dateFilter, setDateFilter] = useState<string>('today');
-    const [sheetOpen, setSheetOpen] = useState<boolean>(false);
-    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-    const [salesAmountError, setSalesAmountError] = useState<string>('');
-    const [customerLastName, setCustomerLastName] = useState<string>('');
-    const [customerFirstName, setCustomerFirstName] = useState<string>('');
-    const [customerAddress, setCustomerAddress] = useState<string>('');
-    const [customerPhone, setCustomerPhone] = useState<string>('');
-    const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
-    const [referenceNumber, setReferenceNumber] = useState<string>('');
-    const [receiptNumber, setReceiptNumber] = useState<string>('');
-    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [saleAmount, setSaleAmount] = useState('');
+    const [orders, setOrders] = useState<POSCashCartItem[]>([]);
+    const [filteredProducts, setFilteredProducts] = useState<POSCashProduct[]>(
+        [],
+    );
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [checkoutOpen, setCheckoutOpen] = useState(false);
+    const [saleAmountError, setSaleAmountError] = useState('');
     const [isFree, setIsFree] = useState(false);
-    const [searchQuery, setSearchQuery] = useState<string>('');
-    const [searchResults, setSearchResults] = useState<Customer[]>([]);
-    const [showResults, setShowResults] = useState<boolean>(false);
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-        null,
-    );
-    const [isExistingCustomer, setIsExistingCustomer] =
-        useState<boolean>(false);
-    const [existingCustomerId, setExistingCustomerId] = useState<
-        null | string | number
-    >();
-    const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
-    const [isLoadingCustomers, setIsLoadingCustomers] =
-        useState<boolean>(false);
-    const [customerEmail, setCustomerEmail] = useState<string>('');
-    const [customerCity, setCustomerCity] = useState<string>('');
-    const [customerProvince, setCustomerProvince] = useState<string>('');
-    const [customerZipcode, setCustomerZipcode] = useState<string>('');
-    const [customerCountry, setCustomerCountry] =
-        useState<string>('PHILIPPINES');
+    const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
-    const peformSearch = async (value: string, locationId: string) => {
-        if (value.trim().length === 0) {
+    useEffect(() => {
+        if (searchTerm.trim().length === 0) {
             setFilteredProducts([]);
             setShowDropdown(false);
             setIsLoadingProducts(false);
             return;
         }
+
         setIsLoadingProducts(true);
-        axios
-            .get('/api/items', {
-                params: { search: value, location: locationId },
-            })
-            .then((response) => {
-                const items = response.data?.data || [];
-                setFilteredProducts(items);
-                setShowDropdown(true);
-                setIsLoadingProducts(false);
-            })
-            .catch((error) => {
-                console.error('Error fetching products:', error);
-                setFilteredProducts([]);
-                setShowDropdown(false);
-                setIsLoadingProducts(false);
-            });
-    };
+        const timeout = window.setTimeout(() => {
+            axios
+                .get('/api/items', {
+                    params: { search: searchTerm, location: selectedLocation },
+                })
+                .then((response) => {
+                    setFilteredProducts(response.data?.data || []);
+                    setShowDropdown(true);
+                })
+                .catch((error) => {
+                    console.error('Error fetching products:', error);
+                    setFilteredProducts([]);
+                    setShowDropdown(false);
+                })
+                .finally(() => setIsLoadingProducts(false));
+        }, 500);
 
-    const debouncedSearch = useCallback(
-        debounce((value: string, locationId: string) => {
-            peformSearch(value, locationId);
-        }, 500),
-        [],
-    );
-
-    const handleSearch = (value: string) => {
-        setSearchTerm(value);
-        if (value.trim().length > 0) {
-            setIsLoadingProducts(true);
-        }
-        debouncedSearch(value, selectedLocation);
-    };
+        return () => window.clearTimeout(timeout);
+    }, [searchTerm, selectedLocation]);
 
     useEffect(() => {
         setShowDropdown(false);
     }, [selectedLocation]);
 
     useEffect(() => {
-        if (isFree) setSaleAmount('0');
-        else setSaleAmount('');
+        setSaleAmount(isFree ? '0' : '');
     }, [isFree]);
 
-    useEffect(() => {
-        if (paymentMethod == 'Cash') setReferenceNumber('');
-    }, [paymentMethod]);
-
-    const handleProductSelect = (product: Product) => {
-        if (orders.some((item) => item.id == product.serial) == true) {
+    const handleProductSelect = (product: POSCashProduct) => {
+        if (orders.some((item) => item.id === product.serial)) {
             toast.info('This item is already on the order list');
             return;
         }
+
         setIsFree(false);
         setSelectedProduct(product);
         setSearchTerm(product.description);
@@ -206,216 +92,55 @@ export default function Index({
     };
 
     const handleAddOrder = () => {
-        if (
-            !isFree &&
-            Number(saleAmount) < Number(selectedProduct?.unit_cost)
-        ) {
-            setSalesAmountError(
-                `Amount should be higher than the unit cost. (${selectedProduct?.unit_cost})`,
+        if (!selectedProduct || !saleAmount) {
+            return;
+        }
+
+        if (!isFree && Number(saleAmount) < Number(selectedProduct.unit_cost)) {
+            setSaleAmountError(
+                `Amount should be higher than the unit cost. (${selectedProduct.unit_cost})`,
             );
             return;
-        } else {
-            setSalesAmountError('');
         }
-        if (saleAmount && selectedProduct) {
-            const now = new Date();
-            const newOrder: Order = {
+
+        setSaleAmountError('');
+
+        const employee = employees.find(
+            (employee) => employee.id === parseInt(selectedEmployee),
+        );
+
+        if (!employee) {
+            return;
+        }
+
+        const now = new Date();
+        setOrders((current) => [
+            {
                 id: selectedProduct.serial,
                 product: selectedProduct,
-                employee: employees.find(
-                    (e) => e.id === parseInt(selectedEmployee),
-                )!,
+                employee,
                 saleAmount: parseFloat(saleAmount),
                 timestamp: now.toLocaleString(),
                 date: now.toISOString().split('T')[0],
-            };
-            setOrders([newOrder, ...orders]);
-
-            setSelectedProduct(null);
-            setSearchTerm('');
-            setSaleAmount('');
-        }
-    };
-
-    const handleRemoveOrder = (orderId: string) => {
-        setOrders(orders.filter((order) => order.id != orderId));
-    };
-
-    const totalSales = transactions
-        .filter((order) => !order.is_void)
-        .reduce((sum, order) => sum + Number(order.total_price), 0);
-
-    const orderTotal = orders.reduce(
-        (sum, order) => sum + Number(order.saleAmount),
-        0,
-    );
-
-    const placeOrder = () => {
-        setFormErrors({}); // Clear previous errors
-
-        // Client-side validation for reference number
-        if (paymentMethod !== 'Cash' && !referenceNumber.trim()) {
-            setFormErrors({
-                reference_number:
-                    'Reference number is required for non-cash payments',
-            });
-            toast.error(
-                'Please provide a reference number for non-cash payments.',
-            );
-            return;
-        }
-
-        router.post(
-            '/pos-cash',
-            {
-                location_id: selectedLocation,
-                employee_id: selectedEmployee,
-                first_name: customerFirstName,
-                last_name: customerLastName,
-                address: customerAddress,
-                receipt_number: receiptNumber,
-                phone: customerPhone,
-                email: customerEmail,
-                city: customerCity,
-                province: customerProvince,
-                zipcode: customerZipcode,
-                country: customerCountry,
-                payment_method: paymentMethod,
-                reference_number: referenceNumber,
-                existing_customer_id: existingCustomerId,
-                orders: orders.map(function (item) {
-                    return {
-                        id: item.product.id,
-                        serial: item.product.serial,
-                        sale_amount: item.saleAmount,
-                    };
-                }),
-                total_price: orderTotal,
             },
-            {
-                onSuccess: () => {
-                    toast.success('Order Created');
-                    setOrders([]);
-                    setCustomerFirstName('');
-                    setCustomerLastName('');
-                    setCustomerAddress('');
-                    setCustomerPhone('');
-                    setPaymentMethod('Cash');
-                    setReferenceNumber('');
-                    setFormErrors({});
-                    setIsDialogOpen(false);
-                    setCustomerEmail('');
-                    setCustomerCity('');
-                    setCustomerProvince('');
-                    setCustomerZipcode('');
-                    setCustomerCountry('');
+            ...current,
+        ]);
 
-                    setSelectedProduct(null);
-                    setSaleAmount('');
-                    setSearchQuery('');
-                    setSelectedCustomer(null);
-                    setExistingCustomerId('');
-                    setIsExistingCustomer(false);
-                },
-                onError: (e) => {
-                    if (e && typeof e === 'object') {
-                        setFormErrors(e as Record<string, string>);
-                    }
-                    toast.error('Please fix the errors in the form.');
-                },
-            },
-        );
+        setSelectedProduct(null);
+        setSearchTerm('');
+        setSaleAmount('');
     };
 
-    const clearCustomer = () => {
-        setCustomerFirstName('');
-        setCustomerLastName('');
-        setCustomerPhone('');
-        setCustomerAddress('');
-        setExistingCustomerId(null);
-        setIsExistingCustomer(false);
-        setSearchQuery('');
-        setCustomerEmail('');
-        setCustomerCity('');
-        setCustomerProvince('');
-        setCustomerZipcode('');
-        setCustomerCountry('');
+    const handleOrderCreated = () => {
+        setOrders([]);
+        setSelectedProduct(null);
+        setSaleAmount('');
+        setSearchTerm('');
     };
-
-    const selectCustomer = (customer: Customer) => {
-        setCustomerFirstName(customer.first_name);
-        setCustomerLastName(customer.last_name);
-        setCustomerAddress(customer.address);
-        setCustomerPhone(customer.phone_number);
-        setExistingCustomerId(customer.id);
-        setCustomerEmail(customer.email ?? '');
-        setCustomerCity(customer.city ?? '');
-        setCustomerProvince(customer.province ?? '');
-        setCustomerZipcode(customer.zipcode ?? '');
-        setCustomerCountry(customer.country ?? '');
-
-        setShowResults(false);
-        setSearchQuery('');
-        setSearchResults([]);
-        setIsExistingCustomer(true);
-        setSearchQuery(`${customer.first_name} ${customer.last_name}`);
-    };
-
-    const handleSearchCustomer = (query: string) => {
-        setSearchQuery(query);
-
-        if (query.length > 1) {
-            setIsLoadingCustomers(true);
-            axios
-                .get('/api/customers', { params: { search: query } })
-                .then((response) => {
-                    const customers = response.data?.data || [];
-                    setSearchResults(customers);
-                    setShowResults(true);
-                    setIsLoadingCustomers(false);
-                })
-                .catch((err) => {
-                    setSearchResults([]);
-                    setIsLoadingCustomers(false);
-                });
-        } else {
-            setShowResults(false);
-            setIsLoadingCustomers(false);
-        }
-    };
-
-    const getFilteredTransactions = () => {
-        const today = new Date().toISOString().split('T')[0];
-        const yesterday = new Date(Date.now() - 86400000)
-            .toISOString()
-            .split('T')[0];
-        const weekAgo = new Date(Date.now() - 7 * 86400000)
-            .toISOString()
-            .split('T')[0];
-
-        switch (dateFilter) {
-            case 'today':
-                return allTransactions.filter((t) => t.date === today);
-            case 'yesterday':
-                return allTransactions.filter((t) => t.date === yesterday);
-            case 'week':
-                return allTransactions.filter((t) => t.date >= weekAgo);
-            case 'all':
-                return allTransactions;
-            default:
-                return allTransactions;
-        }
-    };
-
-    const filteredTransactions = getFilteredTransactions();
-    const filteredTotal = transactions.reduce(
-        (sum, t) => sum + t.total_price,
-        0,
-    );
 
     return (
-        <div className="container mx-auto max-w-7xl p-6">
-            <div className="mb-8 flex items-center justify-between">
+        <div className="container mx-auto max-w-7xl p-4 sm:p-6">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <a
                     href="/"
                     className="flex items-center gap-3 transition-opacity hover:opacity-80"
@@ -426,7 +151,7 @@ export default function Index({
                         </span>
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">
+                        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                             Point of Sale
                         </h1>
                         <p className="text-sm text-muted-foreground">
@@ -435,1120 +160,54 @@ export default function Index({
                     </div>
                 </a>
 
-                <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                    <SheetTrigger asChild>
-                        <Button variant="outline" size="icon">
-                            <Menu className="h-5 w-5" />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
-                        <SheetHeader>
-                            <SheetTitle>Transaction History</SheetTitle>
-                            <SheetDescription>
-                                View sales summary and transaction details
-                            </SheetDescription>
-                        </SheetHeader>
-
-                        <div className="space-y-6 p-5">
-                            {/* Filter */}
-                            <div className="space-y-2">
-                                <Label>Filter by Date</Label>
-                                <Select
-                                    value={dateFilter}
-                                    onValueChange={setDateFilter}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="today">
-                                            Today
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Summary Cards */}
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <Card>
-                                    <CardHeader className="pb-3">
-                                        <CardDescription>
-                                            Total Transactions
-                                        </CardDescription>
-                                        <CardTitle className="text-3xl">
-                                            {transactions.length}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <History className="h-3 w-3" />
-                                            <span>
-                                                {dateFilter === 'today'
-                                                    ? 'Today'
-                                                    : dateFilter === 'yesterday'
-                                                      ? 'Yesterday'
-                                                      : dateFilter === 'week'
-                                                        ? 'Last 7 days'
-                                                        : 'All time'}
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                <Card>
-                                    <CardHeader className="pb-3">
-                                        <CardDescription>
-                                            Total Sales
-                                        </CardDescription>
-                                        <CardTitle className="text-3xl">
-                                            ₱
-                                            {Number(
-                                                totalSales,
-                                            ).toLocaleString()}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <TrendingUp className="h-3 w-3" />
-                                            <span>Revenue generated</span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            <Separator />
-
-                            {/* Transaction List */}
-                            <div className="space-y-3">
-                                <h3 className="font-semibold">
-                                    Recent Transactions
-                                </h3>
-                                {transactions.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <History className="mb-3 h-12 w-12 text-muted-foreground/50" />
-                                        <p className="text-sm text-muted-foreground">
-                                            No transactions found
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {transactions.map((item) => (
-                                            <Accordion
-                                                key={item.order_number}
-                                                type="single"
-                                                collapsible
-                                            >
-                                                <AccordionItem
-                                                    value={item.order_number}
-                                                    className="overflow-hidden rounded-lg border"
-                                                >
-                                                    <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
-                                                        <div className="flex w-full items-center justify-between pr-4">
-                                                            <span className="font-semibold text-gray-900">
-                                                                {
-                                                                    item.order_number
-                                                                }{' '}
-                                                                {item.is_void ? (
-                                                                    <Badge>
-                                                                        Voided
-                                                                    </Badge>
-                                                                ) : (
-                                                                    ''
-                                                                )}
-                                                            </span>
-                                                            <span className="text-sm text-gray-600">
-                                                                {
-                                                                    item.transaction_date
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    </AccordionTrigger>
-                                                    <AccordionContent className="bg-gray-50 px-4 py-4">
-                                                        <div className="space-y-4">
-                                                            {/* Order Summary */}
-                                                            <div className="rounded-lg bg-white p-4 shadow-sm">
-                                                                <h3 className="mb-3 font-semibold text-gray-900">
-                                                                    Order
-                                                                    Details
-                                                                </h3>
-                                                                <div className="grid grid-cols-2 gap-3 text-sm">
-                                                                    <div>
-                                                                        <span className="text-gray-600">
-                                                                            Order
-                                                                            Number:
-                                                                        </span>
-                                                                        <p className="font-medium text-gray-900">
-                                                                            {
-                                                                                item.order_number
-                                                                            }
-                                                                        </p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <span className="text-gray-600">
-                                                                            Transaction
-                                                                            Date:
-                                                                        </span>
-                                                                        <p className="font-medium text-gray-900">
-                                                                            {
-                                                                                item.transaction_date
-                                                                            }
-                                                                        </p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <span className="text-gray-600">
-                                                                            Total
-                                                                            Price:
-                                                                        </span>
-                                                                        <p className="font-medium text-gray-900">
-                                                                            ₱
-                                                                            {item.total_price.toLocaleString(
-                                                                                'en-PH',
-                                                                                {
-                                                                                    minimumFractionDigits: 2,
-                                                                                },
-                                                                            )}
-                                                                        </p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <span className="text-gray-600">
-                                                                            Branch:
-                                                                        </span>
-                                                                        <p className="font-medium text-gray-900">
-                                                                            {
-                                                                                item
-                                                                                    .branch
-                                                                                    .name
-                                                                            }
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Order Items */}
-                                                            <div className="rounded-lg bg-white p-4 shadow-sm">
-                                                                <h3 className="mb-3 font-semibold text-gray-900">
-                                                                    Order Items
-                                                                </h3>
-                                                                <div className="space-y-3">
-                                                                    {item.order_items.map(
-                                                                        (
-                                                                            orderItem,
-                                                                            index,
-                                                                        ) => (
-                                                                            <div
-                                                                                key={
-                                                                                    index
-                                                                                }
-                                                                                className="rounded border-l-4 border-blue-500 bg-gray-50 py-2 pl-4"
-                                                                            >
-                                                                                <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
-                                                                                    <div>
-                                                                                        <span className="text-gray-600">
-                                                                                            Description:
-                                                                                        </span>
-                                                                                        <p className="font-medium text-gray-900">
-                                                                                            {
-                                                                                                orderItem
-                                                                                                    .item
-                                                                                                    .description
-                                                                                            }
-                                                                                        </p>
-                                                                                    </div>
-                                                                                    <div>
-                                                                                        <span className="text-gray-600">
-                                                                                            Model:
-                                                                                        </span>
-                                                                                        <p className="font-medium text-gray-900">
-                                                                                            {orderItem
-                                                                                                .item
-                                                                                                .model ||
-                                                                                                'N/A'}
-                                                                                        </p>
-                                                                                    </div>
-                                                                                    <div>
-                                                                                        <span className="text-gray-600">
-                                                                                            Serial:
-                                                                                        </span>
-                                                                                        <p className="font-medium text-gray-900">
-                                                                                            {
-                                                                                                orderItem.serial
-                                                                                            }
-                                                                                        </p>
-                                                                                    </div>
-                                                                                    <div>
-                                                                                        <span className="text-gray-600">
-                                                                                            Sale
-                                                                                            Amount:
-                                                                                        </span>
-                                                                                        <p className="font-medium text-green-600">
-                                                                                            ₱
-                                                                                            {orderItem.sale_amount.toLocaleString(
-                                                                                                'en-PH',
-                                                                                                {
-                                                                                                    minimumFractionDigits: 2,
-                                                                                                },
-                                                                                            )}
-                                                                                        </p>
-                                                                                    </div>
-                                                                                    <div>
-                                                                                        <span className="text-gray-600">
-                                                                                            Item
-                                                                                            Type:
-                                                                                        </span>
-                                                                                        <p className="font-medium text-gray-900">
-                                                                                            {
-                                                                                                orderItem
-                                                                                                    .item
-                                                                                                    .item_type
-                                                                                            }
-                                                                                        </p>
-                                                                                    </div>
-                                                                                    <div>
-                                                                                        <span className="text-gray-600">
-                                                                                            Supplier:
-                                                                                        </span>
-                                                                                        <p className="font-medium text-gray-900">
-                                                                                            {
-                                                                                                orderItem
-                                                                                                    .item
-                                                                                                    .supplier
-                                                                                            }
-                                                                                        </p>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        ),
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </AccordionContent>
-                                                </AccordionItem>
-                                            </Accordion>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </SheetContent>
-                </Sheet>
+                <TransactionHistorySheet
+                    open={sheetOpen}
+                    onOpenChange={setSheetOpen}
+                    transactions={transactions}
+                />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
-                <div className="space-y-6 lg:col-span-2">
-                    {/* Product Search */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Product Search</CardTitle>
-                            <CardDescription>
-                                Search by description, model or serial number
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="relative">
-                                <Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
-                                {isLoadingProducts && (
-                                    <Loader2 className="absolute top-3 right-3 h-4 w-4 animate-spin text-muted-foreground" />
-                                )}
-                                <Input
-                                    placeholder="Search products..."
-                                    value={searchTerm}
-                                    onChange={(e) =>
-                                        handleSearch(e.target.value)
-                                    }
-                                    className="pl-9"
-                                />
-                                {showDropdown && (
-                                    <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover shadow-md">
-                                        {isLoadingProducts ? (
-                                            <div className="p-6 text-center">
-                                                <Loader2 className="mx-auto mb-2 h-8 w-8 animate-spin text-muted-foreground/50" />
-                                                <p className="text-sm text-muted-foreground">
-                                                    Searching products...
-                                                </p>
-                                            </div>
-                                        ) : filteredProducts.length > 0 ? (
-                                            filteredProducts.map((product) => (
-                                                <div
-                                                    key={product.serial}
-                                                    onClick={() =>
-                                                        handleProductSelect(
-                                                            product,
-                                                        )
-                                                    }
-                                                    className="cursor-pointer border-b p-3 last:border-b-0 hover:bg-accent"
-                                                >
-                                                    <div className="font-medium">
-                                                        {product.description}
-                                                    </div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        {product.model}
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="p-6 text-center">
-                                                <Search className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                                                <p className="text-sm text-muted-foreground">
-                                                    No products found
-                                                </p>
-                                                <p className="mt-1 text-xs text-muted-foreground">
-                                                    Try a different search term
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {selectedProduct && (
-                                <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-1">
-                                            <Label className="text-xs text-muted-foreground">
-                                                Supplier
-                                            </Label>
-                                            <p className="font-medium">
-                                                {selectedProduct.supplier}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-xs text-muted-foreground">
-                                                Serial Number
-                                            </Label>
-                                            <p className="font-medium">
-                                                {selectedProduct.serial}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-xs text-muted-foreground">
-                                                Description
-                                            </Label>
-                                            <p className="font-medium">
-                                                {selectedProduct.description}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-xs text-muted-foreground">
-                                                Model
-                                            </Label>
-                                            <p className="font-medium">
-                                                {selectedProduct.model}
-                                            </p>
-                                        </div>
-                                        {/* <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Unit Cost</Label>
-                      <p className="font-semibold">₱{selectedProduct.unit_cost.toLocaleString()}</p>
-                    </div> */}
-                                        <div className="space-y-1">
-                                            <Label className="text-xs text-muted-foreground">
-                                                SRP
-                                            </Label>
-                                            <p className="font-semibold">
-                                                ₱
-                                                {selectedProduct.srp.toLocaleString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Sale Details */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Sale Details</CardTitle>
-                            <CardDescription>Enter sale amount</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="amount">Sale Amount</Label>
-                                <Input
-                                    id="amount"
-                                    type="number"
-                                    placeholder="0.00"
-                                    value={saleAmount}
-                                    disabled={isFree}
-                                    onChange={(e) =>
-                                        setSaleAmount(e.target.value)
-                                    }
-                                />
-                                {salesAmountError && (
-                                    <p className="text-sm text-destructive">
-                                        {salesAmountError}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <Checkbox
-                                    checked={isFree}
-                                    onCheckedChange={() => setIsFree(!isFree)}
-                                />
-                                <Label>Is free?</Label>
-                            </div>
-                            <Button
-                                onClick={handleAddOrder}
-                                disabled={
-                                    !selectedProduct ||
-                                    !selectedEmployee ||
-                                    !saleAmount
-                                }
-                                className="w-full"
-                            >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add to Orders
-                            </Button>
-                        </CardContent>
-                    </Card>
+                <div className="lg:col-span-2">
+                    <ProductSearchCard
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        isLoading={isLoadingProducts}
+                        showDropdown={showDropdown}
+                        products={filteredProducts}
+                        selectedProduct={selectedProduct}
+                        onSelectProduct={handleProductSelect}
+                        saleAmount={saleAmount}
+                        onSaleAmountChange={setSaleAmount}
+                        isFree={isFree}
+                        onFreeChange={() => setIsFree((current) => !current)}
+                        saleAmountError={saleAmountError}
+                        onAddOrder={handleAddOrder}
+                        canAddOrder={
+                            !!selectedProduct &&
+                            !!selectedEmployee &&
+                            !!saleAmount
+                        }
+                    />
                 </div>
 
-                {/* Orders List */}
-                <div>
-                    <Card className="sticky top-6">
-                        <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                                <span>Orders</span>
-                                <span className="text-sm font-normal text-muted-foreground">
-                                    {orders.length}{' '}
-                                    {orders.length === 1 ? 'item' : 'items'}
-                                </span>
-                            </CardTitle>
-                            <CardDescription>
-                                Total: ₱{orderTotal.toLocaleString()}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="max-h-[600px] space-y-3 overflow-auto">
-                                {orders.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                                        <ShoppingCart className="mb-3 h-12 w-12 text-muted-foreground/50" />
-                                        <p className="text-sm text-muted-foreground">
-                                            No orders yet
-                                        </p>
-                                    </div>
-                                ) : (
-                                    orders.map((order) => (
-                                        <div
-                                            key={order.id}
-                                            className="space-y-2 rounded-lg border p-3"
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm font-medium">
-                                                        {
-                                                            order.product
-                                                                .description
-                                                        }
-                                                    </p>
-                                                    <p className="truncate text-xs text-muted-foreground">
-                                                        {order.product.serial}
-                                                    </p>
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        handleRemoveOrder(
-                                                            order.id,
-                                                        )
-                                                    }
-                                                    className="h-8 w-8 shrink-0"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                            <Separator />
-                                            <div className="space-y-1 text-xs">
-                                                <div className="flex justify-between">
-                                                    <span className="text-muted-foreground">
-                                                        Amount:
-                                                    </span>
-                                                    <span className="font-semibold">
-                                                        ₱
-                                                        {order.saleAmount.toLocaleString()}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-muted-foreground">
-                                                        SRP:
-                                                    </span>
-                                                    <span>
-                                                        ₱
-                                                        {order.product.srp.toLocaleString()}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-muted-foreground">
-                                                        Discount:
-                                                    </span>
-                                                    <span className="font-medium text-green-600">
-                                                        ₱
-                                                        {(
-                                                            order.product.srp -
-                                                            order.saleAmount
-                                                        ).toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            <Dialog
-                                open={isDialogOpen}
-                                onOpenChange={setIsDialogOpen}
-                            >
-                                <DialogTrigger asChild>
-                                    <Button
-                                        disabled={orders.length == 0}
-                                        className="mt-5 w-full"
-                                    >
-                                        Place Order
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-h-[90vh] overflow-y-auto">
-                                    <DialogHeader>
-                                        <DialogTitle>
-                                            Customer Information
-                                        </DialogTitle>
-                                        <DialogDescription>
-                                            Please enter customer details and
-                                            confirm the order.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="searchCustomer">
-                                                Search Existing Customer
-                                            </Label>
-                                            <div className="relative">
-                                                <Input
-                                                    id="searchCustomer"
-                                                    placeholder="Type customer name..."
-                                                    value={searchQuery}
-                                                    onChange={(e) =>
-                                                        handleSearchCustomer(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={
-                                                        isExistingCustomer
-                                                            ? 'border-green-500'
-                                                            : ''
-                                                    }
-                                                />
-                                                {isLoadingCustomers && (
-                                                    <Loader2 className="absolute top-3 right-9 h-4 w-4 animate-spin text-muted-foreground" />
-                                                )}
-                                                {isExistingCustomer && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={clearCustomer}
-                                                        className="absolute top-1 right-1 h-7"
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {showResults && (
-                                                    <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-white shadow-lg">
-                                                        {isLoadingCustomers ? (
-                                                            <div className="p-6 text-center">
-                                                                <Loader2 className="mx-auto mb-2 h-8 w-8 animate-spin text-muted-foreground/50" />
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    Searching
-                                                                    customers...
-                                                                </p>
-                                                            </div>
-                                                        ) : searchResults.length >
-                                                          0 ? (
-                                                            searchResults.map(
-                                                                (customer) => (
-                                                                    <div
-                                                                        key={
-                                                                            customer.id
-                                                                        }
-                                                                        onClick={() =>
-                                                                            selectCustomer(
-                                                                                customer,
-                                                                            )
-                                                                        }
-                                                                        className="cursor-pointer border-b p-3 last:border-b-0 hover:bg-gray-100"
-                                                                    >
-                                                                        <p className="font-medium">
-                                                                            {
-                                                                                customer.first_name
-                                                                            }{' '}
-                                                                            {
-                                                                                customer.last_name
-                                                                            }
-                                                                        </p>
-                                                                        <p className="text-xs text-muted-foreground">
-                                                                            {
-                                                                                customer.phone_number
-                                                                            }
-                                                                        </p>
-                                                                    </div>
-                                                                ),
-                                                            )
-                                                        ) : (
-                                                            <div className="p-6 text-center">
-                                                                <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    No customers
-                                                                    found
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {isExistingCustomer && (
-                                                <p className="flex items-center gap-1 text-xs text-green-600">
-                                                    ✓ Existing customer selected
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="firstName">
-                                                    First Name{' '}
-                                                    <span className="text-red-500">
-                                                        *
-                                                    </span>
-                                                </Label>
-                                                <Input
-                                                    id="firstName"
-                                                    placeholder="Enter first name"
-                                                    value={customerFirstName}
-                                                    onChange={(e) =>
-                                                        setCustomerFirstName(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={
-                                                        formErrors.first_name
-                                                            ? 'border-red-500'
-                                                            : ''
-                                                    }
-                                                />
-                                                {formErrors.first_name && (
-                                                    <p className="text-sm text-red-500">
-                                                        {formErrors.first_name}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="lastName">
-                                                    Last Name{' '}
-                                                    <span className="text-red-500">
-                                                        *
-                                                    </span>
-                                                </Label>
-                                                <Input
-                                                    id="lastName"
-                                                    placeholder="Enter last name"
-                                                    value={customerLastName}
-                                                    onChange={(e) =>
-                                                        setCustomerLastName(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={
-                                                        formErrors.last_name
-                                                            ? 'border-red-500'
-                                                            : ''
-                                                    }
-                                                />
-                                                {formErrors.last_name && (
-                                                    <p className="text-sm text-red-500">
-                                                        {formErrors.last_name}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customerAddress">
-                                                Address{' '}
-                                                <span className="text-red-500">
-                                                    *
-                                                </span>
-                                            </Label>
-                                            <Input
-                                                id="customerAddress"
-                                                placeholder="Enter customer address"
-                                                value={customerAddress}
-                                                onChange={(e) =>
-                                                    setCustomerAddress(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={
-                                                    formErrors.address
-                                                        ? 'border-red-500'
-                                                        : ''
-                                                }
-                                            />
-                                            {formErrors.address && (
-                                                <p className="text-sm text-red-500">
-                                                    {formErrors.address}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="city">
-                                                    City{' '}
-                                                    <span className="text-red-500">
-                                                        *
-                                                    </span>
-                                                </Label>
-                                                <Input
-                                                    id="city"
-                                                    placeholder="Enter city"
-                                                    value={customerCity}
-                                                    onChange={(e) =>
-                                                        setCustomerCity(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={
-                                                        formErrors.city
-                                                            ? 'border-red-500'
-                                                            : ''
-                                                    }
-                                                />
-                                                {formErrors.city && (
-                                                    <p className="text-sm text-red-500">
-                                                        {formErrors.city}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="province">
-                                                    Province{' '}
-                                                    <span className="text-red-500">
-                                                        *
-                                                    </span>
-                                                </Label>
-                                                <Input
-                                                    id="province"
-                                                    placeholder="Enter province"
-                                                    value={customerProvince}
-                                                    onChange={(e) =>
-                                                        setCustomerProvince(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={
-                                                        formErrors.province
-                                                            ? 'border-red-500'
-                                                            : ''
-                                                    }
-                                                />
-                                                {formErrors.province && (
-                                                    <p className="text-sm text-red-500">
-                                                        {formErrors.province}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="zipcode">
-                                                    Zipcode
-                                                </Label>
-                                                <Input
-                                                    id="zipcode"
-                                                    placeholder="Enter zipcode"
-                                                    value={customerZipcode}
-                                                    onChange={(e) =>
-                                                        setCustomerZipcode(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={
-                                                        formErrors.zipcode
-                                                            ? 'border-red-500'
-                                                            : ''
-                                                    }
-                                                />
-                                                {formErrors.zipcode && (
-                                                    <p className="text-sm text-red-500">
-                                                        {formErrors.zipcode}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="country">
-                                                    Country{' '}
-                                                    <span className="text-red-500">
-                                                        *
-                                                    </span>
-                                                </Label>
-                                                <Input
-                                                    id="country"
-                                                    placeholder="Enter country"
-                                                    value={customerCountry}
-                                                    onChange={(e) =>
-                                                        setCustomerCountry(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={
-                                                        formErrors.country
-                                                            ? 'border-red-500'
-                                                            : ''
-                                                    }
-                                                />
-                                                {formErrors.country && (
-                                                    <p className="text-sm text-red-500">
-                                                        {formErrors.country}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customerAddress">
-                                                Email
-                                            </Label>
-                                            <Input
-                                                id="email"
-                                                placeholder="Enter customer's email"
-                                                value={customerEmail}
-                                                onChange={(e) =>
-                                                    setCustomerEmail(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={
-                                                    formErrors.email
-                                                        ? 'border-red-500'
-                                                        : ''
-                                                }
-                                            />
-                                            {formErrors.email && (
-                                                <p className="text-sm text-red-500">
-                                                    {formErrors.email}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customerPhone">
-                                                Phone Number
-                                            </Label>
-                                            <Input
-                                                id="customerPhone"
-                                                placeholder="09XXXXXXXXX"
-                                                value={customerPhone}
-                                                onChange={(e) =>
-                                                    setCustomerPhone(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={
-                                                    formErrors.phone
-                                                        ? 'border-red-500'
-                                                        : ''
-                                                }
-                                            />
-                                            {formErrors.phone && (
-                                                <p className="text-sm text-red-500">
-                                                    {formErrors.phone}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="paymentMethod">
-                                                Payment Method{' '}
-                                                <span className="text-red-500">
-                                                    *
-                                                </span>
-                                            </Label>
-                                            <Select
-                                                value={paymentMethod}
-                                                onValueChange={setPaymentMethod}
-                                            >
-                                                <SelectTrigger id="paymentMethod">
-                                                    <SelectValue placeholder="Select payment method" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Cash">
-                                                        Cash
-                                                    </SelectItem>
-                                                    <SelectItem value="Gcash">
-                                                        Gcash
-                                                    </SelectItem>
-                                                    <SelectItem value="Bank Transfer">
-                                                        Bank Transfer
-                                                    </SelectItem>
-                                                    <SelectItem value="Debit/Credit Card">
-                                                        Debit/Credit Card
-                                                    </SelectItem>
-                                                    <SelectItem value="Home Credit/Skyro/Billease">
-                                                        Home
-                                                        Credit/Skyro/Billease
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="referenceNumber">
-                                                Reference Number
-                                                {paymentMethod !== 'Cash' && (
-                                                    <span className="text-red-500">
-                                                        *
-                                                    </span>
-                                                )}
-                                            </Label>
-                                            <Input
-                                                id="referenceNumber"
-                                                placeholder={
-                                                    paymentMethod === 'Cash'
-                                                        ? 'Not required for cash'
-                                                        : 'Enter reference number'
-                                                }
-                                                value={referenceNumber}
-                                                onChange={(e) =>
-                                                    setReferenceNumber(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={
-                                                    formErrors.reference_number
-                                                        ? 'border-red-500'
-                                                        : ''
-                                                }
-                                                disabled={
-                                                    paymentMethod === 'Cash'
-                                                }
-                                            />
-                                            {formErrors.reference_number && (
-                                                <p className="text-sm text-red-500">
-                                                    {
-                                                        formErrors.reference_number
-                                                    }
-                                                </p>
-                                            )}
-                                            <p className="text-xs text-muted-foreground">
-                                                {paymentMethod === 'Cash'
-                                                    ? 'Reference number not needed for cash payments'
-                                                    : 'Required for non-cash payments (Gcash, Bank Transfer, etc.)'}
-                                            </p>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="receiptNumber">
-                                                Receipt Number{' '}
-                                                <span className="text-red-500">
-                                                    *
-                                                </span>
-                                            </Label>
-                                            <Input
-                                                id="receiptNumber"
-                                                placeholder="#0000000934"
-                                                value={receiptNumber}
-                                                onChange={(e) =>
-                                                    setReceiptNumber(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={
-                                                    formErrors.receipt_number
-                                                        ? 'border-red-500'
-                                                        : ''
-                                                }
-                                            />
-                                            {formErrors.receipt_number && (
-                                                <p className="text-sm text-red-500">
-                                                    {formErrors.receipt_number}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-5">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="employee">
-                                                    Employee
-                                                </Label>
-                                                <Select
-                                                    disabled
-                                                    value={selectedEmployee}
-                                                    onValueChange={
-                                                        setSelectedEmployee
-                                                    }
-                                                >
-                                                    <SelectTrigger id="employee">
-                                                        <SelectValue placeholder="Select employee" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {employees.map(
-                                                            (emp) => (
-                                                                <SelectItem
-                                                                    key={emp.id}
-                                                                    value={emp.id.toString()}
-                                                                >
-                                                                    {
-                                                                        emp.full_name
-                                                                    }
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="branch">
-                                                    Branch
-                                                </Label>
-                                                <Select
-                                                    value={selectedLocation}
-                                                    onValueChange={
-                                                        setSelectedLocation
-                                                    }
-                                                >
-                                                    <SelectTrigger id="branch">
-                                                        <SelectValue placeholder="Select a branch" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {locations.map(
-                                                            (location) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        location.id
-                                                                    }
-                                                                    value={location.id.toString()}
-                                                                >
-                                                                    {
-                                                                        location.name
-                                                                    }
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        onClick={() => placeOrder()}
-                                        disabled={orders.length == 0}
-                                        className="w-full"
-                                    >
-                                        Confirm Order
-                                    </Button>
-                                </DialogContent>
-                            </Dialog>
-                        </CardContent>
-                    </Card>
-                </div>
+                <OrdersCard
+                    orders={orders}
+                    onRemoveOrder={(orderId) =>
+                        setOrders((current) =>
+                            current.filter((order) => order.id !== orderId),
+                        )
+                    }
+                    checkoutOpen={checkoutOpen}
+                    onCheckoutOpenChange={setCheckoutOpen}
+                    employees={employees}
+                    locations={locations}
+                    selectedEmployee={selectedEmployee}
+                    onSelectedEmployeeChange={setSelectedEmployee}
+                    selectedLocation={selectedLocation}
+                    onSelectedLocationChange={setSelectedLocation}
+                    onOrderCreated={handleOrderCreated}
+                />
             </div>
         </div>
     );

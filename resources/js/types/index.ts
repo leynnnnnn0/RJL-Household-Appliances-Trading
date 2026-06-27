@@ -158,6 +158,7 @@ export type Orderitem = {
 export type OrderWithrelations = Order & {
     order_items: OrderItemWithRelations[];
     location: Location;
+    branch: Branch;
     employee: User;
     customer: Customer;
 };
