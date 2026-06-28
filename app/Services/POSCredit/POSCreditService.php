@@ -30,6 +30,8 @@ class POSCreditService
 
     public function createOrder(array $data, array $documents = []): InstallmentOrder
     {
+
+    
         return DB::transaction(function () use ($data, $documents) {
             $items = $data['items'];
             $freeItems = $data['free_items'] ?? [];

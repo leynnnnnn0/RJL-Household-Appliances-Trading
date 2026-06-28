@@ -23,7 +23,7 @@ class SalesReportService
         $asOfDate = match (true) {
             isset($input['as_of_date']) => Carbon::parse($input['as_of_date']),
             isset($input['month']) => Carbon::createFromFormat('Y-m-d', $input['month'].'-07'),
-            default => now()->day(7),
+            default => now()->addMonth()->day(7),
         };
         $month = $asOfDate->format('Y-m');
 

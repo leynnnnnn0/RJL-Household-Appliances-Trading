@@ -17,7 +17,17 @@ class CustomerService
         return Customer::query()
             ->when($search, function (Builder $query, string $search) {
                 $query->where(function (Builder $query) use ($search) {
-                    $query->whereAny(['first_name', 'last_name', 'address', 'phone_number', 'email'], 'like', "%{$search}%");
+                    $terms = preg_split('/\s+/', trim($search));
+
+                    if (count($terms) > 1) {
+                        foreach ($terms as $term) {
+                            $query->where(function (Builder $query) use ($term) {
+                                $query->whereAny(['first_name', 'last_name', 'address', 'phone_number', 'email'], 'like', "%{$term}%");
+                            });
+                        }
+                    } else {
+                        $query->whereAny(['first_name', 'last_name', 'address', 'phone_number', 'email'], 'like', "%{$search}%");
+                    }
                 });
             })
             ->latest()

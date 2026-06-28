@@ -7,6 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Branch, ExpenseRecord } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 type DropdownUser = {
     id: number;
@@ -65,6 +66,12 @@ export default function Edit({ users, expense_record, branches }: PageProps) {
 
         post(`/expense-record/${expense_record.id}`, {
             forceFormData: true,
+            onSuccess: () => {
+                toast.success('Record Updated.');
+            },
+            onError: () => {
+                toast.error('Failed to update record. Please try again.');
+            },
         });
     };
 

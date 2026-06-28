@@ -79,8 +79,8 @@ function formatDateValue(date: Date): string {
 
 function formatDisplayDate(date: Date): string {
     return date.toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
+        month: 'long',
+        day: 'numeric',
         year: 'numeric',
     });
 }

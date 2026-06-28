@@ -14,9 +14,17 @@ class EmployeeService
         return Employee::query()
             ->when($search, function (Builder $query, string $search) {
                 $query->where(function (Builder $query) use ($search) {
-                    $query->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('remarks', 'like', "%{$search}%");
+                    $terms = preg_split('/\s+/', trim($search));
+
+                    if (count($terms) > 1) {
+                        foreach ($terms as $term) {
+                            $query->where(function (Builder $query) use ($term) {
+                                $query->whereAny(['first_name', 'last_name', 'remarks'], 'like', "%{$term}%");
+                            });
+                        }
+                    } else {
+                        $query->whereAny(['first_name', 'last_name', 'remarks'], 'like', "%{$search}%");
+                    }
                 });
             })
             ->latest()

@@ -32,7 +32,7 @@ export default function Create({ users, branches }: PageProps) {
             reference_number: '',
             remarks: '',
             receipt_path: null,
-            expense_date: '',
+            expense_date: new Date().toISOString().split('T')[0],
             branch_id: branches[0]?.id.toString(),
         });
 

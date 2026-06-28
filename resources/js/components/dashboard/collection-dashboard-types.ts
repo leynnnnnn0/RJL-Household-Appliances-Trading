@@ -10,6 +10,8 @@ export interface DashboardTransaction {
     is_voided: boolean;
     remarks: string;
     employee_name?: string;
+    type: string;
+    order_number: string;
 }
 
 export interface DashboardBranchOption {

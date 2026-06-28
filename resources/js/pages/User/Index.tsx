@@ -2,7 +2,7 @@ import PeopleIndexPage from '@/components/people/people-index-page';
 import { Button } from '@/components/ui/button';
 import { Paginated, User } from '@/types';
 import { router } from '@inertiajs/react';
-import { Eye } from 'lucide-react';
+import { Edit, Eye } from 'lucide-react';
 
 interface PageProps {
     users: Paginated<User>;
@@ -77,6 +77,18 @@ export default function Index({ users, filters }: PageProps) {
                                           aria-label="View user"
                                       >
                                           <Eye className="h-4 w-4" />
+                                      </Button>
+
+                                      <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-11 w-11 sm:h-9 sm:w-9"
+                                          onClick={() =>
+                                              router.visit(`/users/${user.id}/edit`)
+                                          }
+                                          aria-label="Edit user"
+                                      >
+                                          <Edit className="h-4 w-4" />
                                       </Button>
                                   </div>
                               ),

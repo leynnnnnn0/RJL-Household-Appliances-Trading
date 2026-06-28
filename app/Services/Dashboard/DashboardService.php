@@ -224,6 +224,8 @@ class DashboardService
                     ->implode(', ')
                 : $this->normalizePaymentMethod($payments->first()['payment_method']),
             'reference_number' => $payments->pluck('reference_number')->filter()->implode(', '),
+            'type' => 'cash',
+            'order_number' => $order->order_number
         ]);
     }
 
@@ -242,6 +244,8 @@ class DashboardService
             'created_at' => $order->created_at,
             'employee_name' => $order->employee->full_name ?? 'N/A',
             'remarks' => $order->order_items->map(fn ($item) => $item->item->model)->implode(', '),
+            'type' => 'cash',
+            'order_number' => $order->order_number
         ];
     }
 
@@ -260,6 +264,8 @@ class DashboardService
             'created_at' => $order->created_at,
             'employee_name' => $order->user->full_name ?? 'N/A',
             'remarks' => $order->installment_order_items->map(fn ($item) => $item->item->model)->implode(', '),
+            'type' => 'installment',
+            'order_number' => $order->order_number
         ];
     }
 
@@ -280,6 +286,8 @@ class DashboardService
             'created_at' => $payment->created_at,
             'employee_name' => $payment->user->full_name ?? 'N/A',
             'remarks' => $order->installment_order_items->map(fn ($item) => $item->item->model)->implode(', '),
+            'type' => 'installment',
+            'order_number' => $order->order_number
         ];
     }
 
@@ -305,6 +313,8 @@ class DashboardService
                     'is_voided' => false,
                     'employee_name' => $group->first()['employee_name'],
                     'remarks' => $group->first()['remarks'],
+                    'type' => 'installment',
+                    'order_number' => $group->first()['order_number'],
                 ];
             })
             ->values();

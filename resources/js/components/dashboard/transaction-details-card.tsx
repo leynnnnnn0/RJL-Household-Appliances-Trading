@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IconFileExport } from '@tabler/icons-react';
 import { FileText } from 'lucide-react';
 import type { DashboardTransaction } from './collection-dashboard-types';
+import { router } from '@inertiajs/react';
 
 interface TransactionDetailsCardProps {
     downloadUrl: string;
@@ -27,6 +28,14 @@ export function TransactionDetailsCard({
     transactions,
 }: TransactionDetailsCardProps) {
     const colSpan = showEmployee ? 9 : 8;
+
+    const goToDetails = (transaction: DashboardTransaction) => {
+        const route =
+            transaction.type === 'cash'
+                ? `/pos-cash-orders/${transaction.order_number}`
+                : `/pos-installment-orders/${transaction.order_number}`;
+        router.get(route, {}, { preserveState: true });
+    }
 
     return (
         <Card className="rounded-2xl border-slate-200 shadow-lg">
@@ -123,8 +132,9 @@ export function TransactionDetailsCard({
                         <tbody>
                             {transactions.map((transaction, index) => (
                                 <tr
+                                    onClick={() => goToDetails(transaction)}
                                     key={`${transaction.receipt_number}-${index}`}
-                                    className={`border-b border-slate-100 transition-colors hover:bg-slate-50 ${
+                                    className={`cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50 ${
                                         transaction.is_voided ? 'bg-rose-50' : index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
                                     }`}
                                 >
