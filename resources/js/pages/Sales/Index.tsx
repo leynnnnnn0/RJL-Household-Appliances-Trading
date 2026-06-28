@@ -6,14 +6,35 @@ import { SalesSummaryCards } from '@/components/sales/sales-summary-cards';
 import type { SalesBucketKey, SalesIndexProps } from '@/components/sales/types';
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
+import { Construction } from 'lucide-react';
 
-const bucketOrder: SalesBucketKey[] = ['current', '1_30', '31_60', '61_90', '90_plus'];
+const bucketOrder: SalesBucketKey[] = [
+    'current',
+    '1_30',
+    '31_60',
+    '61_90',
+    '90_plus',
+];
 
-export default function SalesIndex({ filters, branches, summary, agingTables, analytics }: SalesIndexProps) {
+export default function SalesIndex({
+    filters,
+    branches,
+    summary,
+    agingTables,
+    analytics,
+}: SalesIndexProps) {
     return (
         <AppLayout>
             <Head title="Sales" />
             <div className="space-y-6">
+                <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
+                    <Construction className="h-4 w-4 shrink-0" />
+                    <p className="text-sm font-medium">
+                        This page is currently under development. Some data or
+                        features may be incomplete or unavailable.
+                    </p>
+                </div>
+
                 <ModuleHeading
                     title="Sales"
                     description="Monitor installment receivables, aging risk, customer demand, and category sales performance"
@@ -25,7 +46,13 @@ export default function SalesIndex({ filters, branches, summary, agingTables, an
 
                 <div className="space-y-4">
                     {bucketOrder.map((bucket) => (
-                        <AgingTable key={bucket} bucket={bucket} filters={filters} table={agingTables[bucket]} preview />
+                        <AgingTable
+                            key={bucket}
+                            bucket={bucket}
+                            filters={filters}
+                            table={agingTables[bucket]}
+                            preview
+                        />
                     ))}
                 </div>
             </div>
