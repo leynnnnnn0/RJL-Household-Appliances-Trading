@@ -51,6 +51,7 @@ export const roleModulePermissions: Record<string, string[]> = {
         'can default',
         'can void',
         'can view installment orders sales',
+        'can view sales analytics',
     ],
     itemsModulePermission: [
         'can view items',

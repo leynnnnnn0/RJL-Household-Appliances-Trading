@@ -17,11 +17,7 @@ class CustomerService
         return Customer::query()
             ->when($search, function (Builder $query, string $search) {
                 $query->where(function (Builder $query) use ($search) {
-                    $query->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('address', 'like', "%{$search}%")
-                        ->orWhere('phone_number', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                    $query->whereAny(['first_name', 'last_name', 'address', 'phone_number', 'email'], 'like', "%{$search}%");
                 });
             })
             ->latest()

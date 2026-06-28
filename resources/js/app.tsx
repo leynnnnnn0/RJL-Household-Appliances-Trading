@@ -4,14 +4,20 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Toaster } from '@/components/ui/sonner';
 import { initializeTheme } from './hooks/use-appearance';
-import { Toaster } from "@/components/ui/sonner"
 
-const appName = "JDL";
+const appName = 'JDL';
+
+type AuthPermissions = {
+    permissions?: string[];
+    roles?: string[];
+};
 
 declare global {
     interface Window {
         can: (permission: string) => boolean;
+        rjlAuth?: AuthPermissions;
     }
 }
 
@@ -23,12 +29,18 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
-        // Set up the can function here where we have access to props
+        window.rjlAuth = (props.initialPage.props as { auth?: AuthPermissions }).auth;
+
         const can = (permission: string) => {
-            const auth = (props.initialPage.props as any).auth;
-            return auth.permissions?.includes(permission) || false;
+            const auth = window.rjlAuth;
+
+            return (
+                auth?.roles?.includes('super admin') ||
+                auth?.permissions?.includes(permission) ||
+                false
+            );
         };
-        
+
         window.can = can;
 
         const root = createRoot(el);
@@ -36,7 +48,7 @@ createInertiaApp({
         root.render(
             <StrictMode>
                 <App {...props} />
-                <Toaster position='top-right'/>
+                <Toaster position="top-right" />
             </StrictMode>,
         );
     },

@@ -32,5 +32,15 @@ export default [
     {
         ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'tailwind.config.js'],
     },
+    {
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unused-vars': 'warn',
+            'no-unused-vars': 'warn',
+            'react-hooks/immutability': 'warn',
+            'react-hooks/set-state-in-effect': 'warn',
+            'react-hooks/use-memo': 'warn',
+        },
+    },
     prettier, // Turn off all rules that might conflict with Prettier
 ];

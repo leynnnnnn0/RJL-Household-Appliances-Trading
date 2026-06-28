@@ -31,6 +31,7 @@ import axios from 'axios';
 import { AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import Background from '../../../images/plain_background.jpg';
 
 interface PageProps {
     locations: Location[];
@@ -586,170 +587,187 @@ export default function Index({
     }
 
     return (
-        <div className="min-h-screen bg-background">
-            <POSCreditPageHeader
-                sheetOpen={sheetOpen}
-                onSheetOpenChange={setSheetOpen}
-                onOpenSettings={() => setInterestConfigOpen(true)}
-                transactions={transactions}
-            />
+        <div
+            className="min-h-screen"
+            style={{
+                backgroundImage: `url(${Background})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundAttachment: 'fixed',
+            }}
+        >
+            <div className="min-h-screen">
+                <POSCreditPageHeader
+                    sheetOpen={sheetOpen}
+                    onSheetOpenChange={setSheetOpen}
+                    onOpenSettings={() => setInterestConfigOpen(true)}
+                    transactions={transactions}
+                />
 
-            <main className="container mx-auto max-w-7xl p-6">
-                <div className="mb-6">
-                    <h2 className="text-2xl font-bold tracking-tight">
-                        Credit Approval & Installment Setup
-                    </h2>
-                    <p className="text-muted-foreground">
-                        Complete the form to process a new installment
-                        application
-                    </p>
-                </div>
+                <main className="container mx-auto max-w-7xl p-6">
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold tracking-tight">
+                            Credit Approval & Installment Setup
+                        </h2>
+                        <p className="text-muted-foreground">
+                            Complete the form to process a new installment
+                            application
+                        </p>
+                    </div>
 
-                {validationError && !dialogOpen && (
-                    <Alert variant="destructive" className="mb-6">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{validationError}</AlertDescription>
-                    </Alert>
-                )}
+                    {validationError && !dialogOpen && (
+                        <Alert variant="destructive" className="mb-6">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                {validationError}
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
-                <div className="grid gap-6 xl:grid-cols-2">
-                    <ItemPaymentDetailsCard
-                        isPullOutItems={isPullOutItems}
-                        onPullOutToggle={handlePullOutToggle}
-                        searchTerm={searchTerm}
-                        onSearchTermChange={handleProductSearch}
-                        isLoadingProducts={isLoadingProducts}
-                        showDropdown={showDropdown}
-                        filteredProducts={filteredProducts}
-                        selectedProducts={selectedProducts}
-                        editedSRPs={editedSRPs}
-                        selectedTerm={selectedTerm}
-                        totalLCP={totalLCP}
-                        downPayment={downPayment}
-                        noDownPayment={noDownPayment}
-                        noInterestRate={noInterestRate}
-                        breakdown={paymentBreakdown}
-                        onProductSelect={handleProductSelect}
-                        onSRPChange={handleSRPChange}
-                        onRemoveItem={handleRemoveItem}
-                        onToggleFree={setProductToFree}
-                        onTermSelect={handleTermSelect}
-                        onNoDownPaymentToggle={handleNoDownPaymentToggle}
-                        onNoInterestRateToggle={handleNoInterestRateToggle}
-                        onDownPaymentChange={handleDownPaymentChange}
-                    />
+                    <div className="grid gap-6 xl:grid-cols-2">
+                        <ItemPaymentDetailsCard
+                            isPullOutItems={isPullOutItems}
+                            onPullOutToggle={handlePullOutToggle}
+                            searchTerm={searchTerm}
+                            onSearchTermChange={handleProductSearch}
+                            isLoadingProducts={isLoadingProducts}
+                            showDropdown={showDropdown}
+                            filteredProducts={filteredProducts}
+                            selectedProducts={selectedProducts}
+                            editedSRPs={editedSRPs}
+                            selectedTerm={selectedTerm}
+                            totalLCP={totalLCP}
+                            downPayment={downPayment}
+                            noDownPayment={noDownPayment}
+                            noInterestRate={noInterestRate}
+                            breakdown={paymentBreakdown}
+                            onProductSelect={handleProductSelect}
+                            onSRPChange={handleSRPChange}
+                            onRemoveItem={handleRemoveItem}
+                            onToggleFree={setProductToFree}
+                            onTermSelect={handleTermSelect}
+                            onNoDownPaymentToggle={handleNoDownPaymentToggle}
+                            onNoInterestRateToggle={handleNoInterestRateToggle}
+                            onDownPaymentChange={handleDownPaymentChange}
+                        />
 
-                    <CustomerInformationCard
-                        searchQuery={searchQuery}
-                        searchResults={searchResults}
-                        showResults={showResults}
-                        selectedCustomer={selectedCustomer}
-                        isExistingCustomer={isExistingCustomer}
-                        isLoadingCustomers={isLoadingCustomers}
-                        firstName={firstName}
-                        lastName={lastName}
-                        contact={contact}
-                        email={customerEmail}
-                        address={address}
-                        city={customerCity}
-                        province={customerProvince}
-                        zipcode={customerZipcode}
-                        country={customerCountry}
-                        onSearch={handleSearch}
-                        onSelectCustomer={selectCustomer}
-                        onClearCustomer={clearCustomer}
-                        onFirstNameChange={setFirstName}
-                        onLastNameChange={setLastName}
-                        onContactChange={setContact}
-                        onEmailChange={setCustomerEmail}
-                        onAddressChange={setAddress}
-                        onCityChange={setCustomerCity}
-                        onProvinceChange={setCustomerProvince}
-                        onZipcodeChange={setCustomerZipcode}
-                        onCountryChange={setCustomerCountry}
-                    />
+                        <CustomerInformationCard
+                            searchQuery={searchQuery}
+                            searchResults={searchResults}
+                            showResults={showResults}
+                            selectedCustomer={selectedCustomer}
+                            isExistingCustomer={isExistingCustomer}
+                            isLoadingCustomers={isLoadingCustomers}
+                            firstName={firstName}
+                            lastName={lastName}
+                            contact={contact}
+                            email={customerEmail}
+                            address={address}
+                            city={customerCity}
+                            province={customerProvince}
+                            zipcode={customerZipcode}
+                            country={customerCountry}
+                            onSearch={handleSearch}
+                            onSelectCustomer={selectCustomer}
+                            onClearCustomer={clearCustomer}
+                            onFirstNameChange={setFirstName}
+                            onLastNameChange={setLastName}
+                            onContactChange={setContact}
+                            onEmailChange={setCustomerEmail}
+                            onAddressChange={setAddress}
+                            onCityChange={setCustomerCity}
+                            onProvinceChange={setCustomerProvince}
+                            onZipcodeChange={setCustomerZipcode}
+                            onCountryChange={setCustomerCountry}
+                        />
 
-                    <CreditCheckCards
-                        selectedCustomer={selectedCustomer}
-                        employees={employees}
-                        ref1Name={ref1Name}
-                        ref1Contact={ref1Contact}
-                        visitDate={visitDate}
-                        investigatorId={investigatorId}
-                        employmentVerified={employmentVerified}
-                        investigationNotes={investigationNotes}
-                        idPresented={idPresented}
-                        idNumber={idNumber}
-                        civilStatus={civilStatus}
-                        spouseName={spouseName}
-                        spouseContactNumber={spouseContactNumber}
-                        onRefNameChange={setRef1Name}
-                        onRefContactChange={setRef1Contact}
-                        onVisitDateChange={setVisitDate}
-                        onInvestigatorChange={setInvestigatorId}
-                        onEmploymentVerifiedChange={setEmploymentVerified}
-                        onInvestigationNotesChange={setInvestigationNotes}
-                        onIdPresentedChange={setIdPresented}
-                        onIdNumberChange={setIdNumber}
-                        onCivilStatusChange={setCivilStatus}
-                        onSpouseNameChange={setSpouseName}
-                        onSpouseContactNumberChange={setSpouseContactNumber}
-                    />
+                        <CreditCheckCards
+                            selectedCustomer={selectedCustomer}
+                            employees={employees}
+                            ref1Name={ref1Name}
+                            ref1Contact={ref1Contact}
+                            visitDate={visitDate}
+                            investigatorId={investigatorId}
+                            employmentVerified={employmentVerified}
+                            investigationNotes={investigationNotes}
+                            idPresented={idPresented}
+                            idNumber={idNumber}
+                            civilStatus={civilStatus}
+                            spouseName={spouseName}
+                            spouseContactNumber={spouseContactNumber}
+                            onRefNameChange={setRef1Name}
+                            onRefContactChange={setRef1Contact}
+                            onVisitDateChange={setVisitDate}
+                            onInvestigatorChange={setInvestigatorId}
+                            onEmploymentVerifiedChange={setEmploymentVerified}
+                            onInvestigationNotesChange={setInvestigationNotes}
+                            onIdPresentedChange={setIdPresented}
+                            onIdNumberChange={setIdNumber}
+                            onCivilStatusChange={setCivilStatus}
+                            onSpouseNameChange={setSpouseName}
+                            onSpouseContactNumberChange={setSpouseContactNumber}
+                        />
 
-                    <DocumentsCard
-                        files={uploadedFiles}
-                        onUpload={handleFileUpload}
-                        onRemove={removeFile}
-                    />
-                </div>
+                        <DocumentsCard
+                            files={uploadedFiles}
+                            onUpload={handleFileUpload}
+                            onRemove={removeFile}
+                        />
+                    </div>
 
-                <div className="mt-6 flex justify-end gap-3">
-                    <Button variant="outline" size="lg">
-                        Save as Draft
-                    </Button>
-                    <Button size="lg" className="min-w-40" onClick={openDialog}>
-                        Create Account
-                    </Button>
-                </div>
-            </main>
+                    <div className="mt-6 flex justify-end gap-3">
+                        <Button variant="outline" size="lg">
+                            Save as Draft
+                        </Button>
+                        <Button
+                            size="lg"
+                            className="min-w-40"
+                            onClick={openDialog}
+                        >
+                            Create Account
+                        </Button>
+                    </div>
+                </main>
 
-            <InterestConfigDialog
-                open={interestConfigOpen}
-                interestConfigs={interestConfigs}
-                tempInterestConfigs={tempInterestConfigs}
-                lcpMarkupRate={lcpMarkupRate}
-                lcpAdditionalCharge={lcpAdditionalCharge}
-                tempLcpMarkupRate={tempLcpMarkupRate}
-                tempLcpAdditionalCharge={tempLcpAdditionalCharge}
-                onOpenChange={setInterestConfigOpen}
-                onTempInterestConfigsChange={setTempInterestConfigs}
-                onTempLcpMarkupRateChange={setTempLcpMarkupRate}
-                onTempLcpAdditionalChargeChange={setTempLcpAdditionalCharge}
-                onUpdateInterestConfig={updateInterestConfig}
-                onReset={resetInterestConfigs}
-                onSave={saveInterestConfigs}
-            />
+                <InterestConfigDialog
+                    open={interestConfigOpen}
+                    interestConfigs={interestConfigs}
+                    tempInterestConfigs={tempInterestConfigs}
+                    lcpMarkupRate={lcpMarkupRate}
+                    lcpAdditionalCharge={lcpAdditionalCharge}
+                    tempLcpMarkupRate={tempLcpMarkupRate}
+                    tempLcpAdditionalCharge={tempLcpAdditionalCharge}
+                    onOpenChange={setInterestConfigOpen}
+                    onTempInterestConfigsChange={setTempInterestConfigs}
+                    onTempLcpMarkupRateChange={setTempLcpMarkupRate}
+                    onTempLcpAdditionalChargeChange={setTempLcpAdditionalCharge}
+                    onUpdateInterestConfig={updateInterestConfig}
+                    onReset={resetInterestConfigs}
+                    onSave={saveInterestConfigs}
+                />
 
-            <CheckoutDialog
-                open={dialogOpen}
-                locations={locations}
-                validationError={validationError}
-                receiptNumber={receiptNumber}
-                transactionDate={transactionDate}
-                selectedLocation={selectedLocation}
-                modeOfPayment={modeOfPayment}
-                referenceNumber={referenceNumber}
-                downPayment={downPayment}
-                isSubmitting={isSubmitting}
-                onOpenChange={setDialogOpen}
-                onReceiptNumberChange={setReceiptNumber}
-                onTransactionDateChange={setTransactionDate}
-                onSelectedLocationChange={setSelectedLocation}
-                onModeOfPaymentChange={setModeOfPayment}
-                onReferenceNumberChange={setReferenceNumber}
-                onClearValidationError={() => setValidationError('')}
-                onSubmit={handleSubmit}
-            />
+                <CheckoutDialog
+                    open={dialogOpen}
+                    locations={locations}
+                    validationError={validationError}
+                    receiptNumber={receiptNumber}
+                    transactionDate={transactionDate}
+                    selectedLocation={selectedLocation}
+                    modeOfPayment={modeOfPayment}
+                    referenceNumber={referenceNumber}
+                    downPayment={downPayment}
+                    isSubmitting={isSubmitting}
+                    onOpenChange={setDialogOpen}
+                    onReceiptNumberChange={setReceiptNumber}
+                    onTransactionDateChange={setTransactionDate}
+                    onSelectedLocationChange={setSelectedLocation}
+                    onModeOfPaymentChange={setModeOfPayment}
+                    onReferenceNumberChange={setReferenceNumber}
+                    onClearValidationError={() => setValidationError('')}
+                    onSubmit={handleSubmit}
+                />
+            </div>
         </div>
     );
 }

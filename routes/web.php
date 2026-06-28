@@ -18,6 +18,7 @@ use App\Http\Controllers\POSCreditController;
 use App\Http\Controllers\POSCreditOrderController;
 use App\Http\Controllers\POSCreditOrderSalesController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SalesController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -111,6 +112,12 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:can view installment orders sales')->group(function () {
         Route::resource('/pos-installment-orders-sales', POSCreditOrderSalesController::class);
+    });
+
+    Route::middleware('permission:can view installment orders sales')->group(function () {
+        Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');
+        Route::get('/sales/aging', [SalesController::class, 'showBucket'])->name('sales.aging.show');
+        Route::get('/sales/aging/download-pdf', [SalesController::class, 'downloadPdf'])->name('sales.aging.download-pdf');
     });
 
     /*

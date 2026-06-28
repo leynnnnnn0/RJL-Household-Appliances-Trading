@@ -11,7 +11,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { CreditCard, Menu, Settings } from 'lucide-react';
-
+import Logo from "../../../images/logo.png";
 interface POSCreditPageHeaderProps {
     sheetOpen: boolean;
     onSheetOpenChange: (open: boolean) => void;
@@ -30,10 +30,10 @@ export function POSCreditPageHeader({
             <div className="container mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
                 <a
                     href="/"
-                    className="flex items-center gap-3 transition-opacity hover:opacity-80"
+                    className="flex items-center transition-opacity hover:opacity-80"
                 >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                        <CreditCard className="h-5 w-5 text-primary-foreground" />
+                    <div className="flex items-center justify-center">
+                        <img src={Logo} alt="Logo" className="h-24 w-24" />
                     </div>
                     <div>
                         <h1 className="text-xl font-bold tracking-tight">

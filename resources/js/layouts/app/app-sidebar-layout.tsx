@@ -4,13 +4,25 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { type BreadcrumbItem } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { type PropsWithChildren } from 'react';
+import { useEffect, type PropsWithChildren } from 'react';
 
 export default function AppSidebarLayout({
     children,
     breadcrumbs = [],
 }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
-    const { url } = usePage();
+    const page = usePage();
+    const { auth } = page.props as {
+        auth?: {
+            permissions?: string[];
+            roles?: string[];
+        };
+    };
+    const { url } = page;
+
+    useEffect(() => {
+        window.rjlAuth = auth;
+    }, [auth]);
+
     const resolvedBreadcrumbs =
         breadcrumbs.length > 0 ? breadcrumbs : breadcrumbsFromUrl(url);
 

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchInput } from '@/components/ui/search-input';
 import { formatPOSCashCurrency, POSCashProduct } from '@/lib/pos-cash';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Search } from 'lucide-react';
 
 interface ProductSearchCardProps {
     searchTerm: string;

@@ -7,6 +7,8 @@ import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import Background from "../../../images/plain_background.jpg";
+import Logo from "../../../images/logo.png";
 
 interface PageProps {
     employees: User[];
@@ -139,75 +141,86 @@ export default function Index({
     };
 
     return (
-        <div className="container mx-auto max-w-7xl p-4 sm:p-6">
-            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <a
-                    href="/"
-                    className="flex items-center gap-3 transition-opacity hover:opacity-80"
-                >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                        <span className="text-xl font-bold text-primary-foreground">
-                            P
-                        </span>
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                            Point of Sale
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Search products and process sales
-                        </p>
-                    </div>
-                </a>
+        <div
+            className="min-h-screen"
+            style={{
+                backgroundImage: `url(${Background})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundAttachment: 'fixed',
+            }}
+        >
+            <div className="container mx-auto max-w-7xl p-4 sm:p-6">
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <a
+                        href="/"
+                        className="flex items-center transition-opacity hover:opacity-80"
+                    >
+                        <div className="flex items-center justify-center rounded-lg ">
+                           <img src={Logo} alt="Logo" className="h-24 w-24" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                                Point of Sale
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                Search products and process sales
+                            </p>
+                        </div>
+                    </a>
 
-                <TransactionHistorySheet
-                    open={sheetOpen}
-                    onOpenChange={setSheetOpen}
-                    transactions={transactions}
-                />
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                    <ProductSearchCard
-                        searchTerm={searchTerm}
-                        onSearchChange={setSearchTerm}
-                        isLoading={isLoadingProducts}
-                        showDropdown={showDropdown}
-                        products={filteredProducts}
-                        selectedProduct={selectedProduct}
-                        onSelectProduct={handleProductSelect}
-                        saleAmount={saleAmount}
-                        onSaleAmountChange={setSaleAmount}
-                        isFree={isFree}
-                        onFreeChange={() => setIsFree((current) => !current)}
-                        saleAmountError={saleAmountError}
-                        onAddOrder={handleAddOrder}
-                        canAddOrder={
-                            !!selectedProduct &&
-                            !!selectedEmployee &&
-                            !!saleAmount
-                        }
+                    <TransactionHistorySheet
+                        open={sheetOpen}
+                        onOpenChange={setSheetOpen}
+                        transactions={transactions}
                     />
                 </div>
 
-                <OrdersCard
-                    orders={orders}
-                    onRemoveOrder={(orderId) =>
-                        setOrders((current) =>
-                            current.filter((order) => order.id !== orderId),
-                        )
-                    }
-                    checkoutOpen={checkoutOpen}
-                    onCheckoutOpenChange={setCheckoutOpen}
-                    employees={employees}
-                    locations={locations}
-                    selectedEmployee={selectedEmployee}
-                    onSelectedEmployeeChange={setSelectedEmployee}
-                    selectedLocation={selectedLocation}
-                    onSelectedLocationChange={setSelectedLocation}
-                    onOrderCreated={handleOrderCreated}
-                />
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <div className="lg:col-span-2">
+                        <ProductSearchCard
+                            searchTerm={searchTerm}
+                            onSearchChange={setSearchTerm}
+                            isLoading={isLoadingProducts}
+                            showDropdown={showDropdown}
+                            products={filteredProducts}
+                            selectedProduct={selectedProduct}
+                            onSelectProduct={handleProductSelect}
+                            saleAmount={saleAmount}
+                            onSaleAmountChange={setSaleAmount}
+                            isFree={isFree}
+                            onFreeChange={() =>
+                                setIsFree((current) => !current)
+                            }
+                            saleAmountError={saleAmountError}
+                            onAddOrder={handleAddOrder}
+                            canAddOrder={
+                                !!selectedProduct &&
+                                !!selectedEmployee &&
+                                !!saleAmount
+                            }
+                        />
+                    </div>
+
+                    <OrdersCard
+                        orders={orders}
+                        onRemoveOrder={(orderId) =>
+                            setOrders((current) =>
+                                current.filter((order) => order.id !== orderId),
+                            )
+                        }
+                        checkoutOpen={checkoutOpen}
+                        onCheckoutOpenChange={setCheckoutOpen}
+                        employees={employees}
+                        locations={locations}
+                        selectedEmployee={selectedEmployee}
+                        onSelectedEmployeeChange={setSelectedEmployee}
+                        selectedLocation={selectedLocation}
+                        onSelectedLocationChange={setSelectedLocation}
+                        onOrderCreated={handleOrderCreated}
+                    />
+                </div>
             </div>
         </div>
     );

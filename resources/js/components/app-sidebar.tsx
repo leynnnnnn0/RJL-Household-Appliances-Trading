@@ -58,6 +58,12 @@ const mainNavItems: NavItem[] = [
 
 const salesNavItems: NavItem[] = [
   {
+    title: 'Sales',
+    href: '/sales',
+    icon: ChartBar,
+    permission: 'can view installment orders sales'
+  },
+  {
     title: 'POS Cash Orders',
     href: '/pos-cash-orders',
     icon: IconMoneybag,
