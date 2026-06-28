@@ -34,7 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { Employee, Paginated } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2, Search } from 'lucide-react';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
