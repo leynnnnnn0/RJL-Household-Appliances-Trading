@@ -10,6 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -214,13 +215,17 @@ function TextField({
     return (
         <div className="space-y-2">
             <Label htmlFor={id}>{label}</Label>
-            <Input
-                id={id}
-                type={type}
-                placeholder={placeholder}
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-            />
+            {type === 'date' ? (
+                <DatePicker id={id} value={value} onChange={onChange} />
+            ) : (
+                <Input
+                    id={id}
+                    type={type}
+                    placeholder={placeholder}
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                />
+            )}
         </div>
     );
 }

@@ -4,6 +4,7 @@ import { Head } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, DollarSign, TrendingUp, TrendingDown, Wallet, CreditCard, Banknote, Receipt, FileText, Filter, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -135,11 +136,10 @@ export default function OwnerDashboard({
                   <Label htmlFor="fromDate" className="text-slate-700 font-semibold mb-2 block">
                     From Date
                   </Label>
-                  <Input
+                  <DatePicker
                     id="fromDate"
-                    type="date"
                     value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
+                    onChange={setFromDate}
                     className="w-full"
                   />
                 </div>
@@ -147,11 +147,10 @@ export default function OwnerDashboard({
                   <Label htmlFor="toDate" className="text-slate-700 font-semibold mb-2 block">
                     To Date
                   </Label>
-                  <Input
+                  <DatePicker
                     id="toDate"
-                    type="date"
                     value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
+                    onChange={setToDate}
                     className="w-full"
                   />
                 </div>

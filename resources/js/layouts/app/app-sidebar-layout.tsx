@@ -3,21 +3,53 @@ import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { type BreadcrumbItem } from '@/types';
+import { usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
 export default function AppSidebarLayout({
     children,
     breadcrumbs = [],
 }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
+    const { url } = usePage();
+    const resolvedBreadcrumbs =
+        breadcrumbs.length > 0 ? breadcrumbs : breadcrumbsFromUrl(url);
+
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
             <AppContent variant="sidebar" className="overflow-x-hidden">
-                <AppSidebarHeader breadcrumbs={breadcrumbs} />
-                 <div className="p-5 space-y-5">
-                    {children}
-                 </div>
+                <AppSidebarHeader breadcrumbs={resolvedBreadcrumbs} />
+                <div className="space-y-5 p-5">{children}</div>
             </AppContent>
         </AppShell>
     );
+}
+
+function breadcrumbsFromUrl(url: string): BreadcrumbItem[] {
+    const pathname = url.split('?')[0] || '/';
+    const segments = pathname.split('/').filter(Boolean);
+
+    if (segments.length === 0) {
+        return [{ title: 'Dashboard', href: '/dashboard' }];
+    }
+
+    return segments.map((segment, index) => {
+        const href = `/${segments.slice(0, index + 1).join('/')}`;
+
+        return {
+            title: titleFromSegment(segment),
+            href,
+        };
+    });
+}
+
+function titleFromSegment(segment: string): string {
+    if (/^\d+$/.test(segment)) {
+        return `#${segment}`;
+    }
+
+    return segment
+        .split('-')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 }

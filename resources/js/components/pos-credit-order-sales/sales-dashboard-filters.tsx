@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -46,18 +46,10 @@ export function CreditSalesDashboardFilters({
             </p>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <FilterField label="Date From">
-                    <Input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(event) => setDateFrom(event.target.value)}
-                    />
+                    <DatePicker value={dateFrom} onChange={setDateFrom} />
                 </FilterField>
                 <FilterField label="Date To">
-                    <Input
-                        type="date"
-                        value={dateTo}
-                        onChange={(event) => setDateTo(event.target.value)}
-                    />
+                    <DatePicker value={dateTo} onChange={setDateTo} />
                 </FilterField>
                 <FilterField label="Item Type">
                     <Select value={itemType} onValueChange={setItemType}>

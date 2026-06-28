@@ -19,8 +19,10 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PHPhoneInput } from '@/components/ui/ph-phone-input';
 import {
     Select,
     SelectContent,
@@ -280,14 +282,13 @@ export default function Edit({ backUrl, customer, employees }: EditProps) {
                                     <Label htmlFor="phone_number">
                                         Phone Number
                                     </Label>
-                                    <Input
+                                    <PHPhoneInput
                                         id="phone_number"
-                                        type="tel"
                                         value={data.phone_number}
-                                        onChange={(e) =>
+                                        onChange={(value) =>
                                             setData(
                                                 'phone_number',
-                                                e.target.value,
+                                                value,
                                             )
                                         }
                                     />
@@ -436,14 +437,13 @@ export default function Edit({ backUrl, customer, employees }: EditProps) {
                                         Reference Phone Number{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Input
+                                    <PHPhoneInput
                                         id="reference_phone_number"
-                                        type="tel"
                                         value={data.reference_phone_number}
-                                        onChange={(e) =>
+                                        onChange={(value) =>
                                             setData(
                                                 'reference_phone_number',
-                                                e.target.value,
+                                                value,
                                             )
                                         }
                                     />
@@ -503,14 +503,13 @@ export default function Edit({ backUrl, customer, employees }: EditProps) {
                                         Home Visit Date{' '}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Input
+                                    <DatePicker
                                         id="home_visit_date"
-                                        type="date"
                                         value={data.home_visit_date}
-                                        onChange={(e) =>
+                                        onChange={(value) =>
                                             setData(
                                                 'home_visit_date',
-                                                e.target.value,
+                                                value,
                                             )
                                         }
                                     />

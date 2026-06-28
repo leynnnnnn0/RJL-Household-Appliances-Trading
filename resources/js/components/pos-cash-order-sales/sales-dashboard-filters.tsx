@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
     Select,
     SelectContent,
@@ -42,16 +42,12 @@ export function SalesDashboardFilters({ filters, locations }: Props) {
         );
     };
 
-    const handleDateFromChange = (
-        event: React.ChangeEvent<HTMLInputElement>,
-    ) => {
-        const nextDate = event.target.value;
+    const handleDateFromChange = (nextDate: string) => {
         setDateFrom(nextDate);
         applyFilters(nextDate, dateTo, selectedLocation);
     };
 
-    const handleDateToChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const nextDate = event.target.value;
+    const handleDateToChange = (nextDate: string) => {
         setDateTo(nextDate);
         applyFilters(dateFrom, nextDate, selectedLocation);
     };
@@ -65,19 +61,11 @@ export function SalesDashboardFilters({ filters, locations }: Props) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
                 <label className="text-sm font-medium">From Date</label>
-                <Input
-                    type="date"
-                    value={dateFrom}
-                    onChange={handleDateFromChange}
-                />
+                <DatePicker value={dateFrom} onChange={handleDateFromChange} />
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">To Date</label>
-                <Input
-                    type="date"
-                    value={dateTo}
-                    onChange={handleDateToChange}
-                />
+                <DatePicker value={dateTo} onChange={handleDateToChange} />
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Location</label>

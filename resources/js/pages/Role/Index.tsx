@@ -1,5 +1,4 @@
 import ModuleHeading from '@/components/cards/module-heading';
-import SearchBox from '@/components/cards/search-box';
 import TableContainer from '@/components/cards/table-container';
 import Pagination from '@/components/pagination';
 import {
@@ -16,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import {
     Table,
     TableBody,
@@ -84,14 +83,12 @@ export default function Index({ roles, filters }: Props) {
             </ModuleHeading>
 
             <div className="space-y-4">
-                <SearchBox>
-                    <Input
-                        placeholder="Search roles..."
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        className="pl-10"
-                    />
-                </SearchBox>
+                <SearchInput
+                    placeholder="Search roles..."
+                    value={search}
+                    onChange={setSearch}
+                    className="sm:max-w-sm"
+                />
 
                 <div className="hidden md:block">
                     <TableContainer>

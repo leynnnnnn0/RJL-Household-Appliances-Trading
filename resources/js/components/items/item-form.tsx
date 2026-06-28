@@ -7,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -338,15 +339,24 @@ function TextField({
             <FieldLabel htmlFor={name} required={required}>
                 {label}
             </FieldLabel>
-            <Input
-                id={name}
-                type={type}
-                min={min}
-                step={step}
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                placeholder={placeholder}
-            />
+            {type === 'date' ? (
+                <DatePicker
+                    id={name}
+                    value={String(value || '')}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                />
+            ) : (
+                <Input
+                    id={name}
+                    type={type}
+                    min={min}
+                    step={step}
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    placeholder={placeholder}
+                />
+            )}
             <FieldError message={error} />
         </div>
     );

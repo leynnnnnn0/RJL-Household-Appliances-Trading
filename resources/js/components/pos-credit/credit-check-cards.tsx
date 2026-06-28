@@ -1,8 +1,10 @@
 import type { Customer, Employee } from '@/components/pos-credit/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PHPhoneInput } from '@/components/ui/ph-phone-input';
 import {
     Select,
     SelectContent,
@@ -89,10 +91,9 @@ export function CreditCheckCards({
                         }
                         onChange={onRefNameChange}
                     />
-                    <TextField
+                    <PhoneField
                         id="ref1Contact"
                         label="Contact *"
-                        placeholder="0912 345 6789"
                         value={ref1Contact}
                         disabled={
                             selectedCustomer?.reference?.phone_number != null
@@ -110,10 +111,9 @@ export function CreditCheckCards({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <TextField
+                    <DateField
                         id="visitDate"
                         label="Home Visit Date *"
-                        type="date"
                         value={visitDate}
                         disabled={investigation?.home_visit_date != null}
                         onChange={onVisitDateChange}
@@ -234,10 +234,9 @@ export function CreditCheckCards({
                                 disabled={investigation?.spouse_name != null}
                                 onChange={onSpouseNameChange}
                             />
-                            <TextField
+                            <PhoneField
                                 id="spouseContactNumber"
                                 label="Spouse Contact Number"
-                                placeholder="0912 345 6789"
                                 value={spouseContactNumber}
                                 disabled={
                                     investigation?.spouse_contact_number != null
@@ -248,6 +247,58 @@ export function CreditCheckCards({
                     )}
                 </CardContent>
             </Card>
+        </div>
+    );
+}
+
+function PhoneField({
+    id,
+    label,
+    value,
+    disabled,
+    onChange,
+}: {
+    id: string;
+    label: string;
+    value: string;
+    disabled?: boolean;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className="space-y-2">
+            <Label htmlFor={id}>{label}</Label>
+            <PHPhoneInput
+                id={id}
+                value={value}
+                disabled={disabled}
+                onChange={onChange}
+            />
+        </div>
+    );
+}
+
+function DateField({
+    id,
+    label,
+    value,
+    disabled,
+    onChange,
+}: {
+    id: string;
+    label: string;
+    value: string;
+    disabled?: boolean;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className="space-y-2">
+            <Label htmlFor={id}>{label}</Label>
+            <DatePicker
+                id={id}
+                value={value}
+                disabled={disabled}
+                onChange={onChange}
+            />
         </div>
     );
 }

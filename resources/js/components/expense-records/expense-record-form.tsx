@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -206,12 +207,11 @@ export default function ExpenseRecordForm({
                             <RequiredLabel htmlFor="expense_date">
                                 Expense Date
                             </RequiredLabel>
-                            <Input
+                            <DatePicker
                                 id="expense_date"
-                                type="date"
                                 value={data.expense_date}
-                                onChange={(event) =>
-                                    setData('expense_date', event.target.value)
+                                onChange={(value) =>
+                                    setData('expense_date', value)
                                 }
                             />
                             <FieldError message={errors.expense_date} />

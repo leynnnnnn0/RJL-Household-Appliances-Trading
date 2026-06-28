@@ -9,8 +9,9 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SearchInput } from '@/components/ui/search-input';
 import { formatPOSCashCurrency, POSCashProduct } from '@/lib/pos-cash';
-import { Loader2, Plus, Search } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 
 interface ProductSearchCardProps {
     searchTerm: string;
@@ -56,17 +57,14 @@ export default function ProductSearchCard({
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="relative">
-                        <Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
                         {isLoading && (
-                            <Loader2 className="absolute top-3 right-3 h-4 w-4 animate-spin text-muted-foreground" />
+                            <Loader2 className="absolute top-3 right-3 z-10 h-4 w-4 animate-spin text-muted-foreground" />
                         )}
-                        <Input
+                        <SearchInput
                             placeholder="Search products..."
                             value={searchTerm}
-                            onChange={(event) =>
-                                onSearchChange(event.target.value)
-                            }
-                            className="pl-9"
+                            onChange={onSearchChange}
+                            inputClassName={isLoading ? 'pr-9' : ''}
                         />
                         {showDropdown && (
                             <ProductSearchResults

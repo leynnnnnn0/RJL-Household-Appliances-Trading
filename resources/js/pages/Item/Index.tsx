@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SearchInput } from '@/components/ui/search-input';
 import {
     Select,
     SelectContent,
@@ -221,17 +222,12 @@ export default function Index({ items, suppliers, locations }: PageProps) {
                     <CardContent className="pt-6">
                         <div className="flex flex-col gap-4">
                             {/* Search */}
-                            <div className="relative w-full">
-                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search items by brand, description, or model..."
-                                    value={searchQuery}
-                                    onChange={(e) =>
-                                        setSearchQuery(e.target.value)
-                                    }
-                                    className="h-11 pl-10"
-                                />
-                            </div>
+                            <SearchInput
+                                placeholder="Search items by brand, description, or model..."
+                                value={searchQuery}
+                                onChange={setSearchQuery}
+                                inputClassName="h-11"
+                            />
 
                             {/* Filter Row */}
                             <div className="flex flex-col gap-3">

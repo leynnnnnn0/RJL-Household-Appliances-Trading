@@ -1,3 +1,4 @@
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -138,12 +139,7 @@ export function PaidDateField({
     onChange: (value: string) => void;
 }) {
     return (
-        <Input
-            type="date"
-            className="h-9 text-xs"
-            value={value || ''}
-            onChange={(event) => onChange(event.target.value)}
-        />
+        <DatePicker value={value || ''} onChange={onChange} />
     );
 }
 

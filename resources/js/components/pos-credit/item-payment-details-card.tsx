@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SearchInput } from '@/components/ui/search-input';
 import { Separator } from '@/components/ui/separator';
 import { Briefcase, Loader2, Search, X } from 'lucide-react';
 
@@ -143,15 +144,14 @@ function ProductSearch({
         <div className="space-y-2">
             <Label>Search Product *</Label>
             <div className="relative">
-                <Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
                 {isLoading && (
-                    <Loader2 className="absolute top-3 right-3 h-4 w-4 animate-spin text-muted-foreground" />
+                    <Loader2 className="absolute top-3 right-3 z-10 h-4 w-4 animate-spin text-muted-foreground" />
                 )}
-                <Input
+                <SearchInput
                     placeholder="Search products..."
                     value={value}
-                    onChange={(event) => onChange(event.target.value)}
-                    className="pl-9"
+                    onChange={onChange}
+                    inputClassName={isLoading ? 'pr-9' : ''}
                 />
                 {showDropdown && (
                     <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover shadow-md">

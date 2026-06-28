@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
     Popover,
     PopoverContent,
@@ -14,8 +14,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { IconQuestionMark } from '@tabler/icons-react';
-import { Calendar, Filter, MapPin, Search, User, X } from 'lucide-react';
+import { Calendar, Filter, MapPin, User, X } from 'lucide-react';
 import { useState } from 'react';
+import { SearchInput } from '../ui/search-input';
 import {
     POSCashOrderFilterActions,
     POSCashOrderFilterOptions,
@@ -102,28 +103,6 @@ export function CashOrderFilters({
     );
 }
 
-function SearchInput({
-    value,
-    onChange,
-    placeholder,
-}: {
-    value: string;
-    onChange: (value: string) => void;
-    placeholder: string;
-}) {
-    return (
-        <div className="relative flex-1">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-                placeholder={placeholder}
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                className="pl-9"
-            />
-        </div>
-    );
-}
-
 function FilterFields({
     filters,
     locations,
@@ -142,22 +121,14 @@ function FilterFields({
                 <label className="flex items-center gap-1.5 text-sm font-medium">
                     <Calendar className="h-4 w-4" /> Date From
                 </label>
-                <Input
-                    type="date"
-                    value={filters.dateFrom}
-                    onChange={(event) => setDateFrom(event.target.value)}
-                />
+                <DatePicker value={filters.dateFrom} onChange={setDateFrom} />
             </div>
 
             <div className="space-y-2">
                 <label className="flex items-center gap-1.5 text-sm font-medium">
                     <Calendar className="h-4 w-4" /> Date To
                 </label>
-                <Input
-                    type="date"
-                    value={filters.dateTo}
-                    onChange={(event) => setDateTo(event.target.value)}
-                />
+                <DatePicker value={filters.dateTo} onChange={setDateTo} />
             </div>
 
             <div className="space-y-2">

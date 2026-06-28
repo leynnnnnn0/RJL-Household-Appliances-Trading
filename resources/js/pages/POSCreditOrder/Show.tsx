@@ -16,6 +16,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -1707,14 +1708,13 @@ export default function Show({
                                                     <Label htmlFor="paid_date">
                                                         Payment Date *
                                                     </Label>
-                                                    <Input
+                                                    <DatePicker
                                                         id="paid_date"
-                                                        type="date"
                                                         value={data.paid_date}
-                                                        onChange={(e) =>
+                                                        onChange={(value) =>
                                                             setData(
                                                                 'paid_date',
-                                                                e.target.value,
+                                                                value,
                                                             )
                                                         }
                                                         className={
@@ -2186,17 +2186,16 @@ export default function Show({
                                     <Label htmlFor="edit_history_paid_date">
                                         Payment Date *
                                     </Label>
-                                    <Input
+                                    <DatePicker
                                         id="edit_history_paid_date"
-                                        type="date"
                                         value={
                                             editPaymentHistoryForm.data
                                                 .paid_date
                                         }
-                                        onChange={(e) =>
+                                        onChange={(value) =>
                                             editPaymentHistoryForm.setData(
                                                 'paid_date',
-                                                e.target.value,
+                                                value,
                                             )
                                         }
                                         className={
@@ -2915,14 +2914,13 @@ export default function Show({
 
                         <div className="space-y-2">
                             <Label htmlFor="paid_date">Payment Date *</Label>
-                            <Input
+                            <DatePicker
                                 id="paid_date"
-                                type="date"
                                 value={accelerationForm.data.paid_date}
-                                onChange={(e) =>
+                                onChange={(value) =>
                                     accelerationForm.setData(
                                         'paid_date',
-                                        e.target.value,
+                                        value,
                                     )
                                 }
                                 className={

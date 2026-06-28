@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import {
     Popover,
@@ -34,6 +35,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { SearchInput } from '@/components/ui/search-input';
 import AppLayout from '@/layouts/app-layout';
 import {
     expenseCategoryColor,
@@ -155,11 +157,7 @@ export default function Index({ expense_record, users, filters }: PageProps) {
 
             <div className="space-y-2">
                 <label className="text-sm font-medium">Date</label>
-                <Input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                />
+                <DatePicker value={date} onChange={setDate} />
             </div>
 
             <div className="space-y-2">
@@ -217,15 +215,12 @@ export default function Index({ expense_record, users, filters }: PageProps) {
                     <CardContent className="pt-6">
                         {/* Mobile: Search + Filter Button */}
                         <div className="flex gap-2 lg:hidden">
-                            <div className="relative flex-1">
-                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search expenses..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="pl-9"
-                                />
-                            </div>
+                            <SearchInput
+                                value={search}
+                                onChange={setSearch}
+                                placeholder="Search expenses..."
+                                className="flex-1"
+                            />
                             <Popover
                                 open={isFilterOpen}
                                 onOpenChange={setIsFilterOpen}
@@ -255,15 +250,11 @@ export default function Index({ expense_record, users, filters }: PageProps) {
 
                         {/* Desktop: All Filters Visible */}
                         <div className="hidden space-y-4 lg:block">
-                            <div className="relative">
-                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search by reference number, remarks..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="pl-9"
-                                />
-                            </div>
+                            <SearchInput
+                                value={search}
+                                onChange={setSearch}
+                                placeholder="Search by reference number, remarks..."
+                            />
 
                             <div className="grid grid-cols-4 gap-4">
                                 <div className="space-y-2">
@@ -326,12 +317,9 @@ export default function Index({ expense_record, users, filters }: PageProps) {
                                     <label className="text-sm font-medium">
                                         Date
                                     </label>
-                                    <Input
-                                        type="date"
+                                    <DatePicker
                                         value={date}
-                                        onChange={(e) =>
-                                            setDate(e.target.value)
-                                        }
+                                        onChange={setDate}
                                     />
                                 </div>
 

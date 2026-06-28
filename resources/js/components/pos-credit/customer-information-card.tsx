@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PHPhoneInput } from '@/components/ui/ph-phone-input';
+import { SearchInput } from '@/components/ui/search-input';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Users, X } from 'lucide-react';
@@ -106,14 +108,15 @@ export function CustomerInformationCard({
                     />
                 </div>
 
-                <TextField
-                    id="contact"
-                    label="Contact Number"
-                    placeholder="0912 345 6789"
-                    value={contact}
-                    disabled={isExistingCustomer}
-                    onChange={onContactChange}
-                />
+                <div className="space-y-2">
+                    <Label htmlFor="contact">Contact Number</Label>
+                    <PHPhoneInput
+                        id="contact"
+                        value={contact}
+                        disabled={isExistingCustomer}
+                        onChange={onContactChange}
+                    />
+                </div>
                 <TextField
                     id="email"
                     label="Email"
@@ -202,12 +205,14 @@ function CustomerSearch({
         <div className="space-y-2">
             <Label htmlFor="searchCustomer">Search Existing Customer</Label>
             <div className="relative">
-                <Input
+                <SearchInput
                     id="searchCustomer"
                     placeholder="Type customer name..."
                     value={value}
-                    onChange={(event) => onSearch(event.target.value)}
-                    className={isExistingCustomer ? 'border-green-500' : ''}
+                    onChange={onSearch}
+                    inputClassName={
+                        isExistingCustomer ? 'border-green-500' : ''
+                    }
                 />
                 {isLoading && (
                     <Loader2 className="absolute top-3 right-9 h-4 w-4 animate-spin text-muted-foreground" />

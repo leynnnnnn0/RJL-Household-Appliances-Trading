@@ -1,3 +1,5 @@
+import type React from 'react';
+
 export interface Paginated<T> {
     data: T[];
     links: PaginationLink[];
@@ -8,6 +10,28 @@ export interface Paginated<T> {
     from: number;
     to: number;
 }
+
+export type BreadcrumbItem = {
+    title: string;
+    href: string;
+};
+
+export type NavItem = {
+    title: string;
+    href: string;
+    icon?: React.ComponentType<{ className?: string }>;
+};
+
+export type SharedData = {
+    auth: {
+        user: {
+            id: number;
+            name: string;
+            email: string;
+            avatar?: string;
+        };
+    };
+};
 
 interface InstallmentOrderRemark {
     id: number;

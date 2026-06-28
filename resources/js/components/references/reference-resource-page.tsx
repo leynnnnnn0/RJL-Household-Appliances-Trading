@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SearchInput } from '@/components/ui/search-input';
 import {
     Table,
     TableBody,
@@ -33,7 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { Paginated } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -197,15 +198,12 @@ export default function ReferenceResourcePage<TRecord extends ReferenceRecord>({
 
             <div className="space-y-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <div className="relative w-full sm:max-w-sm">
-                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-                        <Input
-                            placeholder={resource.searchPlaceholder}
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            className="pl-10"
-                        />
-                    </div>
+                    <SearchInput
+                        value={search}
+                        onChange={setSearch}
+                        placeholder={resource.searchPlaceholder}
+                        className="sm:max-w-sm"
+                    />
                 </div>
 
                 <div className="overflow-hidden rounded-lg border">

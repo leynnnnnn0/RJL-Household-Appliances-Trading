@@ -21,6 +21,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PHPhoneInput } from '@/components/ui/ph-phone-input';
 import AppLayout from '@/layouts/app-layout';
 import { Role } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
@@ -178,12 +179,11 @@ export default function Edit({ backUrl, user, roles }: EditProps) {
                                 <Label htmlFor="phone_number">
                                     Phone Number
                                 </Label>
-                                <Input
+                                <PHPhoneInput
                                     id="phone_number"
-                                    type="tel"
                                     value={data.phone_number}
-                                    onChange={(e) =>
-                                        setData('phone_number', e.target.value)
+                                    onChange={(value) =>
+                                        setData('phone_number', value)
                                     }
                                     className={
                                         errors.phone_number

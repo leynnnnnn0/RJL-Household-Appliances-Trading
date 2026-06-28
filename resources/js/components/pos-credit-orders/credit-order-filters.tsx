@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
     Popover,
     PopoverContent,
@@ -20,10 +20,10 @@ import {
     Filter,
     MapPin,
     Package,
-    Search,
     X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { SearchInput } from '../ui/search-input';
 import {
     POSCreditOrderFilterActions,
     POSCreditOrderFilterOptions,
@@ -109,28 +109,6 @@ export function CreditOrderFilters({
     );
 }
 
-function SearchInput({
-    value,
-    onChange,
-    placeholder,
-}: {
-    value: string;
-    onChange: (value: string) => void;
-    placeholder: string;
-}) {
-    return (
-        <div className="relative flex-1">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-                placeholder={placeholder}
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                className="pl-9"
-            />
-        </div>
-    );
-}
-
 function FilterFields({
     filters,
     locations,
@@ -146,21 +124,11 @@ function FilterFields({
     return (
         <>
             <FilterField icon={<Calendar />} label="Date From">
-                <Input
-                    type="date"
-                    value={filters.dateFrom}
-                    onChange={(event) => setDateFrom(event.target.value)}
-                    className="h-9 text-sm"
-                />
+                <DatePicker value={filters.dateFrom} onChange={setDateFrom} />
             </FilterField>
 
             <FilterField icon={<Calendar />} label="Date To">
-                <Input
-                    type="date"
-                    value={filters.dateTo}
-                    onChange={(event) => setDateTo(event.target.value)}
-                    className="h-9 text-sm"
-                />
+                <DatePicker value={filters.dateTo} onChange={setDateTo} />
             </FilterField>
 
             <FilterField icon={<MapPin />} label="Branch">

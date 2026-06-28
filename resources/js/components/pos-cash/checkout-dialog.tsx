@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PHPhoneInput } from '@/components/ui/ph-phone-input';
+import { SearchInput } from '@/components/ui/search-input';
 import {
     Select,
     SelectContent,
@@ -398,14 +400,20 @@ export default function CheckoutDialog({
                         placeholder="Enter customer's email"
                     />
 
-                    <TextInput
-                        id="customerPhone"
-                        label="Phone Number"
-                        value={form.phone}
-                        onChange={(value) => setFormValue('phone', value)}
-                        error={errors.phone}
-                        placeholder="09XXXXXXXXX"
-                    />
+                    <div className="space-y-2">
+                        <Label htmlFor="customerPhone">Phone Number</Label>
+                        <PHPhoneInput
+                            id="customerPhone"
+                            value={form.phone}
+                            onChange={(value) => setFormValue('phone', value)}
+                            className={errors.phone ? 'border-red-500' : ''}
+                        />
+                        {errors.phone && (
+                            <p className="text-sm text-red-500">
+                                {errors.phone}
+                            </p>
+                        )}
+                    </div>
 
                     <PaymentBreakdown
                         payments={payments}
@@ -641,12 +649,14 @@ function CustomerSearch({
         <div className="space-y-2">
             <Label htmlFor="searchCustomer">Search Existing Customer</Label>
             <div className="relative">
-                <Input
+                <SearchInput
                     id="searchCustomer"
                     placeholder="Type customer name..."
                     value={searchQuery}
-                    onChange={(event) => onSearch(event.target.value)}
-                    className={isExistingCustomer ? 'border-green-500' : ''}
+                    onChange={onSearch}
+                    inputClassName={
+                        isExistingCustomer ? 'border-green-500' : ''
+                    }
                 />
                 {isLoading && (
                     <Loader2 className="absolute top-3 right-9 h-4 w-4 animate-spin text-muted-foreground" />
