@@ -3,6 +3,15 @@ import { BulkPaymentConfirmationDialog } from '@/components/bulk-payments/bulk-p
 import { BulkPaymentMobileList } from '@/components/bulk-payments/bulk-payment-mobile-list';
 import { BulkPaymentTable } from '@/components/bulk-payments/bulk-payment-table';
 import { createEmptyPayment } from '@/components/bulk-payments/payment-defaults';
+import {
+    BulkPaymentField,
+    BulkPaymentForm,
+    BulkPaymentInstallment,
+    BulkPaymentOpenPopovers,
+    BulkPaymentOrder,
+    BulkPaymentRow,
+    BulkPaymentValidationErrors,
+} from '@/components/bulk-payments/types';
 import ModuleHeading from '@/components/cards/module-heading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import AppLayout from '@/layouts/app-layout';
@@ -12,16 +21,21 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function BulkPayments() {
-    const [rows, setRows] = useState([{ id: 1 }]);
+    const [rows, setRows] = useState<BulkPaymentRow[]>([{ id: 1 }]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
+    const [searchResults, setSearchResults] = useState<BulkPaymentOrder[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [openPopovers, setOpenPopovers] = useState({});
+    const [openPopovers, setOpenPopovers] = useState<BulkPaymentOpenPopovers>(
+        {},
+    );
     const [processing, setProcessing] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [validationErrors, setValidationErrors] = useState({});
+    const [validationErrors, setValidationErrors] =
+        useState<BulkPaymentValidationErrors>({});
 
-    const [payments, setPayments] = useState([createEmptyPayment()]);
+    const [payments, setPayments] = useState<BulkPaymentForm[]>([
+        createEmptyPayment(),
+    ]);
 
     // Debounced search
     useEffect(() => {
@@ -33,7 +47,9 @@ export default function BulkPayments() {
         const timer = setTimeout(async () => {
             setIsSearching(true);
             axios
-                .get(`/api/installment-orders?search=${searchQuery}`)
+                .get<{ data: BulkPaymentOrder[] }>(
+                    `/api/installment-orders?search=${searchQuery}`,
+                )
                 .then((res) => {
                     setSearchResults(res.data.data || []);
                 })
@@ -56,7 +72,7 @@ export default function BulkPayments() {
         setPayments([...payments, createEmptyPayment()]);
     };
 
-    const removeRow = (index) => {
+    const removeRow = (index: number) => {
         if (rows.length === 1) return;
         const newRows = rows.filter((_, i) => i !== index);
         const newPayments = payments.filter((_, i) => i !== index);
@@ -67,23 +83,23 @@ export default function BulkPayments() {
         const newErrors = { ...validationErrors };
         delete newErrors[index];
         // Reindex remaining errors
-        const reindexedErrors = {};
+        const reindexedErrors: BulkPaymentValidationErrors = {};
         Object.keys(newErrors).forEach((key) => {
             const idx = parseInt(key);
             if (idx > index) {
-                reindexedErrors[idx - 1] = newErrors[key];
+                reindexedErrors[idx - 1] = newErrors[idx];
             } else {
-                reindexedErrors[idx] = newErrors[key];
+                reindexedErrors[idx] = newErrors[idx];
             }
         });
         setValidationErrors(reindexedErrors);
     };
 
-    const selectOrder = (index, order) => {
+    const selectOrder = (index: number, order: BulkPaymentOrder) => {
         const newPayments = [...payments];
 
         // Handle installment_payments whether it's an object or array
-        let installments = [];
+        let installments: BulkPaymentInstallment[] = [];
         if (order.installment_payments) {
             if (Array.isArray(order.installment_payments)) {
                 installments = order.installment_payments;
@@ -113,7 +129,7 @@ export default function BulkPayments() {
         setSearchQuery(''); // Reset search query after selection
     };
 
-    const selectInstallment = (index, installmentId) => {
+    const selectInstallment = (index: number, installmentId: string) => {
         const newPayments = [...payments];
         const currentOrderId = newPayments[index].installment_order_id;
 
@@ -184,13 +200,21 @@ export default function BulkPayments() {
         }
     };
 
-    const updatePayment = (index, field, value) => {
+    const updatePayment = (
+        index: number,
+        field: BulkPaymentField,
+        value: string,
+    ) => {
         const newPayments = [...payments];
         newPayments[index][field] = value;
         setPayments(newPayments);
 
         // Clear validation error when user starts typing
-        if (validationErrors[index]?.[field]) {
+        if (
+            (field === 'amount_paid' ||
+                field === 'collection_receipt_number') &&
+            validationErrors[index]?.[field]
+        ) {
             const newErrors = { ...validationErrors };
             delete newErrors[index][field];
             if (Object.keys(newErrors[index] || {}).length === 0) {
@@ -201,11 +225,11 @@ export default function BulkPayments() {
     };
 
     const validatePayments = () => {
-        const errors = {};
+        const errors: BulkPaymentValidationErrors = {};
         let isValid = true;
 
         payments.forEach((payment, index) => {
-            const rowErrors = {};
+            const rowErrors: BulkPaymentValidationErrors[number] = {};
 
             // Validate amount paid
             if (!payment.amount_paid || parseFloat(payment.amount_paid) <= 0) {
@@ -262,11 +286,22 @@ export default function BulkPayments() {
     const confirmSubmit = async () => {
         setShowConfirmModal(false);
         setProcessing(true);
+        const paymentPayload = payments.map((payment) => ({
+            installment_order_id: payment.installment_order_id,
+            installment_order_payment_id: payment.installment_order_payment_id,
+            installment_number: payment.installment_number,
+            amount_due: payment.amount_due,
+            amount_paid: payment.amount_paid,
+            payment_method: payment.payment_method,
+            reference_number: payment.reference_number,
+            paid_date: payment.paid_date,
+            collection_receipt_number: payment.collection_receipt_number,
+        }));
 
         router.post(
-            route('bulk-payments.store'),
+            '/bulk-payments',
             {
-                payments: payments,
+                payments: paymentPayload,
             },
             {
                 onSuccess: () => {

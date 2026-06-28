@@ -29,9 +29,9 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($row) {
                 return [
-                    'category'  => $row->category,
-                    'srp'       => (int) $row->srp,
-                    'unitCost'  => (int) $row->unitCost,
+                    'category' => $row->category,
+                    'srp' => (int) $row->srp,
+                    'unitCost' => (int) $row->unitCost,
                 ];
             })
             ->values();
@@ -53,11 +53,12 @@ class DashboardController extends Controller
             // Build base queries with date range filter
             $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
                 ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
-            $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user'])
+            $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user', 'installment_order_items.item'])
                 ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
             $installmentPaymentsQuery = InstallmentOrderPaymentHistory::with([
                 'installment_order_payment.installment_order.customer',
-                'user'
+                'installment_order_payment.installment_order.installment_order_items.item',
+                'user',
             ])
                 ->whereBetween(DB::raw('DATE(paid_date)'), [$fromDate, $toDate])
                 ->whereHas('installment_order_payment.installment_order', function ($q) {
@@ -87,8 +88,8 @@ class DashboardController extends Controller
                         'created_at' => $order->created_at,
                         'employee_name' => $order->employee->full_name ?? 'N/A',
                         'remarks' => $order->order_items
-                            ->map(fn($item) => $item->item->model)
-                            ->implode(', ')
+                            ->map(fn ($item) => $item->item->model)
+                            ->implode(', '),
                     ];
                 });
 
@@ -107,8 +108,8 @@ class DashboardController extends Controller
                         'is_voided' => $order->is_voided,
                         'created_at' => $order->created_at,
                         'employee_name' => $order->user->full_name ?? 'N/A',
-                        'remarks' => $order->installment_order_items->map(fn($item) => $item->item->model)
-                            ->implode(', ')
+                        'remarks' => $order->installment_order_items->map(fn ($item) => $item->item->model)
+                            ->implode(', '),
                     ];
                 });
 
@@ -127,8 +128,8 @@ class DashboardController extends Controller
                         'is_voided' => false,
                         'created_at' => $order->created_at,
                         'employee_name' => $order->user->full_name ?? 'N/A',
-                        'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)
-                            ->implode(', ')
+                        'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn ($item) => $item->item->model)
+                            ->implode(', '),
                     ];
                 });
 
@@ -137,7 +138,7 @@ class DashboardController extends Controller
                 ->groupBy('receipt_number')
                 ->map(function ($group) {
                     $paymentMethods = $group->pluck('payment_method')->unique();
-                    $amounts = $group->groupBy('payment_method')->map(fn($items) => $items->sum('m_i'));
+                    $amounts = $group->groupBy('payment_method')->map(fn ($items) => $items->sum('m_i'));
 
                     return [
                         'date' => $group->first()['date'],
@@ -147,7 +148,7 @@ class DashboardController extends Controller
                         'd_p' => null,
                         'amount_paid' => null,
                         'payment_method' => $paymentMethods->count() > 1
-                            ? 'Split: ' . $amounts->map(fn($amt, $method) => ucfirst($method) . ' ₱' . number_format($amt, 2))->implode(', ')
+                            ? 'Split: '.$amounts->map(fn ($amt, $method) => ucfirst($method).' ₱'.number_format($amt, 2))->implode(', ')
                             : $group->first()['payment_method'],
                         'reference_number' => $group->first()['reference_number'],
                         'is_voided' => false,
@@ -228,8 +229,8 @@ class DashboardController extends Controller
                 'filters' => [
                     'from_date' => $fromDate,
                     'to_date' => $toDate,
-                    'employee_id' => $employeeId
-                ]
+                    'employee_id' => $employeeId,
+                ],
             ]);
         }
 
@@ -376,7 +377,7 @@ class DashboardController extends Controller
         //     ]);
         // }
 
-        if (!Auth::user()->getRoleNames()->contains('super admin')) {
+        if (! Auth::user()->getRoleNames()->contains('super admin')) {
             return Inertia::render('Dashboard/NonAdminDashboard');
         }
 
@@ -388,7 +389,7 @@ class DashboardController extends Controller
             'employees' => $employees,
             'marginPercent' => number_format($marginPercent),
             'potentialProfit' => number_format($srpTotal - $unitCostTotal, 2, '.', ','),
-            'inventoryData' => $data->toArray()
+            'inventoryData' => $data->toArray(),
         ]);
     }
 
@@ -402,11 +403,8 @@ class DashboardController extends Controller
             ->where('user_id', Auth::id())
             ->get();
 
-
         return Inertia::render('Dashboard/CashierDashboard');
     }
-
-
 
     public function downloadTransactionsPdf(Request $request)
     {
@@ -422,11 +420,12 @@ class DashboardController extends Controller
         // Build base queries with date range filter
         $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
             ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
-        $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user'])
+        $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user', 'installment_order_items.item'])
             ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
         $installmentPaymentsQuery = InstallmentOrderPaymentHistory::with([
             'installment_order_payment.installment_order.customer',
-            'user'
+            'installment_order_payment.installment_order.installment_order_items.item',
+            'user',
         ])
             ->whereBetween(DB::raw('DATE(paid_date)'), [$fromDate, $toDate])
             ->whereHas('installment_order_payment.installment_order', function ($q) {
@@ -462,8 +461,8 @@ class DashboardController extends Controller
                     'created_at' => $order->created_at,
                     'employee_name' => $order->employee->full_name ?? 'N/A',
                     'remarks' => $order->order_items
-                        ->map(fn($item) => $item->item->model)
-                        ->implode(', ')
+                        ->map(fn ($item) => $item->item->model)
+                        ->implode(', '),
                 ];
             });
 
@@ -482,8 +481,8 @@ class DashboardController extends Controller
                     'is_voided' => $order->is_voided,
                     'created_at' => $order->created_at,
                     'employee_name' => $order->user->full_name ?? 'N/A',
-                    'remarks' => $order->installment_order_items->map(fn($item) => $item->item->model)
-                        ->implode(', ')
+                    'remarks' => $order->installment_order_items->map(fn ($item) => $item->item->model)
+                        ->implode(', '),
                 ];
             });
 
@@ -502,8 +501,8 @@ class DashboardController extends Controller
                     'is_voided' => false,
                     'created_at' => $order->created_at,
                     'employee_name' => $order->user->full_name ?? 'N/A',
-                    'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn($item) => $item->item->model)
-                        ->implode(', ')
+                    'remarks' => $order->installment_order_payment->installment_order->installment_order_items->map(fn ($item) => $item->item->model)
+                        ->implode(', '),
                 ];
             });
 
@@ -512,7 +511,7 @@ class DashboardController extends Controller
             ->groupBy('receipt_number')
             ->map(function ($group) {
                 $paymentMethods = $group->pluck('payment_method')->unique();
-                $amounts = $group->groupBy('payment_method')->map(fn($items) => $items->sum('m_i'));
+                $amounts = $group->groupBy('payment_method')->map(fn ($items) => $items->sum('m_i'));
 
                 return [
                     'date' => $group->first()['date'],
@@ -522,7 +521,7 @@ class DashboardController extends Controller
                     'd_p' => null,
                     'amount_paid' => null,
                     'payment_method' => $paymentMethods->count() > 1
-                        ? 'Split: ' . $amounts->map(fn($amt, $method) => ucfirst($method) . ' ₱' . number_format($amt, 2))->implode(', ')
+                        ? 'Split: '.$amounts->map(fn ($amt, $method) => ucfirst($method).' ₱'.number_format($amt, 2))->implode(', ')
                         : $group->first()['payment_method'],
                     'reference_number' => $group->first()['reference_number'],
                     'is_voided' => false,
@@ -596,7 +595,7 @@ class DashboardController extends Controller
             'fromDate' => Carbon::parse($fromDate)->format('F d, Y'),
             'toDate' => Carbon::parse($toDate)->format('F d, Y'),
             'employeeName' => $employeeName,
-            'generatedAt' => now()->format('F d, Y h:i A')
+            'generatedAt' => now()->format('F d, Y h:i A'),
         ];
 
         // Generate PDF
@@ -608,7 +607,7 @@ class DashboardController extends Controller
             ->setOption('margin-right', 10);
 
         // Generate filename
-        $filename = 'transactions_' . $fromDate . '_to_' . $toDate . '.pdf';
+        $filename = 'transactions_'.$fromDate.'_to_'.$toDate.'.pdf';
 
         return $pdf->download($filename);
     }

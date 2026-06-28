@@ -7,12 +7,17 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { paymentMethods } from './payment-defaults';
+import { BulkPaymentInstallment } from './types';
 
 export function InstallmentSelect({
     payment,
     onSelectInstallment,
 }: {
-    payment: any;
+    payment: {
+        selected_order: unknown;
+        installment_order_payment_id: string;
+        available_installments: BulkPaymentInstallment[];
+    };
     onSelectInstallment: (value: string) => void;
 }) {
     return (
@@ -25,7 +30,7 @@ export function InstallmentSelect({
                 <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
-                {payment?.available_installments?.map((installment: any) => {
+                {payment?.available_installments?.map((installment) => {
                     const isPaid = installment.status?.toLowerCase() === 'paid';
 
                     return (

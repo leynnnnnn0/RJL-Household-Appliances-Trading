@@ -12,6 +12,7 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { Loader2, Search } from 'lucide-react';
+import { BulkPaymentForm, BulkPaymentOrder } from './types';
 
 export function BulkPaymentOrderPicker({
     payment,
@@ -23,14 +24,14 @@ export function BulkPaymentOrderPicker({
     searchResults,
     onSelectOrder,
 }: {
-    payment: any;
+    payment: BulkPaymentForm;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     searchQuery: string;
     onSearchChange: (value: string) => void;
     isSearching: boolean;
-    searchResults: any[];
-    onSelectOrder: (order: any) => void;
+    searchResults: BulkPaymentOrder[];
+    onSelectOrder: (order: BulkPaymentOrder) => void;
 }) {
     return (
         <Popover open={open} onOpenChange={onOpenChange}>

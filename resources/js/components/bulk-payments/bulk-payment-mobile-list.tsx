@@ -11,8 +11,9 @@ import {
     ReferenceNumberField,
 } from './bulk-payment-fields';
 import { BulkPaymentOrderPicker } from './bulk-payment-order-picker';
+import { BulkPaymentListProps } from './types';
 
-export function BulkPaymentMobileList(props: any) {
+export function BulkPaymentMobileList(props: BulkPaymentListProps) {
     const {
         rows,
         payments,
@@ -31,7 +32,7 @@ export function BulkPaymentMobileList(props: any) {
 
     return (
         <div className="space-y-4 lg:hidden">
-            {rows.map((row: any, index: number) => (
+            {rows.map((row, index) => (
                 <Card key={row.id}>
                     <CardContent className="space-y-4 pt-5">
                         <div className="flex items-center justify-between gap-3">

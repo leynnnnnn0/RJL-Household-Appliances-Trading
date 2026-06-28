@@ -6,7 +6,7 @@ export const paymentMethods = [
     { value: 'debit_card', label: 'Debit Card' },
 ];
 
-export function createEmptyPayment() {
+export function createEmptyPayment(): BulkPaymentForm {
     return {
         installment_order_id: '',
         installment_order_payment_id: '',
@@ -21,3 +21,4 @@ export function createEmptyPayment() {
         available_installments: [],
     };
 }
+import { BulkPaymentForm } from './types';

@@ -10,8 +10,9 @@ import {
     ReferenceNumberField,
 } from './bulk-payment-fields';
 import { BulkPaymentOrderPicker } from './bulk-payment-order-picker';
+import { BulkPaymentListProps } from './types';
 
-export function BulkPaymentTable(props: any) {
+export function BulkPaymentTable(props: BulkPaymentListProps) {
     const {
         rows,
         payments,
@@ -67,7 +68,7 @@ export function BulkPaymentTable(props: any) {
                         </tr>
                     </thead>
                     <tbody>
-                        {rows.map((row: any, index: number) => (
+                        {rows.map((row, index) => (
                             <tr
                                 key={row.id}
                                 className="border-b hover:bg-muted/50"

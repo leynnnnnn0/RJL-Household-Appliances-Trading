@@ -231,7 +231,7 @@ class POSCreditOrderService
             'location',
             'branch',
             'installment_order_items.item',
-            'installment_order_payments',
+            'installment_order_payments.installment_order_payment_history',
         ]);
 
         if (! empty($filters['search'])) {
