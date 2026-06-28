@@ -14,6 +14,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ItemService
@@ -45,11 +46,23 @@ class ItemService
 
     public function delete(Item $item): void
     {
+        if ($item->installment_order_item()->exists() || $item->order_item()->exists()) {
+            throw ValidationException::withMessages([
+                'item' => 'This item is already linked to a transaction and cannot be archived.',
+            ]);
+        }
+
         $item->delete();
     }
 
     public function move(Item $item, array $data): Item
     {
+        if ((int) $item->location_id === (int) $data['location_id']) {
+            throw ValidationException::withMessages([
+                'location_id' => 'Transfer location must be different from the current location.',
+            ]);
+        }
+
         return DB::transaction(function () use ($item, $data) {
             $fromLocationId = $item->location_id;
 

@@ -24,9 +24,15 @@ export function SalesAnalyticsCards({ analytics }: { analytics: SalesAnalytics }
                             <LineChart data={analytics.monthly_trend} margin={{ left: 0, right: 8 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                                <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
+                                <YAxis yAxisId="left" tickFormatter={(value) => Number(value).toLocaleString('en-PH')} tick={{ fontSize: 11 }} />
                                 <YAxis yAxisId="right" orientation="right" tickFormatter={compactPeso} tick={{ fontSize: 11 }} />
-                                <Tooltip formatter={(value: number, name) => (name === 'sales' ? formatPeso(value) : value)} />
+                                <Tooltip
+                                    formatter={(value: number, name) =>
+                                        name === 'Sales'
+                                            ? formatPeso(value)
+                                            : Number(value).toLocaleString('en-PH')
+                                    }
+                                />
                                 <Legend />
                                 <Line yAxisId="left" type="monotone" dataKey="accounts" name="Accounts" stroke="#111827" strokeWidth={2} />
                                 <Line yAxisId="right" type="monotone" dataKey="sales" name="Sales" stroke="#16a34a" strokeWidth={2} />

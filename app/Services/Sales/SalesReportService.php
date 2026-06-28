@@ -32,6 +32,7 @@ class SalesReportService
             'branch_id' => ($input['branch_id'] ?? 'all') ?: 'all',
             'item_type' => ($input['item_type'] ?? 'all') ?: 'all',
             'as_of_date' => $asOfDate->toDateString(),
+            'search' => trim($input['search'] ?? ''),
         ];
     }
 
@@ -101,6 +102,12 @@ class SalesReportService
             ->when($filters['item_type'] !== 'all', fn (Builder $query) => $query->whereHas(
                 'installment_order_items.item',
                 fn (Builder $itemQuery) => $itemQuery->where('item_type', $filters['item_type'])
+            ))
+            ->when($filters['search'] !== '', fn (Builder $query) => $query->whereHas(
+                'customer',
+                fn (Builder $customerQuery) => $customerQuery
+                    ->where('first_name', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('last_name', 'like', '%'.$filters['search'].'%')
             ))
             ->get();
     }

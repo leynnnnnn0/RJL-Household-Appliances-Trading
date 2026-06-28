@@ -224,8 +224,12 @@
         </div>
         <div class="summary-row clearfix">
             <div class="summary-cell">
-                <div class="summary-label">Net Collection</div>
+                <div class="summary-label">Gross Collection</div>
                 <div class="summary-value" style="color: #28a745; font-size: 18px;">PHP {{ number_format($netCollection, 2) }}</div>
+            </div>
+            <div class="summary-cell">
+                <div class="summary-label">Net After Expenses</div>
+                <div class="summary-value" style="color: #111827; font-size: 18px;">PHP {{ number_format($netAfterExpenses, 2) }}</div>
             </div>
         </div>
     </div>

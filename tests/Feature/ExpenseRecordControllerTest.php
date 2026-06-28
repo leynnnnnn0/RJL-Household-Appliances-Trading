@@ -222,6 +222,20 @@ it('updates expense record status and review metadata', function () {
     expect($record->refresh()->approved_at)->not()->toBeNull();
 });
 
+it('can cancel an expense record that was recorded by accident', function () {
+    $reviewer = actingAsExpenseRecordManager();
+    $record = ExpenseRecord::factory()->create(['status' => 'pending']);
+
+    $this->put(route('expense-record.update-status', $record), ['status' => 'cancelled'])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('expense_records', [
+        'id' => $record->id,
+        'status' => 'cancelled',
+        'approved_by' => $reviewer->id,
+    ]);
+});
+
 it('validates expense record status updates', function () {
     actingAsExpenseRecordManager();
     $record = ExpenseRecord::factory()->create();

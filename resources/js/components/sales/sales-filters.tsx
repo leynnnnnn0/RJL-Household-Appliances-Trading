@@ -2,25 +2,60 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
+import { SearchInput } from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { router } from '@inertiajs/react';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Search } from 'lucide-react';
+import { FormEvent, useEffect, useState } from 'react';
 import { salesQueryString } from './formatters';
 import type { SalesBranch, SalesFilters } from './types';
 
 interface SalesFiltersProps {
     branches: SalesBranch[];
     filters: SalesFilters;
+    action?: string;
+    extraParams?: Record<string, string>;
+    showSearch?: boolean;
 }
 
-export function SalesFiltersCard({ branches, filters }: SalesFiltersProps) {
+export function SalesFiltersCard({
+    branches,
+    filters,
+    action = '/sales',
+    extraParams = {},
+    showSearch = false,
+}: SalesFiltersProps) {
+    const [search, setSearch] = useState(filters.search || '');
+
+    useEffect(() => {
+        setSearch(filters.search || '');
+    }, [filters.search]);
+
     const applyFilter = (key: keyof SalesFilters, value: string) => {
         router.get(
-            '/sales',
+            action,
             {
                 ...filters,
+                ...extraParams,
                 [key]: value,
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
+
+    const submitSearch = (event: FormEvent) => {
+        event.preventDefault();
+
+        router.get(
+            action,
+            {
+                ...filters,
+                ...extraParams,
+                search,
             },
             {
                 preserveScroll: true,
@@ -81,6 +116,28 @@ export function SalesFiltersCard({ branches, filters }: SalesFiltersProps) {
                         <a href={downloadAllUrl}>Download All PDF</a>
                     </Button>
                 </div>
+                {showSearch && (
+                    <form onSubmit={submitSearch} className="sm:col-span-2 lg:col-span-4">
+                        <FilterLabel
+                            htmlFor="sales-aging-search"
+                            label="Customer Search"
+                            tooltip="Filters this aging page by customer first or last name."
+                        />
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <SearchInput
+                                id="sales-aging-search"
+                                value={search}
+                                onChange={setSearch}
+                                placeholder="Search customer name..."
+                                className="flex-1"
+                            />
+                            <Button type="submit" className="sm:w-36">
+                                <Search className="h-4 w-4" />
+                                Search
+                            </Button>
+                        </div>
+                    </form>
+                )}
             </CardContent>
         </Card>
     );

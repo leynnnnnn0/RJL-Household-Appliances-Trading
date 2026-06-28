@@ -2,12 +2,15 @@
 
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BulkPaymentController;
+use App\Http\Controllers\API\CustomerController as ApiCustomerController;
+use App\Http\Controllers\API\InstallmentOrderController as ApiInstallmentOrderController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseRecordController;
 use App\Http\Controllers\InstallmentOrderRemarkController;
+use App\Http\Controllers\ItemAPIController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PDFController;
@@ -17,6 +20,7 @@ use App\Http\Controllers\POSCashOrderSalesController;
 use App\Http\Controllers\POSCreditController;
 use App\Http\Controllers\POSCreditOrderController;
 use App\Http\Controllers\POSCreditOrderSalesController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\SupplierController;
@@ -29,6 +33,22 @@ Route::get('/', fn () => redirect()->route('login'))->name('home');
 Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/api/items', [ItemAPIController::class, 'index'])
+        ->middleware('permission:can access cash pos|can access credit pos');
+    Route::get('/api/customers', [ApiCustomerController::class, 'index'])
+        ->middleware('permission:can access cash pos|can access credit pos');
+    Route::get('/api/installment-orders', [ApiInstallmentOrderController::class, 'index'])
+        ->middleware('permission:can access bulk payments');
+
+    Route::post('/api/reports/aging/request', [ReportController::class, 'requestAgingReport'])
+        ->middleware('permission:can view installment orders sales')
+        ->name('reports.aging.request');
+    Route::get('/api/reports/aging/status/{jobId}', [ReportController::class, 'agingReportStatus'])
+        ->middleware('permission:can view installment orders sales')
+        ->name('reports.aging.status');
+    Route::get('/api/reports/aging/download/{jobId}', [ReportController::class, 'downloadAgingReport'])
+        ->middleware('permission:can view installment orders sales')
+        ->name('reports.aging.download');
 
     Route::get('/pos-installment-orders/{id}/payment-schedule-pdf', [POSCreditOrderController::class, 'printPaymentSchedule']);
 

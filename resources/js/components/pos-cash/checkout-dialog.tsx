@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
     emptyPOSCashCustomerForm,
     POSCashCartItem,
@@ -29,7 +30,7 @@ import { Customer, Location, User } from '@/types';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { Loader2, Plus, Trash2, Users, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface CheckoutDialogProps {
@@ -59,6 +60,7 @@ export default function CheckoutDialog({
     onSelectedLocationChange,
     onOrderCreated,
 }: CheckoutDialogProps) {
+    const [step, setStep] = useState<'form' | 'review'>('form');
     const [form, setForm] = useState<POSCashCustomerForm>(
         emptyPOSCashCustomerForm(),
     );
@@ -68,22 +70,20 @@ export default function CheckoutDialog({
     const [showResults, setShowResults] = useState(false);
     const [isExistingCustomer, setIsExistingCustomer] = useState(false);
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+    const suppressCustomerResultsRef = useRef(false);
     const [payments, setPayments] = useState<POSCashPayment[]>([
         { payment_method: 'Cash', amount: orderTotal, reference_number: '' },
     ]);
 
     useEffect(() => {
         setPayments((current) => {
-            if (current.length !== 1) {
-                return current;
-            }
-
+            if (current.length !== 1) return current;
             return [{ ...current[0], amount: orderTotal }];
         });
     }, [orderTotal]);
 
     const paymentTotal = payments.reduce(
-        (sum, payment) => sum + Number(payment.amount || 0),
+        (sum, p) => sum + Number(p.amount || 0),
         0,
     );
     const paymentBalance = orderTotal - paymentTotal;
@@ -102,6 +102,7 @@ export default function CheckoutDialog({
         setSearchResults([]);
         setShowResults(false);
         setIsExistingCustomer(false);
+        setStep('form');
         setPayments([
             {
                 payment_method: 'Cash',
@@ -123,6 +124,7 @@ export default function CheckoutDialog({
     };
 
     const selectCustomer = (customer: Customer) => {
+        suppressCustomerResultsRef.current = true;
         setForm((current) => ({
             ...current,
             existing_customer_id: customer.id,
@@ -143,32 +145,31 @@ export default function CheckoutDialog({
     };
 
     const handleSearchCustomer = (query: string) => {
+        suppressCustomerResultsRef.current = false;
         setSearchQuery(query);
-
         if (query.length <= 1) {
             setShowResults(false);
             setIsLoadingCustomers(false);
             return;
         }
-
         setIsLoadingCustomers(true);
         axios
             .get('/api/customers', { params: { search: query } })
             .then((response) => {
+                if (suppressCustomerResultsRef.current) {
+                    setSearchResults([]);
+                    setShowResults(false);
+                    return;
+                }
                 setSearchResults(response.data?.data || []);
                 setShowResults(true);
             })
-            .catch(() => {
-                setSearchResults([]);
-            })
+            .catch(() => setSearchResults([]))
             .finally(() => setIsLoadingCustomers(false));
     };
 
-    const placeOrder = () => {
-        setErrors({});
-
+    const validatePayments = () => {
         const nextErrors: Record<string, string> = {};
-
         payments.forEach((payment, index) => {
             if (
                 payment.payment_method !== 'Cash' &&
@@ -177,28 +178,33 @@ export default function CheckoutDialog({
                 nextErrors[`payments.${index}.reference_number`] =
                     'Reference number is required for non-cash payments';
             }
-
             if (Number(payment.amount) < 0) {
                 nextErrors[`payments.${index}.amount`] =
                     'Amount cannot be negative';
             }
         });
-
         if (Math.round(paymentBalance * 100) !== 0) {
             nextErrors.payments = 'Payment total must match order total';
         }
+        return nextErrors;
+    };
 
-        if (Object.keys(nextErrors).length > 0) {
-            setErrors(nextErrors);
+    const handleReviewClick = () => {
+        setErrors({});
+        const paymentErrors = validatePayments();
+        if (Object.keys(paymentErrors).length > 0) {
+            setErrors(paymentErrors);
             toast.error('Please fix the payment breakdown.');
             return;
         }
+        setStep('review');
+    };
 
+    const placeOrder = () => {
         const primaryPayment = payments[0] ?? {
             payment_method: 'Cash',
             reference_number: '',
         };
-
         router.post(
             '/pos-cash',
             {
@@ -216,11 +222,13 @@ export default function CheckoutDialog({
                 country: form.country,
                 payment_method: primaryPayment.payment_method,
                 reference_number:
-                    payments.length > 1 ? null : primaryPayment.reference_number,
-                payments: payments.map((payment) => ({
-                    payment_method: payment.payment_method,
-                    amount: Number(payment.amount || 0),
-                    reference_number: payment.reference_number || null,
+                    payments.length > 1
+                        ? null
+                        : primaryPayment.reference_number,
+                payments: payments.map((p) => ({
+                    payment_method: p.payment_method,
+                    amount: Number(p.amount || 0),
+                    reference_number: p.reference_number || null,
                 })),
                 existing_customer_id: form.existing_customer_id,
                 orders: orders.map((item) => ({
@@ -241,6 +249,7 @@ export default function CheckoutDialog({
                     if (errorBag && typeof errorBag === 'object') {
                         setErrors(errorBag as Record<string, string>);
                     }
+                    setStep('form');
                     toast.error('Please fix the errors in the form.');
                 },
             },
@@ -253,18 +262,12 @@ export default function CheckoutDialog({
         value: string | number,
     ) => {
         setPayments((current) =>
-            current.map((payment, paymentIndex) => {
-                if (paymentIndex !== index) {
-                    return payment;
-                }
-
-                const nextPayment = { ...payment, [key]: value };
-
-                if (key === 'payment_method' && value === 'Cash') {
-                    nextPayment.reference_number = '';
-                }
-
-                return nextPayment;
+            current.map((payment, i) => {
+                if (i !== index) return payment;
+                const next = { ...payment, [key]: value };
+                if (key === 'payment_method' && value === 'Cash')
+                    next.reference_number = '';
+                return next;
             }),
         );
     };
@@ -281,197 +284,333 @@ export default function CheckoutDialog({
     };
 
     const removePayment = (index: number) => {
-        setPayments((current) =>
-            current.filter((_, paymentIndex) => paymentIndex !== index),
-        );
+        setPayments((current) => current.filter((_, i) => i !== index));
     };
 
+    const customerName =
+        `${form.first_name} ${form.last_name}`.trim() || 'Walk-in customer';
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog
+            open={open}
+            onOpenChange={(o) => {
+                if (!o) setStep('form');
+                onOpenChange(o);
+            }}
+        >
             <DialogTrigger asChild>
                 <Button disabled={orders.length === 0} className="mt-5 w-full">
                     Place Order
                 </Button>
             </DialogTrigger>
+
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Customer Information</DialogTitle>
-                    <DialogDescription>
-                        Please enter customer details and confirm the order.
-                    </DialogDescription>
-                </DialogHeader>
+                {step === 'form' ? (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle>Customer Information</DialogTitle>
+                            <DialogDescription>
+                                Please enter customer details and confirm the
+                                order.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                <div className="space-y-4 py-4">
-                    <CustomerSearch
-                        searchQuery={searchQuery}
-                        onSearch={handleSearchCustomer}
-                        isLoading={isLoadingCustomers}
-                        isExistingCustomer={isExistingCustomer}
-                        onClear={clearCustomer}
-                        showResults={showResults}
-                        searchResults={searchResults}
-                        onSelectCustomer={selectCustomer}
-                    />
+                        <div className="space-y-4 py-4">
+                            <CustomerSearch
+                                searchQuery={searchQuery}
+                                onSearch={handleSearchCustomer}
+                                isLoading={isLoadingCustomers}
+                                isExistingCustomer={isExistingCustomer}
+                                onClear={clearCustomer}
+                                showResults={showResults}
+                                searchResults={searchResults}
+                                onSelectCustomer={selectCustomer}
+                            />
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <TextInput
+                                    id="firstName"
+                                    label="First Name"
+                                    required
+                                    value={form.first_name}
+                                    onChange={(v) =>
+                                        setFormValue('first_name', v)
+                                    }
+                                    error={errors.first_name}
+                                    placeholder="Enter first name"
+                                />
+                                <TextInput
+                                    id="lastName"
+                                    label="Last Name"
+                                    required
+                                    value={form.last_name}
+                                    onChange={(v) =>
+                                        setFormValue('last_name', v)
+                                    }
+                                    error={errors.last_name}
+                                    placeholder="Enter last name"
+                                />
+                            </div>
+                            <TextInput
+                                id="customerAddress"
+                                label="Address"
+                                required
+                                value={form.address}
+                                onChange={(v) => setFormValue('address', v)}
+                                error={errors.address}
+                                placeholder="Enter customer address"
+                            />
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <TextInput
+                                    id="city"
+                                    label="City"
+                                    required
+                                    value={form.city}
+                                    onChange={(v) => setFormValue('city', v)}
+                                    error={errors.city}
+                                    placeholder="Enter city"
+                                />
+                                <TextInput
+                                    id="province"
+                                    label="Province"
+                                    required
+                                    value={form.province}
+                                    onChange={(v) =>
+                                        setFormValue('province', v)
+                                    }
+                                    error={errors.province}
+                                    placeholder="Enter province"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <TextInput
+                                    id="zipcode"
+                                    label="Zipcode"
+                                    value={form.zipcode}
+                                    onChange={(v) => setFormValue('zipcode', v)}
+                                    error={errors.zipcode}
+                                    placeholder="Enter zipcode"
+                                />
+                                <TextInput
+                                    id="country"
+                                    label="Country"
+                                    required
+                                    value={form.country}
+                                    onChange={(v) => setFormValue('country', v)}
+                                    error={errors.country}
+                                    placeholder="Enter country"
+                                />
+                            </div>
+                            <TextInput
+                                id="email"
+                                label="Email"
+                                value={form.email}
+                                onChange={(v) => setFormValue('email', v)}
+                                error={errors.email}
+                                placeholder="Enter customer's email"
+                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="customerPhone">
+                                    Phone Number
+                                </Label>
+                                <PHPhoneInput
+                                    id="customerPhone"
+                                    value={form.phone}
+                                    onChange={(v) => setFormValue('phone', v)}
+                                    className={
+                                        errors.phone ? 'border-red-500' : ''
+                                    }
+                                />
+                                {errors.phone && (
+                                    <p className="text-sm text-red-500">
+                                        {errors.phone}
+                                    </p>
+                                )}
+                            </div>
+                            <PaymentBreakdown
+                                payments={payments}
+                                orderTotal={orderTotal}
+                                paymentTotal={paymentTotal}
+                                balance={paymentBalance}
+                                errors={errors}
+                                onUpdate={updatePayment}
+                                onAdd={addPayment}
+                                onRemove={removePayment}
+                            />
+                            <TextInput
+                                id="receiptNumber"
+                                label="Receipt Number"
+                                required
+                                value={form.receipt_number}
+                                onChange={(v) =>
+                                    setFormValue('receipt_number', v)
+                                }
+                                error={errors.receipt_number}
+                                placeholder="#0000000934"
+                            />
+                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                <SelectInput
+                                    id="employee"
+                                    label="Employee"
+                                    value={selectedEmployee}
+                                    onChange={onSelectedEmployeeChange}
+                                    disabled
+                                    options={employees.map((e) => ({
+                                        value: e.id.toString(),
+                                        label: e.full_name as string,
+                                    }))}
+                                />
+                                <SelectInput
+                                    id="branch"
+                                    label="Branch"
+                                    value={selectedLocation}
+                                    onChange={onSelectedLocationChange}
+                                    options={locations.map((l) => ({
+                                        value: l.id.toString(),
+                                        label: l.name,
+                                    }))}
+                                />
+                            </div>
+                        </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <TextInput
-                            id="firstName"
-                            label="First Name"
-                            required
-                            value={form.first_name}
-                            onChange={(value) =>
-                                setFormValue('first_name', value)
-                            }
-                            error={errors.first_name}
-                            placeholder="Enter first name"
-                        />
-                        <TextInput
-                            id="lastName"
-                            label="Last Name"
-                            required
-                            value={form.last_name}
-                            onChange={(value) =>
-                                setFormValue('last_name', value)
-                            }
-                            error={errors.last_name}
-                            placeholder="Enter last name"
-                        />
-                    </div>
+                        <Button
+                            onClick={handleReviewClick}
+                            disabled={orders.length === 0}
+                            className="w-full"
+                        >
+                            Review Order
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle>Order Review</DialogTitle>
+                            <DialogDescription>
+                                Double-check the customer, receipt, and items
+                                before confirming.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    <TextInput
-                        id="customerAddress"
-                        label="Address"
-                        required
-                        value={form.address}
-                        onChange={(value) => setFormValue('address', value)}
-                        error={errors.address}
-                        placeholder="Enter customer address"
-                    />
+                        <div className="space-y-4 py-2">
+                            <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+                                <Label className="text-xs tracking-wide text-muted-foreground uppercase">
+                                    Customer & Order
+                                </Label>
+                                <div className="grid grid-cols-1 gap-2 text-sm">
+                                    <ReviewLine
+                                        label="Customer"
+                                        value={customerName}
+                                    />
+                                    <ReviewLine
+                                        label="Receipt"
+                                        value={
+                                            form.receipt_number ||
+                                            'Not yet entered'
+                                        }
+                                    />
+                                    <ReviewLine
+                                        label="Items"
+                                        value={String(orders.length)}
+                                    />
+                                    <ReviewLine
+                                        label="Total"
+                                        value={`₱${orderTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <TextInput
-                            id="city"
-                            label="City"
-                            required
-                            value={form.city}
-                            onChange={(value) => setFormValue('city', value)}
-                            error={errors.city}
-                            placeholder="Enter city"
-                        />
-                        <TextInput
-                            id="province"
-                            label="Province"
-                            required
-                            value={form.province}
-                            onChange={(value) =>
-                                setFormValue('province', value)
-                            }
-                            error={errors.province}
-                            placeholder="Enter province"
-                        />
-                    </div>
+                            <Separator />
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <TextInput
-                            id="zipcode"
-                            label="Zipcode"
-                            value={form.zipcode}
-                            onChange={(value) => setFormValue('zipcode', value)}
-                            error={errors.zipcode}
-                            placeholder="Enter zipcode"
-                        />
-                        <TextInput
-                            id="country"
-                            label="Country"
-                            required
-                            value={form.country}
-                            onChange={(value) => setFormValue('country', value)}
-                            error={errors.country}
-                            placeholder="Enter country"
-                        />
-                    </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs tracking-wide text-muted-foreground uppercase">
+                                    Selected Items ({orders.length})
+                                </Label>
+                                <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border bg-muted/20 p-3">
+                                    {orders.map((order) => (
+                                        <div
+                                            key={order.id}
+                                            className="flex items-start justify-between gap-3 rounded-md bg-white px-3 py-2 text-sm shadow-sm"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="truncate font-medium">
+                                                    {order.product.description}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {order.product.model} ·{' '}
+                                                    {order.product.serial}
+                                                </p>
+                                            </div>
+                                            <p className="shrink-0 font-semibold">
+                                                ₱
+                                                {order.saleAmount.toLocaleString(
+                                                    'en-PH',
+                                                    {
+                                                        minimumFractionDigits: 2,
+                                                    },
+                                                )}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
 
-                    <TextInput
-                        id="email"
-                        label="Email"
-                        value={form.email}
-                        onChange={(value) => setFormValue('email', value)}
-                        error={errors.email}
-                        placeholder="Enter customer's email"
-                    />
+                            <Separator />
 
-                    <div className="space-y-2">
-                        <Label htmlFor="customerPhone">Phone Number</Label>
-                        <PHPhoneInput
-                            id="customerPhone"
-                            value={form.phone}
-                            onChange={(value) => setFormValue('phone', value)}
-                            className={errors.phone ? 'border-red-500' : ''}
-                        />
-                        {errors.phone && (
-                            <p className="text-sm text-red-500">
-                                {errors.phone}
-                            </p>
-                        )}
-                    </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs tracking-wide text-muted-foreground uppercase">
+                                    Payments ({payments.length})
+                                </Label>
+                                <div className="space-y-2">
+                                    {payments.map((payment, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center justify-between rounded-md bg-muted/20 px-3 py-2 text-sm"
+                                        >
+                                            <span className="text-muted-foreground">
+                                                {payment.payment_method}
+                                            </span>
+                                            <span className="font-medium">
+                                                ₱
+                                                {Number(
+                                                    payment.amount || 0,
+                                                ).toLocaleString('en-PH', {
+                                                    minimumFractionDigits: 2,
+                                                })}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
 
-                    <PaymentBreakdown
-                        payments={payments}
-                        orderTotal={orderTotal}
-                        paymentTotal={paymentTotal}
-                        balance={paymentBalance}
-                        errors={errors}
-                        onUpdate={updatePayment}
-                        onAdd={addPayment}
-                        onRemove={removePayment}
-                    />
-
-                    <TextInput
-                        id="receiptNumber"
-                        label="Receipt Number"
-                        required
-                        value={form.receipt_number}
-                        onChange={(value) =>
-                            setFormValue('receipt_number', value)
-                        }
-                        error={errors.receipt_number}
-                        placeholder="#0000000934"
-                    />
-
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        <SelectInput
-                            id="employee"
-                            label="Employee"
-                            value={selectedEmployee}
-                            onChange={onSelectedEmployeeChange}
-                            disabled
-                            options={employees.map((employee) => ({
-                                value: employee.id.toString(),
-                                label: employee.full_name as string,
-                            }))}
-                        />
-                        <SelectInput
-                            id="branch"
-                            label="Branch"
-                            value={selectedLocation}
-                            onChange={onSelectedLocationChange}
-                            options={locations.map((location) => ({
-                                value: location.id.toString(),
-                                label: location.name,
-                            }))}
-                        />
-                    </div>
-                </div>
-
-                <Button
-                    onClick={placeOrder}
-                    disabled={orders.length === 0}
-                    className="w-full"
-                >
-                    Confirm Order
-                </Button>
+                        <div className="flex gap-3 pt-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setStep('form')}
+                                className="flex-1"
+                            >
+                                Back
+                            </Button>
+                            <Button
+                                onClick={placeOrder}
+                                disabled={orders.length === 0}
+                                className="flex-1"
+                            >
+                                Confirm Order
+                            </Button>
+                        </div>
+                    </>
+                )}
             </DialogContent>
         </Dialog>
+    );
+}
+
+function ReviewLine({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="flex justify-between gap-3 rounded-md bg-white px-3 py-2 shadow-sm">
+            <span className="text-muted-foreground">{label}</span>
+            <span className="text-right font-medium">{value}</span>
+        </div>
     );
 }
 
@@ -499,7 +638,6 @@ function PaymentBreakdown({
     onRemove: (index: number) => void;
 }) {
     const isBalanced = Math.round(balance * 100) === 0;
-
     return (
         <div className="space-y-3 rounded-lg border p-3 sm:p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -519,7 +657,6 @@ function PaymentBreakdown({
                     Add Payment
                 </Button>
             </div>
-
             <div className="space-y-3">
                 {payments.map((payment, index) => (
                     <div
@@ -530,37 +667,35 @@ function PaymentBreakdown({
                             id={`payment-method-${index}`}
                             label="Method"
                             value={payment.payment_method}
-                            onChange={(value) =>
-                                onUpdate(index, 'payment_method', value)
+                            onChange={(v) =>
+                                onUpdate(index, 'payment_method', v)
                             }
-                            options={posCashPaymentMethods.map((method) => ({
-                                value: method,
-                                label: method,
+                            options={posCashPaymentMethods.map((m) => ({
+                                value: m,
+                                label: m,
                             }))}
                         />
-
                         <TextInput
                             id={`payment-amount-${index}`}
                             label="Amount"
                             value={String(payment.amount)}
-                            onChange={(value) =>
+                            onChange={(v) =>
                                 onUpdate(
                                     index,
                                     'amount',
-                                    value === '' ? 0 : Number(value),
+                                    v === '' ? 0 : Number(v),
                                 )
                             }
                             error={errors[`payments.${index}.amount`]}
                             placeholder="0.00"
                         />
-
                         <TextInput
                             id={`payment-reference-${index}`}
                             label="Reference"
                             required={payment.payment_method !== 'Cash'}
                             value={payment.reference_number}
-                            onChange={(value) =>
-                                onUpdate(index, 'reference_number', value)
+                            onChange={(v) =>
+                                onUpdate(index, 'reference_number', v)
                             }
                             error={errors[`payments.${index}.reference_number`]}
                             disabled={payment.payment_method === 'Cash'}
@@ -570,7 +705,6 @@ function PaymentBreakdown({
                                     : 'Reference number'
                             }
                         />
-
                         <div className="flex items-end">
                             <Button
                                 type="button"
@@ -586,7 +720,6 @@ function PaymentBreakdown({
                     </div>
                 ))}
             </div>
-
             <div className="grid grid-cols-1 gap-2 rounded-md bg-muted/40 p-3 text-sm sm:grid-cols-3">
                 <PaymentTotal label="Order Total" value={orderTotal} />
                 <PaymentTotal label="Payments" value={paymentTotal} />
@@ -596,7 +729,6 @@ function PaymentBreakdown({
                     className={isBalanced ? 'text-green-600' : 'text-red-600'}
                 />
             </div>
-
             {errors.payments && (
                 <p className="text-sm text-red-500">{errors.payments}</p>
             )}
@@ -748,7 +880,7 @@ function TextInput({
                 placeholder={placeholder}
                 value={value}
                 disabled={disabled}
-                onChange={(event) => onChange(event.target.value)}
+                onChange={(e) => onChange(e.target.value)}
                 className={error ? 'border-red-500' : ''}
             />
             {error && <p className="text-sm text-red-500">{error}</p>}

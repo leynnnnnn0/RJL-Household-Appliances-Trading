@@ -5,6 +5,7 @@ export interface SalesFilters {
     branch_id: string;
     item_type: string;
     as_of_date: string;
+    search: string;
 }
 
 export interface SalesBranch {

@@ -72,8 +72,8 @@ class ExpenseRecordService
     {
         $expenseRecord->update([
             'status' => $status,
-            'approved_by' => $status === 'approved' ? $reviewerId : null,
-            'approved_at' => $status === 'approved' ? now() : null,
+            'approved_by' => $status !== 'pending' ? $reviewerId : null,
+            'approved_at' => $status !== 'pending' ? now() : null,
         ]);
 
         return $expenseRecord->refresh();

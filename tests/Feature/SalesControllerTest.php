@@ -159,6 +159,41 @@ it('shows a full aging bucket page and downloads pdf reports', function () {
     $this->get(route('sales.aging.download-pdf', array_merge($query, ['bucket' => 'all'])))->assertOk();
 });
 
+it('filters sales aging bucket pages by customer name', function () {
+    actingAsSalesAnalyticsUser();
+    $branch = Branch::factory()->create();
+    $matchingCustomer = Customer::factory()->create([
+        'first_name' => 'Maria',
+        'last_name' => 'Santos',
+    ]);
+    $otherCustomer = Customer::factory()->create([
+        'first_name' => 'Pedro',
+        'last_name' => 'Reyes',
+    ]);
+
+    createSalesReportOrder(['branch_id' => $branch->id, 'customer_id' => $matchingCustomer->id], 'appliances', [
+        ['installment_number' => 1, 'due_date' => '2026-06-10', 'amount_due' => 2500],
+    ]);
+    createSalesReportOrder(['branch_id' => $branch->id, 'customer_id' => $otherCustomer->id], 'appliances', [
+        ['installment_number' => 1, 'due_date' => '2026-06-10', 'amount_due' => 1500],
+    ]);
+
+    $this->get(route('sales.aging.show', [
+        'bucket' => '1_30',
+        'as_of_date' => '2026-06-30',
+        'branch_id' => $branch->id,
+        'item_type' => 'all',
+        'search' => 'Maria',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Sales/Bucket')
+            ->where('filters.search', 'Maria')
+            ->where('table.total_accounts', 1)
+            ->where('table.rows.0.customer_name', 'Maria Santos')
+        );
+});
+
 it('validates sales filters', function () {
     actingAsSalesAnalyticsUser();
 

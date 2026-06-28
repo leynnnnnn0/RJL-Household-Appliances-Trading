@@ -67,6 +67,7 @@ class DashboardService
         $filters = $this->filters($input);
         $transactions = $this->transactions($filters, $userId);
         $totals = $this->totals($transactions['calculationRows']);
+        $expenses = $this->approvedExpenses($filters, $userId);
 
         return [
             'allTransactions' => $transactions['displayRows'],
@@ -75,7 +76,8 @@ class DashboardService
             'dpCollection' => $totals['dpCollection'],
             'cashCollection' => $totals['cashCollection'],
             'netCollection' => $totals['netCollection'],
-            'expenses' => $this->approvedExpenses($filters, $userId),
+            'expenses' => $expenses,
+            'netAfterExpenses' => $totals['netCollection'] - $expenses,
             'totalCashOnHand' => $totals['totalCashOnHand'],
             'totalOtherMop' => $totals['totalOtherMop'],
             'employees' => Branch::dropdown(),

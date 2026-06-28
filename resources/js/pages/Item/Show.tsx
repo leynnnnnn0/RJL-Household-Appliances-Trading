@@ -82,6 +82,7 @@ export default function View({
     };
 
     const isAvailable = !item.date_out;
+    const canArchiveItem = isAvailable && purchaseHistory.length === 0;
     const totalValue = item.quantity * item.unit_cost;
 
     return (
@@ -123,7 +124,7 @@ export default function View({
                             </Button>
                         )}
 
-                        {isAvailable && window.can('can archive item') && (
+                        {canArchiveItem && window.can('can archive item') && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="destructive">

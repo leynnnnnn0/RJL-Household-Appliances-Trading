@@ -2,6 +2,8 @@
 
 use App\Models\Item;
 use App\Models\Location;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -285,6 +287,19 @@ it('moves an item and records transfer history from the original location', func
     ]);
 });
 
+it('does not transfer an item to the same location', function () {
+    actingAsItemManager();
+    $location = Location::factory()->create();
+    $item = createItemRecord(['location_id' => $location->id]);
+
+    $this->from(route('items.show', $item))
+        ->put(route('items.move', $item), [
+            'location_id' => $location->id,
+            'remarks' => 'No actual move',
+        ])
+        ->assertSessionHasErrors('location_id');
+});
+
 it('soft deletes an item', function () {
     actingAsItemManager();
     $item = createItemRecord();
@@ -293,6 +308,36 @@ it('soft deletes an item', function () {
         ->assertRedirect(route('items.index'));
 
     $this->assertSoftDeleted('items', ['id' => $item->id]);
+});
+
+it('does not archive an item linked to a transaction', function () {
+    actingAsItemManager();
+    $location = Location::factory()->create();
+    $user = User::factory()->create();
+    $item = createItemRecord(['location_id' => $location->id]);
+    $order = Order::create([
+        'customer_id' => null,
+        'order_number' => 'ORD-LINKED-ITEM',
+        'location_id' => $location->id,
+        'employee_id' => $user->id,
+        'total_price' => 1000,
+        'transaction_date' => now(),
+        'payment_method' => 'Cash',
+        'receipt_number' => 'LINKED-ITEM-RECEIPT',
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'item_id' => $item->id,
+        'serial' => $item->serial,
+        'sale_amount' => 1000,
+    ]);
+
+    $this->from(route('items.show', $item))
+        ->delete(route('items.destroy', $item))
+        ->assertSessionHasErrors('item');
+
+    $this->assertNotSoftDeleted('items', ['id' => $item->id]);
 });
 
 it('validates item import upload and stores parsed rows in session', function () {

@@ -11,6 +11,7 @@ export const expenseStatusOptions = [
     { value: 'pending', label: 'Pending' },
     { value: 'approved', label: 'Approved' },
     { value: 'rejected', label: 'Rejected' },
+    { value: 'cancelled', label: 'Cancelled' },
 ];
 
 export const expensePaymentMethodOptions = [
@@ -27,6 +28,7 @@ export function expenseStatusColor(status: string): string {
             approved: 'bg-green-100 text-green-800 hover:bg-green-100',
             rejected: 'bg-red-100 text-red-800 hover:bg-red-100',
             pending: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100',
+            cancelled: 'bg-slate-100 text-slate-800 hover:bg-slate-100',
         }[status] ?? 'bg-gray-100 text-gray-800 hover:bg-gray-100'
     );
 }

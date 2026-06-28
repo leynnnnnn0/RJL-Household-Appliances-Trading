@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { AlertCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import Background from '../../../images/plain_background.jpg';
 
@@ -56,6 +56,7 @@ export default function Index({
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+    const suppressProductDropdownRef = useRef(false);
     const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
         [],
     );
@@ -86,6 +87,7 @@ export default function Index({
     );
     const [isExistingCustomer, setIsExistingCustomer] = useState(false);
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+    const suppressCustomerResultsRef = useRef(false);
 
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -189,6 +191,7 @@ export default function Index({
             setEditedSRPs((prev) => ({ ...prev, [product.id]: product.srp }));
         }
 
+        suppressProductDropdownRef.current = true;
         setSearchTerm('');
         setDownPayment(defaultDownPayment);
         setNoDownPayment(false);
@@ -196,14 +199,28 @@ export default function Index({
     }
 
     function handleProductSearch(value: string) {
+        suppressProductDropdownRef.current = false;
         setSearchTerm(value);
-        if (value.trim().length > 0) setIsLoadingProducts(true);
+        if (value.trim().length === 0) {
+            setFilteredProducts([]);
+            setShowDropdown(false);
+            setIsLoadingProducts(false);
+            return;
+        }
+
+        setIsLoadingProducts(true);
 
         axios
             .get('/api/items', {
                 params: { search: value, is_defaulted: isPullOutItems },
             })
             .then((response) => {
+                if (suppressProductDropdownRef.current) {
+                    setFilteredProducts([]);
+                    setShowDropdown(false);
+                    return;
+                }
+
                 setFilteredProducts(response.data?.data || []);
                 setShowDropdown(true);
                 setIsLoadingProducts(false);
@@ -271,6 +288,7 @@ export default function Index({
     }
 
     function handleSearch(query: string) {
+        suppressCustomerResultsRef.current = false;
         setSearchQuery(query);
         if (query.length <= 1) {
             setSearchResults([]);
@@ -283,6 +301,12 @@ export default function Index({
         axios
             .get('/api/customers', { params: { search: query } })
             .then((response) => {
+                if (suppressCustomerResultsRef.current) {
+                    setSearchResults([]);
+                    setShowResults(false);
+                    return;
+                }
+
                 setSearchResults(response.data?.data || []);
                 setShowResults(true);
                 setIsLoadingCustomers(false);
@@ -295,6 +319,7 @@ export default function Index({
     }
 
     function selectCustomer(customer: Customer) {
+        suppressCustomerResultsRef.current = true;
         setSelectedCustomer(customer);
         setIsExistingCustomer(true);
         setFirstName(customer.first_name);
@@ -757,6 +782,11 @@ export default function Index({
                     modeOfPayment={modeOfPayment}
                     referenceNumber={referenceNumber}
                     downPayment={downPayment}
+                    customerName={`${firstName} ${lastName}`.trim()}
+                    selectedProducts={selectedProducts}
+                    term={selectedTerm}
+                    loanContractPrice={paymentBreakdown?.lcp ?? totalLCP}
+                    promisoryNoteValue={paymentBreakdown?.pnv ?? 0}
                     isSubmitting={isSubmitting}
                     onOpenChange={setDialogOpen}
                     onReceiptNumberChange={setReceiptNumber}

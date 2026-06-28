@@ -16,6 +16,7 @@ export const salesQueryString = (filters: SalesFilters, extra: Record<string, st
         as_of_date: filters.as_of_date,
         branch_id: filters.branch_id,
         item_type: filters.item_type,
+        search: filters.search || '',
         ...extra,
     });
 

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { router } from '@inertiajs/react';
 import { FileDown, HelpCircle, Search } from 'lucide-react';
 import { formatPeso, salesQueryString } from './formatters';
 import type { AgingRow, AgingTableData, SalesBucketKey, SalesFilters } from './types';
@@ -14,7 +15,11 @@ interface AgingTableProps {
 
 function MobileAgingRow({ row }: { row: AgingRow }) {
     return (
-        <div className="rounded-xl border bg-white p-4">
+        <button
+            type="button"
+            onClick={() => router.visit(`/pos-installment-orders/${row.order_number}`)}
+            className="w-full rounded-xl border bg-white p-4 text-left transition-colors hover:bg-slate-50"
+        >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <p className="break-words text-base font-bold">{row.customer_name}</p>
@@ -43,7 +48,7 @@ function MobileAgingRow({ row }: { row: AgingRow }) {
                     <p>{row.days_overdue}</p>
                 </div>
             </div>
-        </div>
+        </button>
     );
 }
 
@@ -112,7 +117,11 @@ export function AgingTable({ bucket, filters, table, preview = false }: AgingTab
                         </thead>
                         <tbody>
                             {table.rows.map((row) => (
-                                <tr key={`${row.order_id}-${row.bucket}`} className="border-b hover:bg-slate-50">
+                                <tr
+                                    key={`${row.order_id}-${row.bucket}`}
+                                    onClick={() => router.visit(`/pos-installment-orders/${row.order_number}`)}
+                                    className="cursor-pointer border-b hover:bg-slate-50"
+                                >
                                     <td className="p-3 font-semibold">{row.customer_name}</td>
                                     <td className="max-w-[220px] truncate p-3">{row.address}</td>
                                     <td className="max-w-[260px] truncate p-3">{row.model}</td>

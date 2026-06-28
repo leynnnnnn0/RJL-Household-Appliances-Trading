@@ -29,7 +29,13 @@ export default function SalesBucket({ filters, bucket, bucketLabel, branches, ta
                     </Button>
                 </ModuleHeading>
 
-                <SalesFiltersCard branches={branches} filters={filters} />
+                <SalesFiltersCard
+                    branches={branches}
+                    filters={filters}
+                    action="/sales/aging"
+                    extraParams={{ bucket }}
+                    showSearch
+                />
                 <AgingTable bucket={bucket} filters={filters} table={table} />
             </div>
         </AppLayout>

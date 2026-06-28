@@ -5,7 +5,7 @@ import { POSCashCartItem, POSCashProduct } from '@/lib/pos-cash';
 import { Location, OrderWithrelations, User } from '@/types';
 import { usePage } from '@inertiajs/react';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import Background from "../../../images/plain_background.jpg";
 import Logo from "../../../images/logo.png";
@@ -42,8 +42,20 @@ export default function Index({
     const [saleAmountError, setSaleAmountError] = useState('');
     const [isFree, setIsFree] = useState(false);
     const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+    const suppressProductDropdownRef = useRef(false);
 
     useEffect(() => {
+        if (
+            suppressProductDropdownRef.current &&
+            selectedProduct &&
+            searchTerm === selectedProduct.description
+        ) {
+            setFilteredProducts([]);
+            setShowDropdown(false);
+            setIsLoadingProducts(false);
+            return;
+        }
+
         if (searchTerm.trim().length === 0) {
             setFilteredProducts([]);
             setShowDropdown(false);
@@ -58,6 +70,12 @@ export default function Index({
                     params: { search: searchTerm, location: selectedLocation },
                 })
                 .then((response) => {
+                    if (suppressProductDropdownRef.current) {
+                        setFilteredProducts([]);
+                        setShowDropdown(false);
+                        return;
+                    }
+
                     setFilteredProducts(response.data?.data || []);
                     setShowDropdown(true);
                 })
@@ -70,7 +88,7 @@ export default function Index({
         }, 500);
 
         return () => window.clearTimeout(timeout);
-    }, [searchTerm, selectedLocation]);
+    }, [searchTerm, selectedLocation, selectedProduct]);
 
     useEffect(() => {
         setShowDropdown(false);
@@ -82,15 +100,24 @@ export default function Index({
 
     const handleProductSelect = (product: POSCashProduct) => {
         if (orders.some((item) => item.id === product.serial)) {
+            suppressProductDropdownRef.current = true;
+            setShowDropdown(false);
             toast.info('This item is already on the order list');
             return;
         }
 
+        suppressProductDropdownRef.current = true;
         setIsFree(false);
         setSelectedProduct(product);
         setSearchTerm(product.description);
         setSaleAmount(product.srp.toString());
         setShowDropdown(false);
+    };
+
+    const handleSearchChange = (value: string) => {
+        suppressProductDropdownRef.current = false;
+        setSelectedProduct(null);
+        setSearchTerm(value);
     };
 
     const handleAddOrder = () => {
@@ -181,7 +208,7 @@ export default function Index({
                     <div className="lg:col-span-2">
                         <ProductSearchCard
                             searchTerm={searchTerm}
-                            onSearchChange={setSearchTerm}
+                            onSearchChange={handleSearchChange}
                             isLoading={isLoadingProducts}
                             showDropdown={showDropdown}
                             products={filteredProducts}

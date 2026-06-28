@@ -98,7 +98,7 @@ export default function Edit({ item, suppliers, locations }: PageProps) {
                 processingLabel="Saving..."
                 description="Update the item details below"
                 isDirty={isDirty}
-                showDateOut
+                showDateOut={false}
                 showLocation={false}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
