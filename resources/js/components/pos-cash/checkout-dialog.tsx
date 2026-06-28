@@ -20,12 +20,13 @@ import {
     emptyPOSCashCustomerForm,
     POSCashCartItem,
     POSCashCustomerForm,
+    POSCashPayment,
     posCashPaymentMethods,
 } from '@/lib/pos-cash';
 import { Customer, Location, User } from '@/types';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
-import { Loader2, Users, X } from 'lucide-react';
+import { Loader2, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -65,12 +66,25 @@ export default function CheckoutDialog({
     const [showResults, setShowResults] = useState(false);
     const [isExistingCustomer, setIsExistingCustomer] = useState(false);
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+    const [payments, setPayments] = useState<POSCashPayment[]>([
+        { payment_method: 'Cash', amount: orderTotal, reference_number: '' },
+    ]);
 
     useEffect(() => {
-        if (form.payment_method === 'Cash') {
-            setFormValue('reference_number', '');
-        }
-    }, [form.payment_method]);
+        setPayments((current) => {
+            if (current.length !== 1) {
+                return current;
+            }
+
+            return [{ ...current[0], amount: orderTotal }];
+        });
+    }, [orderTotal]);
+
+    const paymentTotal = payments.reduce(
+        (sum, payment) => sum + Number(payment.amount || 0),
+        0,
+    );
+    const paymentBalance = orderTotal - paymentTotal;
 
     const setFormValue = (
         key: keyof POSCashCustomerForm,
@@ -86,13 +100,18 @@ export default function CheckoutDialog({
         setSearchResults([]);
         setShowResults(false);
         setIsExistingCustomer(false);
+        setPayments([
+            {
+                payment_method: 'Cash',
+                amount: orderTotal,
+                reference_number: '',
+            },
+        ]);
     };
 
     const clearCustomer = () => {
         setForm((current) => ({
             ...emptyPOSCashCustomerForm(),
-            payment_method: current.payment_method,
-            reference_number: current.reference_number,
             receipt_number: current.receipt_number,
         }));
         setSearchQuery('');
@@ -146,16 +165,37 @@ export default function CheckoutDialog({
     const placeOrder = () => {
         setErrors({});
 
-        if (form.payment_method !== 'Cash' && !form.reference_number.trim()) {
-            setErrors({
-                reference_number:
-                    'Reference number is required for non-cash payments',
-            });
-            toast.error(
-                'Please provide a reference number for non-cash payments.',
-            );
+        const nextErrors: Record<string, string> = {};
+
+        payments.forEach((payment, index) => {
+            if (
+                payment.payment_method !== 'Cash' &&
+                !payment.reference_number.trim()
+            ) {
+                nextErrors[`payments.${index}.reference_number`] =
+                    'Reference number is required for non-cash payments';
+            }
+
+            if (Number(payment.amount) < 0) {
+                nextErrors[`payments.${index}.amount`] =
+                    'Amount cannot be negative';
+            }
+        });
+
+        if (Math.round(paymentBalance * 100) !== 0) {
+            nextErrors.payments = 'Payment total must match order total';
+        }
+
+        if (Object.keys(nextErrors).length > 0) {
+            setErrors(nextErrors);
+            toast.error('Please fix the payment breakdown.');
             return;
         }
+
+        const primaryPayment = payments[0] ?? {
+            payment_method: 'Cash',
+            reference_number: '',
+        };
 
         router.post(
             '/pos-cash',
@@ -172,8 +212,14 @@ export default function CheckoutDialog({
                 province: form.province,
                 zipcode: form.zipcode,
                 country: form.country,
-                payment_method: form.payment_method,
-                reference_number: form.reference_number,
+                payment_method: primaryPayment.payment_method,
+                reference_number:
+                    payments.length > 1 ? null : primaryPayment.reference_number,
+                payments: payments.map((payment) => ({
+                    payment_method: payment.payment_method,
+                    amount: Number(payment.amount || 0),
+                    reference_number: payment.reference_number || null,
+                })),
                 existing_customer_id: form.existing_customer_id,
                 orders: orders.map((item) => ({
                     id: item.product.id,
@@ -196,6 +242,45 @@ export default function CheckoutDialog({
                     toast.error('Please fix the errors in the form.');
                 },
             },
+        );
+    };
+
+    const updatePayment = (
+        index: number,
+        key: keyof POSCashPayment,
+        value: string | number,
+    ) => {
+        setPayments((current) =>
+            current.map((payment, paymentIndex) => {
+                if (paymentIndex !== index) {
+                    return payment;
+                }
+
+                const nextPayment = { ...payment, [key]: value };
+
+                if (key === 'payment_method' && value === 'Cash') {
+                    nextPayment.reference_number = '';
+                }
+
+                return nextPayment;
+            }),
+        );
+    };
+
+    const addPayment = () => {
+        setPayments((current) => [
+            ...current,
+            {
+                payment_method: 'Gcash',
+                amount: Math.max(0, Number(paymentBalance.toFixed(2))),
+                reference_number: '',
+            },
+        ]);
+    };
+
+    const removePayment = (index: number) => {
+        setPayments((current) =>
+            current.filter((_, paymentIndex) => paymentIndex !== index),
         );
     };
 
@@ -322,40 +407,15 @@ export default function CheckoutDialog({
                         placeholder="09XXXXXXXXX"
                     />
 
-                    <SelectInput
-                        id="paymentMethod"
-                        label="Payment Method"
-                        required
-                        value={form.payment_method}
-                        onChange={(value) =>
-                            setFormValue('payment_method', value)
-                        }
-                        options={posCashPaymentMethods.map((method) => ({
-                            value: method,
-                            label: method,
-                        }))}
-                    />
-
-                    <TextInput
-                        id="referenceNumber"
-                        label="Reference Number"
-                        required={form.payment_method !== 'Cash'}
-                        value={form.reference_number}
-                        onChange={(value) =>
-                            setFormValue('reference_number', value)
-                        }
-                        error={errors.reference_number}
-                        disabled={form.payment_method === 'Cash'}
-                        placeholder={
-                            form.payment_method === 'Cash'
-                                ? 'Not required for cash'
-                                : 'Enter reference number'
-                        }
-                        hint={
-                            form.payment_method === 'Cash'
-                                ? 'Reference number not needed for cash payments'
-                                : 'Required for non-cash payments (Gcash, Bank Transfer, etc.)'
-                        }
+                    <PaymentBreakdown
+                        payments={payments}
+                        orderTotal={orderTotal}
+                        paymentTotal={paymentTotal}
+                        balance={paymentBalance}
+                        errors={errors}
+                        onUpdate={updatePayment}
+                        onAdd={addPayment}
+                        onRemove={removePayment}
                     />
 
                     <TextInput
@@ -404,6 +464,157 @@ export default function CheckoutDialog({
                 </Button>
             </DialogContent>
         </Dialog>
+    );
+}
+
+function PaymentBreakdown({
+    payments,
+    orderTotal,
+    paymentTotal,
+    balance,
+    errors,
+    onUpdate,
+    onAdd,
+    onRemove,
+}: {
+    payments: POSCashPayment[];
+    orderTotal: number;
+    paymentTotal: number;
+    balance: number;
+    errors: Record<string, string>;
+    onUpdate: (
+        index: number,
+        key: keyof POSCashPayment,
+        value: string | number,
+    ) => void;
+    onAdd: () => void;
+    onRemove: (index: number) => void;
+}) {
+    const isBalanced = Math.round(balance * 100) === 0;
+
+    return (
+        <div className="space-y-3 rounded-lg border p-3 sm:p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <Label>Payment Breakdown</Label>
+                    <p className="text-xs text-muted-foreground">
+                        Total payments must match the order total.
+                    </p>
+                </div>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onAdd}
+                >
+                    <Plus className="h-4 w-4" />
+                    Add Payment
+                </Button>
+            </div>
+
+            <div className="space-y-3">
+                {payments.map((payment, index) => (
+                    <div
+                        key={index}
+                        className="grid grid-cols-1 gap-3 rounded-md border bg-muted/20 p-3 sm:grid-cols-[1fr_140px] lg:grid-cols-[1fr_140px_1fr_auto]"
+                    >
+                        <SelectInput
+                            id={`payment-method-${index}`}
+                            label="Method"
+                            value={payment.payment_method}
+                            onChange={(value) =>
+                                onUpdate(index, 'payment_method', value)
+                            }
+                            options={posCashPaymentMethods.map((method) => ({
+                                value: method,
+                                label: method,
+                            }))}
+                        />
+
+                        <TextInput
+                            id={`payment-amount-${index}`}
+                            label="Amount"
+                            value={String(payment.amount)}
+                            onChange={(value) =>
+                                onUpdate(
+                                    index,
+                                    'amount',
+                                    value === '' ? 0 : Number(value),
+                                )
+                            }
+                            error={errors[`payments.${index}.amount`]}
+                            placeholder="0.00"
+                        />
+
+                        <TextInput
+                            id={`payment-reference-${index}`}
+                            label="Reference"
+                            required={payment.payment_method !== 'Cash'}
+                            value={payment.reference_number}
+                            onChange={(value) =>
+                                onUpdate(index, 'reference_number', value)
+                            }
+                            error={errors[`payments.${index}.reference_number`]}
+                            disabled={payment.payment_method === 'Cash'}
+                            placeholder={
+                                payment.payment_method === 'Cash'
+                                    ? 'Not required'
+                                    : 'Reference number'
+                            }
+                        />
+
+                        <div className="flex items-end">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                                disabled={payments.length === 1}
+                                onClick={() => onRemove(index)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 rounded-md bg-muted/40 p-3 text-sm sm:grid-cols-3">
+                <PaymentTotal label="Order Total" value={orderTotal} />
+                <PaymentTotal label="Payments" value={paymentTotal} />
+                <PaymentTotal
+                    label="Balance"
+                    value={balance}
+                    className={isBalanced ? 'text-green-600' : 'text-red-600'}
+                />
+            </div>
+
+            {errors.payments && (
+                <p className="text-sm text-red-500">{errors.payments}</p>
+            )}
+        </div>
+    );
+}
+
+function PaymentTotal({
+    label,
+    value,
+    className = '',
+}: {
+    label: string;
+    value: number;
+    className?: string;
+}) {
+    return (
+        <div className="flex items-center justify-between gap-3 sm:block">
+            <span className="text-muted-foreground">{label}</span>
+            <p className={`font-semibold ${className}`}>
+                ₱
+                {Number(value || 0).toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                })}
+            </p>
+        </div>
     );
 }
 

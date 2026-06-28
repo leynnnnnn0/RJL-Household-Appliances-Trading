@@ -21,7 +21,7 @@ class POSCashOrderService
 
     public function findByOrderNumber(string $orderNumber): Order
     {
-        return Order::with('order_items.item', 'employee', 'location', 'customer', 'branch')
+        return Order::with('order_items.item', 'employee', 'location', 'customer', 'branch', 'payments')
             ->where('order_number', $orderNumber)
             ->firstOrFail();
     }
@@ -72,7 +72,7 @@ class POSCashOrderService
     private function baseIndexQuery(array $filters): Builder
     {
         return $this->applyCommonFilters(
-            Order::with('order_items.item', 'employee', 'location', 'branch'),
+            Order::with('order_items.item', 'employee', 'location', 'branch', 'payments'),
             $filters,
             'branch_id'
         );
@@ -86,6 +86,7 @@ class POSCashOrderService
                 'order_items.item.location',
                 'location',
                 'employee',
+                'payments',
             ]),
             $filters,
             'location_id'

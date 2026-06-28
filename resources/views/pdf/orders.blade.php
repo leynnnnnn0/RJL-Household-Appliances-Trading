@@ -315,6 +315,18 @@
                         {{ number_format($order->total_price, 2) }}
                     </td>
                 </tr>
+                <tr style="background: white;" class="{{ $order->is_void ? 'voided-row' : '' }}">
+                    <td colspan="10" style="font-size: 7px;">
+                        <strong>Payment:</strong>
+                        @if($order->payments->count() > 0)
+                            @foreach($order->payments as $payment)
+                                {{ $payment->payment_method }} {{ number_format($payment->amount, 2) }}@if($payment->reference_number) (Ref: {{ $payment->reference_number }})@endif{{ !$loop->last ? ', ' : '' }}
+                            @endforeach
+                        @else
+                            {{ $order->payment_method }} {{ number_format($order->total_price, 2) }}@if($order->reference_number) (Ref: {{ $order->reference_number }})@endif
+                        @endif
+                    </td>
+                </tr>
             @endforeach
         </tbody>
     </table>

@@ -14,7 +14,7 @@ class POSCashService
 {
     public function todayTransactionsForCurrentUser(): Collection
     {
-        return Order::with(['order_items.item', 'location', 'branch'])
+        return Order::with(['order_items.item', 'location', 'branch', 'payments'])
             ->whereDate('transaction_date', today())
             ->where('employee_id', Auth::id())
             ->latest()
@@ -25,6 +25,9 @@ class POSCashService
     {
         return DB::transaction(function () use ($data) {
             $customer = $this->upsertCustomer($data);
+            $payments = $this->normalizePayments($data);
+            $isSplitPayment = count($payments) > 1;
+
             $order = Order::create([
                 'customer_id' => $customer->id,
                 'location_id' => 1,
@@ -32,11 +35,13 @@ class POSCashService
                 'employee_id' => $data['employee_id'],
                 'order_number' => $this->generateOrderNumber(),
                 'total_price' => $data['total_price'],
-                'payment_method' => $data['payment_method'],
-                'reference_number' => $data['reference_number'] ?? null,
+                'payment_method' => $isSplitPayment ? 'Split' : $payments[0]['payment_method'],
+                'reference_number' => $isSplitPayment ? null : ($payments[0]['reference_number'] ?? null),
                 'transaction_date' => now(),
                 'receipt_number' => $data['receipt_number'],
             ]);
+
+            $order->payments()->createMany($payments);
 
             foreach ($data['orders'] as $item) {
                 $inventoryItem = Item::where('date_out', null)->findOrFail($item['id']);
@@ -55,6 +60,26 @@ class POSCashService
 
             return $order;
         });
+    }
+
+    private function normalizePayments(array $data): array
+    {
+        if (! empty($data['payments'])) {
+            return collect($data['payments'])
+                ->map(fn (array $payment) => [
+                    'payment_method' => $payment['payment_method'],
+                    'amount' => $payment['amount'],
+                    'reference_number' => $payment['reference_number'] ?? null,
+                ])
+                ->values()
+                ->all();
+        }
+
+        return [[
+            'payment_method' => $data['payment_method'],
+            'amount' => $data['total_price'],
+            'reference_number' => $data['reference_number'] ?? null,
+        ]];
     }
 
     public function generateOrderNumber(): string

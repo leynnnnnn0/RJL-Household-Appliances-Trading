@@ -150,6 +150,13 @@ it('stores a cash order with one item and new customer information', function ()
         ->and($order->total_price)->toEqual(12500)
         ->and($order->order_items)->toHaveCount(1);
 
+    $this->assertDatabaseHas('order_payments', [
+        'order_id' => $order->id,
+        'payment_method' => 'Cash',
+        'amount' => 12500,
+        'reference_number' => null,
+    ]);
+
     $this->assertDatabaseHas('order_items', [
         'order_id' => $order->id,
         'item_id' => $payload['orders'][0]['id'],
@@ -162,6 +169,80 @@ it('stores a cash order with one item and new customer information', function ()
         'id' => $payload['orders'][0]['id'],
         'date_out' => now()->startOfDay()->toDateTimeString(),
     ]);
+});
+
+it('stores split payments for a cash order without changing the order total', function () {
+    actingAsPOSCashier();
+
+    $payload = validPOSCashPayload([
+        'receipt_number' => 'RCPT-POS-CASH-SPLIT',
+        'payment_method' => 'Cash',
+        'reference_number' => null,
+        'payments' => [
+            [
+                'payment_method' => 'Cash',
+                'amount' => 5000,
+                'reference_number' => null,
+            ],
+            [
+                'payment_method' => 'Gcash',
+                'amount' => 7500,
+                'reference_number' => 'GCASH-SPLIT-1001',
+            ],
+        ],
+    ]);
+
+    $this->post(route('pos-cash.store'), $payload)
+        ->assertOk()
+        ->assertSessionHasNoErrors();
+
+    $order = Order::with('payments')
+        ->where('receipt_number', 'RCPT-POS-CASH-SPLIT')
+        ->firstOrFail();
+
+    expect($order->payment_method)->toBe('Split')
+        ->and($order->reference_number)->toBeNull()
+        ->and((float) $order->total_price)->toBe(12500.0)
+        ->and($order->payments)->toHaveCount(2);
+
+    $this->assertDatabaseHas('order_payments', [
+        'order_id' => $order->id,
+        'payment_method' => 'Cash',
+        'amount' => 5000,
+        'reference_number' => null,
+    ]);
+
+    $this->assertDatabaseHas('order_payments', [
+        'order_id' => $order->id,
+        'payment_method' => 'Gcash',
+        'amount' => 7500,
+        'reference_number' => 'GCASH-SPLIT-1001',
+    ]);
+});
+
+it('validates split payment totals and non-cash reference numbers', function () {
+    actingAsPOSCashier();
+
+    $this->from(route('pos-cash.index'))
+        ->post(route('pos-cash.store'), validPOSCashPayload([
+            'receipt_number' => 'RCPT-POS-CASH-SPLIT-INVALID',
+            'payments' => [
+                [
+                    'payment_method' => 'Cash',
+                    'amount' => 5000,
+                    'reference_number' => null,
+                ],
+                [
+                    'payment_method' => 'Gcash',
+                    'amount' => 1000,
+                    'reference_number' => null,
+                ],
+            ],
+        ]))
+        ->assertSessionHasErrors([
+            'payments',
+            'payments.1.reference_number',
+        ]);
 });
 
 it('stores a cash order with multiple items and increments order numbers', function () {
@@ -320,10 +401,19 @@ it('requires payment information and a reference number for non-cash payments', 
         ->assertOk()
         ->assertSessionHasNoErrors();
 
+    $order = Order::where('receipt_number', 'RCPT-POS-CASH-GCASH')->firstOrFail();
+
     $this->assertDatabaseHas('orders', [
         'payment_method' => 'Gcash',
         'reference_number' => 'GCASH-REF-1001',
         'receipt_number' => 'RCPT-POS-CASH-GCASH',
+    ]);
+
+    $this->assertDatabaseHas('order_payments', [
+        'order_id' => $order->id,
+        'payment_method' => 'Gcash',
+        'amount' => 12500,
+        'reference_number' => 'GCASH-REF-1001',
     ]);
 });
 

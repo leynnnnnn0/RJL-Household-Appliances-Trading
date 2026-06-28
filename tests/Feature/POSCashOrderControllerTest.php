@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderPayment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -156,6 +157,40 @@ it('renders a cash order detail page by order number', function () {
             ->has('transaction.employee')
             ->has('transaction.branch')
             ->has('transaction.order_items', 1)
+        );
+});
+
+it('renders split payment details on the cash order detail page', function () {
+    actingAsPOSCashOrderUser(['can view cash orders']);
+
+    $order = createPOSCashOrderRecord([
+        'order_number' => 'ORD-CASH-SPLIT-SHOW',
+        'total_price' => 8800,
+        'payment_method' => 'Split',
+    ]);
+
+    OrderPayment::create([
+        'order_id' => $order->id,
+        'payment_method' => 'Cash',
+        'amount' => 4000,
+    ]);
+
+    OrderPayment::create([
+        'order_id' => $order->id,
+        'payment_method' => 'Gcash',
+        'amount' => 4800,
+        'reference_number' => 'GCASH-SHOW-1001',
+    ]);
+
+    $this->get(route('pos-cash-orders.show', $order->order_number))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('POSCashOrder/Show')
+            ->where('transaction.order_number', 'ORD-CASH-SPLIT-SHOW')
+            ->has('transaction.payments', 2)
+            ->where('transaction.payments.0.payment_method', 'Cash')
+            ->where('transaction.payments.1.payment_method', 'Gcash')
+            ->where('transaction.payments.1.reference_number', 'GCASH-SHOW-1001')
         );
 });
 

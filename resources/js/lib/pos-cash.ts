@@ -35,6 +35,12 @@ export interface POSCashCustomerForm {
     receipt_number: string;
 }
 
+export interface POSCashPayment {
+    payment_method: string;
+    amount: number;
+    reference_number: string;
+}
+
 export const posCashPaymentMethods = [
     'Cash',
     'Gcash',

@@ -23,12 +23,12 @@ export function OrderInfoCard({
                         <InfoRow
                             icon={<CreditCard />}
                             label="Payment Method"
-                            value={transaction.payment_method || 'N/A'}
+                            value={formatPaymentMethod(transaction)}
                         />
                         <InfoRow
                             icon={<Receipt />}
                             label="Reference Number"
-                            value={transaction.reference_number || 'N/A'}
+                            value={formatPaymentReferences(transaction)}
                             mono
                         />
                         <InfoRow
@@ -66,6 +66,41 @@ export function OrderInfoCard({
             </CardContent>
         </Card>
     );
+}
+
+function formatPaymentMethod(transaction: OrderWithrelations): string {
+    if (!transaction.payments?.length) {
+        return transaction.payment_method || 'N/A';
+    }
+
+    if (transaction.payments.length === 1) {
+        return transaction.payments[0].payment_method;
+    }
+
+    return transaction.payments
+        .map(
+            (payment) =>
+                `${payment.payment_method} ${formatCurrency(payment.amount)}`,
+        )
+        .join(', ');
+}
+
+function formatPaymentReferences(transaction: OrderWithrelations): string {
+    if (!transaction.payments?.length) {
+        return transaction.reference_number || 'N/A';
+    }
+
+    const references = transaction.payments
+        .map((payment) => payment.reference_number)
+        .filter(Boolean);
+
+    return references.length > 0 ? references.join(', ') : 'N/A';
+}
+
+function formatCurrency(value: number | string): string {
+    return `₱${Number(value || 0).toLocaleString('en-PH', {
+        minimumFractionDigits: 2,
+    })}`;
 }
 
 function InfoRow({

@@ -20,7 +20,7 @@ class POSCashOrderSalesService
 
     public function orders(array $filters): Collection
     {
-        return Order::with(['branch', 'order_items.item.location', 'order_items.item.supplier'])
+        return Order::with(['branch', 'order_items.item.location', 'order_items.item.supplier', 'payments'])
             ->where('is_void', 0)
             ->when($filters['date_from'], fn ($query) => $query->whereDate('created_at', '>=', $filters['date_from']))
             ->when($filters['date_to'], fn ($query) => $query->whereDate('created_at', '<=', $filters['date_to']))

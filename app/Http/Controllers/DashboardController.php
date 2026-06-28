@@ -51,7 +51,7 @@ class DashboardController extends Controller
             $employeeId = $request->input('branch_id');
 
             // Build base queries with date range filter
-            $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
+            $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee', 'payments'])
                 ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
             $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user', 'installment_order_items.item'])
                 ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
@@ -73,25 +73,9 @@ class DashboardController extends Controller
             }
 
             // Get cash orders
-            $cashOrders = $cashOrdersQuery->get()
-                ->map(function ($order) {
-                    return [
-                        'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                        'receipt_number' => $order->receipt_number,
-                        'customer' => $order->customer->full_name,
-                        'm_i' => null,
-                        'd_p' => null,
-                        'amount_paid' => $order->total_price,
-                        'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
-                        'reference_number' => $order->reference_number,
-                        'is_voided' => $order->is_void,
-                        'created_at' => $order->created_at,
-                        'employee_name' => $order->employee->full_name ?? 'N/A',
-                        'remarks' => $order->order_items
-                            ->map(fn ($item) => $item->item->model)
-                            ->implode(', '),
-                    ];
-                });
+            $cashOrders = $cashOrdersQuery->get();
+            $cashOrderPaymentRows = $cashOrders->flatMap(fn (Order $order) => $this->cashOrderPaymentRows($order));
+            $cashOrderDisplayRows = $cashOrders->map(fn (Order $order) => $this->cashOrderDisplayRow($order));
 
             // Get installment orders
             $installmentOrders = $installmentOrdersQuery->get()
@@ -160,7 +144,7 @@ class DashboardController extends Controller
 
             // Combine all transactions (use ungrouped installment payments for accurate MOP totals)
             $transactions = collect()
-                ->concat($cashOrders)
+                ->concat($cashOrderPaymentRows)
                 ->concat($installmentOrders)
                 ->concat($installmentPayments);
 
@@ -206,7 +190,7 @@ class DashboardController extends Controller
 
             // Use grouped version for display test
             $allTransactions = collect()
-                ->concat($cashOrders)
+                ->concat($cashOrderDisplayRows)
                 ->concat($installmentOrders)
                 ->concat($groupedInstallmentPayments)
                 ->sortByDesc('date')
@@ -418,7 +402,7 @@ class DashboardController extends Controller
         }
 
         // Build base queries with date range filter
-        $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee'])
+        $cashOrdersQuery = Order::with(['customer', 'order_items.item', 'employee', 'payments'])
             ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
         $installmentOrdersQuery = InstallmentOrder::with(['customer', 'user', 'installment_order_items.item'])
             ->whereBetween(DB::raw('DATE(transaction_date)'), [$fromDate, $toDate]);
@@ -446,25 +430,9 @@ class DashboardController extends Controller
         }
 
         // Get cash orders
-        $cashOrders = $cashOrdersQuery->get()
-            ->map(function ($order) {
-                return [
-                    'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
-                    'receipt_number' => $order->receipt_number,
-                    'customer' => $order->customer->full_name,
-                    'm_i' => null,
-                    'd_p' => null,
-                    'amount_paid' => $order->total_price,
-                    'payment_method' => Str::of(strtolower($order->payment_method))->replace('_', ' '),
-                    'reference_number' => $order->reference_number,
-                    'is_voided' => $order->is_void,
-                    'created_at' => $order->created_at,
-                    'employee_name' => $order->employee->full_name ?? 'N/A',
-                    'remarks' => $order->order_items
-                        ->map(fn ($item) => $item->item->model)
-                        ->implode(', '),
-                ];
-            });
+        $cashOrders = $cashOrdersQuery->get();
+        $cashOrderPaymentRows = $cashOrders->flatMap(fn (Order $order) => $this->cashOrderPaymentRows($order));
+        $cashOrderDisplayRows = $cashOrders->map(fn (Order $order) => $this->cashOrderDisplayRow($order));
 
         // Get installment orders
         $installmentOrders = $installmentOrdersQuery->get()
@@ -533,7 +501,7 @@ class DashboardController extends Controller
 
         // Combine transactions using ungrouped installment payments for accurate MOP totals
         $transactions = collect()
-            ->concat($cashOrders)
+            ->concat($cashOrderPaymentRows)
             ->concat($installmentOrders)
             ->concat($installmentPayments);
 
@@ -568,7 +536,7 @@ class DashboardController extends Controller
 
         // Use grouped version for display in PDF
         $allTransactions = collect()
-            ->concat($cashOrders)
+            ->concat($cashOrderDisplayRows)
             ->concat($installmentOrders)
             ->concat($groupedInstallmentPayments)
             ->sortByDesc('date')
@@ -610,5 +578,80 @@ class DashboardController extends Controller
         $filename = 'transactions_'.$fromDate.'_to_'.$toDate.'.pdf';
 
         return $pdf->download($filename);
+    }
+
+    private function cashOrderPaymentRows(Order $order): \Illuminate\Support\Collection
+    {
+        return $this->effectiveOrderPayments($order)
+            ->map(fn (array $payment) => [
+                'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
+                'receipt_number' => $order->receipt_number,
+                'customer' => $order->customer->full_name,
+                'm_i' => null,
+                'd_p' => null,
+                'amount_paid' => $payment['amount'],
+                'payment_method' => $this->normalizePaymentMethod($payment['payment_method']),
+                'reference_number' => $payment['reference_number'],
+                'is_voided' => $order->is_void,
+                'created_at' => $order->created_at,
+                'employee_name' => $order->employee->full_name ?? 'N/A',
+                'remarks' => $order->order_items
+                    ->map(fn ($item) => $item->item->model)
+                    ->implode(', '),
+            ]);
+    }
+
+    private function cashOrderDisplayRow(Order $order): array
+    {
+        $payments = $this->effectiveOrderPayments($order);
+
+        return [
+            'date' => Carbon::parse($order->transaction_date)->format('F d, Y'),
+            'receipt_number' => $order->receipt_number,
+            'customer' => $order->customer->full_name,
+            'm_i' => null,
+            'd_p' => null,
+            'amount_paid' => $order->total_price,
+            'payment_method' => $payments->count() > 1
+                ? 'Split: '.$payments
+                    ->groupBy('payment_method')
+                    ->map(fn ($items, $method) => ucfirst($this->normalizePaymentMethod($method)).' ₱'.number_format($items->sum('amount'), 2))
+                    ->implode(', ')
+                : $this->normalizePaymentMethod($payments->first()['payment_method']),
+            'reference_number' => $payments
+                ->pluck('reference_number')
+                ->filter()
+                ->implode(', '),
+            'is_voided' => $order->is_void,
+            'created_at' => $order->created_at,
+            'employee_name' => $order->employee->full_name ?? 'N/A',
+            'remarks' => $order->order_items
+                ->map(fn ($item) => $item->item->model)
+                ->implode(', '),
+        ];
+    }
+
+    private function effectiveOrderPayments(Order $order): \Illuminate\Support\Collection
+    {
+        if ($order->relationLoaded('payments') && $order->payments->isNotEmpty()) {
+            return $order->payments
+                ->map(fn ($payment) => [
+                    'payment_method' => $payment->payment_method,
+                    'amount' => (float) $payment->amount,
+                    'reference_number' => $payment->reference_number,
+                ])
+                ->values();
+        }
+
+        return collect([[
+            'payment_method' => $order->payment_method,
+            'amount' => (float) $order->total_price,
+            'reference_number' => $order->reference_number,
+        ]]);
+    }
+
+    private function normalizePaymentMethod(string $method): string
+    {
+        return (string) Str::of(strtolower($method))->replace('_', ' ');
     }
 }

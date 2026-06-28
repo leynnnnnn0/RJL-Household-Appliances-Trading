@@ -147,6 +147,14 @@ export type Order = {
     reference_number: string | null;
 };
 
+export type OrderPayment = {
+    id: number;
+    order_id: number;
+    payment_method: string;
+    amount: number;
+    reference_number: string | null;
+};
+
 export type Orderitem = {
     order_id: number;
     item_id: number;
@@ -157,6 +165,7 @@ export type Orderitem = {
 
 export type OrderWithrelations = Order & {
     order_items: OrderItemWithRelations[];
+    payments?: OrderPayment[];
     location: Location;
     branch: Branch;
     employee: User;

@@ -33,6 +33,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function payments()
+    {
+        return $this->hasMany(OrderPayment::class);
+    }
+
     public function employee()
     {
         return $this->belongsTo(User::class, 'employee_id');
