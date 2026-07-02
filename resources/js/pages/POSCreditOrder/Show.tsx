@@ -43,7 +43,7 @@ import {
     InstallmentOrderPaymentHistory,
     InstallmentOrderWithRelations,
 } from '@/types';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { IconTopologyStarRing3 } from '@tabler/icons-react';
 import {
     AlertCircle,
@@ -836,7 +836,7 @@ export default function Show({
                                                     <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                                         <div className="min-w-0 flex-1">
                                                             <div className="mb-1 flex flex-wrap items-center gap-2">
-                                                                <h4 className="text-base font-semibold break-words">
+                                                                <h4 onClick={() => router.visit(`/items/${orderItem.item.id}`)} className="text-base font-semibold break-words underline cursor-pointer">
                                                                     {
                                                                         orderItem
                                                                             .item
@@ -938,7 +938,7 @@ export default function Show({
                                         <p className="text-sm text-muted-foreground">
                                             Name
                                         </p>
-                                        <p className="font-medium">
+                                        <p className="font-medium cursor-pointer underline" onClick={() => router.visit(`/customers/${transaction.customer?.id}`)}>
                                             {transaction.customer?.first_name}{' '}
                                             {transaction.customer?.last_name}
                                         </p>

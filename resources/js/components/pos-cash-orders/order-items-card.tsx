@@ -10,6 +10,7 @@ import {
 import { OrderWithrelations } from '@/types';
 import { Package } from 'lucide-react';
 import { formatCurrency } from './formatters';
+import { router } from '@inertiajs/react';
 
 export function OrderItemsCard({
     transaction,
@@ -54,8 +55,9 @@ export function OrderItemsCard({
                                 transaction.order_items.map(
                                     (orderItem, index) => (
                                         <TableRow
+                                            onClick={() => router.visit(`/items/${orderItem.item_id}`)}
                                             key={`${orderItem.item_id}-${index}`}
-                                            className="hover:bg-muted/30"
+                                            className="hover:bg-muted/30 cursor-pointer"
                                         >
                                             <TableCell className="px-3 py-2 text-sm font-medium">
                                                 {orderItem.item_id}

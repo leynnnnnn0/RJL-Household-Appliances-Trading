@@ -432,84 +432,86 @@ export default function View({
                     </CardContent>
                 </Card>
 
-                {/* Purchase History */}
-                {item.remarks && (
-                    <Card className="overflow-hidden">
-                        <CardHeader className="px-4 sm:px-6">
-                            <CardTitle>Purchase History</CardTitle>
-                            <CardDescription>
-                                Additional information
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-4 sm:px-6">
-                            {purchaseHistory.length === 0 ? (
-                                <HistoryEmptyState />
-                            ) : (
-                                <>
-                                    <div className="space-y-3 md:hidden">
-                                        {purchaseHistory.map((item) => (
-                                            <PurchaseHistoryCard
-                                                key={item.order_number}
-                                                item={item}
-                                            />
-                                        ))}
-                                    </div>
+                <Card className="overflow-hidden">
+                    <CardHeader className="px-4 sm:px-6">
+                        <CardTitle>Purchase History</CardTitle>
+                        <CardDescription>
+                            Additional information
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="px-4 sm:px-6">
+                        {purchaseHistory.length === 0 ? (
+                            <HistoryEmptyState />
+                        ) : (
+                            <>
+                                <div className="space-y-3 md:hidden">
+                                    {purchaseHistory.map((item) => (
+                                        <PurchaseHistoryCard
+                                            key={item.order_number}
+                                            item={item}
+                                        />
+                                    ))}
+                                </div>
 
-                                    <div className="hidden md:block">
-                                        <Table className="min-w-[760px]">
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>
-                                                        Order Number
-                                                    </TableHead>
-                                                    <TableHead>
-                                                        Customer
-                                                    </TableHead>
-                                                    <TableHead>
-                                                        Transaction By
-                                                    </TableHead>
-                                                    <TableHead>
-                                                        Transaction Date
-                                                    </TableHead>
-                                                    <TableHead>
-                                                        Created at
-                                                    </TableHead>
+                                <div className="hidden md:block">
+                                    <Table className="min-w-[760px]">
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>
+                                                    Order Number
+                                                </TableHead>
+                                                <TableHead>Customer</TableHead>
+                                                <TableHead>
+                                                    Transaction By
+                                                </TableHead>
+                                                <TableHead>
+                                                    Transaction Date
+                                                </TableHead>
+                                                <TableHead>
+                                                    Created at
+                                                </TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {purchaseHistory.map((item) => (
+                                                <TableRow
+                                                    className="cursor-pointer"
+                                                    onClick={() =>
+                                                    {
+                                                        if(item.order_number.startsWith('ORD'))
+                                                        {
+                                                            router.visit(`/pos-cash-orders/${item.order_number}`);
+                                                        } else {
+                                                            router.visit(`/pos-installment-orders/${item.order_number}`);
+                                                        }
+                                                    }
+                                                    }
+                                                    key={item.order_number}
+                                                >
+                                                    <TableCell>
+                                                        {item.order_number}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {item.customer}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {item.transaction_by}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {item.transaction_date}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {item.created_at}
+                                                    </TableCell>
                                                 </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {purchaseHistory.map((item) => (
-                                                    <TableRow
-                                                        key={item.order_number}
-                                                    >
-                                                        <TableCell>
-                                                            {item.order_number}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {item.customer}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {
-                                                                item.transaction_by
-                                                            }
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {
-                                                                item.transaction_date
-                                                            }
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {item.created_at}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
 
                 {/* Remarks */}
                 {item.remarks && (
