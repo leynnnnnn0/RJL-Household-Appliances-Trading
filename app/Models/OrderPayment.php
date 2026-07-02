@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class OrderPayment extends Model
+class OrderPayment extends Model implements AuditableContract
 {
+    use Auditable;
+
     protected $fillable = [
         'order_id',
         'payment_method',

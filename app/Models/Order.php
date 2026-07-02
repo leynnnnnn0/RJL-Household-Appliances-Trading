@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class Order extends Model
+class Order extends Model implements AuditableContract
 {
+    use Auditable;
+
     protected $fillable = [
         'customer_id',
         'location_id',
@@ -20,7 +24,7 @@ class Order extends Model
         'reason_for_cancellation',
         'void_date',
         'user_id',
-        'branch_id'
+        'branch_id',
     ];
 
     public function customer()

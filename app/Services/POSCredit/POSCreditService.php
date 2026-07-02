@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class POSCreditService
 {
+    public function __construct(private readonly POSCreditCalculator $calculator) {}
+
     public function todayTransactionsForCurrentUser(): Collection
     {
         return InstallmentOrder::with('customer')
@@ -31,10 +33,10 @@ class POSCreditService
     public function createOrder(array $data, array $documents = []): InstallmentOrder
     {
 
-    
         return DB::transaction(function () use ($data, $documents) {
             $items = $data['items'];
             $freeItems = $data['free_items'] ?? [];
+            $calculation = $this->calculator->calculate($data);
 
             if (empty($items)) {
                 throw new Exception('At least one paid item is required');
@@ -51,22 +53,22 @@ class POSCreditService
                 'branch_id' => $data['location_id'],
                 'user_id' => Auth::id(),
                 'order_number' => $this->generateOrderNumber(),
-                'loan_contract_price' => $data['loan_contract_price'],
-                'lcp_markup_rate' => $data['lcp_markup_rate'],
-                'lcp_additional_charge' => $data['lcp_additional_charge'],
-                'down_payment' => $data['down_payment'],
+                'loan_contract_price' => $calculation['loan_contract_price'],
+                'lcp_markup_rate' => $calculation['lcp_markup_rate'],
+                'lcp_additional_charge' => $calculation['lcp_additional_charge'],
+                'down_payment' => $calculation['down_payment'],
                 'payment_method' => $data['payment_method'] ?? null,
                 'reference_number' => $data['reference_number'] ?? null,
-                'promisory_note_value' => $data['promisory_note_value'],
+                'promisory_note_value' => $calculation['promisory_note_value'],
                 'number_of_terms' => $data['number_of_terms'],
-                'promisory_note_value_interest' => $data['promisory_note_value_interest'],
-                'promisory_note_value_interest_additional_charge' => $data['promisory_note_value_interest_additional_charge'],
+                'promisory_note_value_interest' => $calculation['promisory_note_value_interest'],
+                'promisory_note_value_interest_additional_charge' => $calculation['promisory_note_value_interest_additional_charge'],
                 'transaction_date' => $data['transaction_date'],
                 'receipt_number' => $data['receipt_number'],
             ]);
 
             $this->createOrderItems($order, $items, $freeItems);
-            $this->createPaymentSchedule($order, $this->calculateInstallmentTotal($order, $data));
+            $this->createPaymentSchedule($order, $calculation['installment_total']);
 
             return $order;
         });
@@ -199,16 +201,6 @@ class POSCreditService
 
             $inventoryItem->update(['date_out' => Carbon::parse($order->transaction_date)->toDateString()]);
         }
-    }
-
-    private function calculateInstallmentTotal(InstallmentOrder $order, array $data): float
-    {
-        if ($data['is_no_interest']) {
-            return (float) $data['loan_contract_price'] - (float) $data['down_payment'];
-        }
-
-        return (float) $order->promisory_note_value * (float) $order->promisory_note_value_interest
-            + (float) $order->promisory_note_value_interest_additional_charge;
     }
 
     private function createPaymentSchedule(InstallmentOrder $order, float $total): void

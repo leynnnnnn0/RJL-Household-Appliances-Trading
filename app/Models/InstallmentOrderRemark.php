@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class InstallmentOrderRemark extends Model
+class InstallmentOrderRemark extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\InstallmentOrderRemarkFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'installment_order_id',

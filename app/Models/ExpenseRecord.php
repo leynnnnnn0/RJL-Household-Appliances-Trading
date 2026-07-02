@@ -6,11 +6,13 @@ use App\Enums\ExpenseCategory;
 use App\Enums\ExpenseStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class ExpenseRecord extends Model
+class ExpenseRecord extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\ExpenseRecordFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'user_id',

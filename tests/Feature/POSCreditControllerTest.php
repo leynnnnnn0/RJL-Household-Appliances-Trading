@@ -90,13 +90,13 @@ function validPOSCreditPayload(array $overrides = []): array
             ],
         ],
         'free_items' => [],
-        'loan_contract_price' => 11000,
+        'loan_contract_price' => 10000,
         'lcp_markup_rate' => 0,
         'lcp_additional_charge' => 0,
         'down_payment' => 2000,
         'payment_method' => 'cash',
         'reference_number' => null,
-        'promisory_note_value' => 9000,
+        'promisory_note_value' => 8000,
         'number_of_terms' => 3,
         'promisory_note_value_interest' => 1,
         'promisory_note_value_interest_additional_charge' => 0,
@@ -240,7 +240,7 @@ it('stores a no-interest installment order and schedules equal payments after do
 
     expect($order->order_number)->toBe('IORD-'.now()->format('Ymd').'-0001')
         ->and($order->user_id)->toBe($user->id)
-        ->and($order->loan_contract_price)->toEqual(11000)
+        ->and($order->loan_contract_price)->toEqual(10000)
         ->and($order->down_payment)->toEqual(2000)
         ->and($order->promisory_note_value_interest)->toEqual(1)
         ->and($order->promisory_note_value_interest_additional_charge)->toEqual(0)
@@ -430,8 +430,8 @@ it('stores free items as full discounts without changing the installment total',
         ->firstOrFail();
 
     expect($order->installment_order_items)->toHaveCount(2)
-        ->and(posCreditMoney($order->total_pnv))->toBe(9000.0)
-        ->and(posCreditPaymentScheduleTotal($order))->toBe(9000.0)
+        ->and(posCreditMoney($order->total_pnv))->toBe(7000.0)
+        ->and(posCreditPaymentScheduleTotal($order))->toBe(7000.0)
         ->and(posCreditItemSaleTotal($order))->toBe(posCreditMoney($expectedChargedItemTotal))
         ->and(posCreditItemDiscountTotal($order))->toBe(posCreditMoney($expectedFreeItemDiscountTotal))
         ->and(posCreditMoney(posCreditItemSaleTotal($order) + posCreditItemDiscountTotal($order)))->toBe($expectedTotalItemValue);
@@ -451,7 +451,7 @@ it('stores free items as full discounts without changing the installment total',
     ]);
 });
 
-it('stores a no-down-payment interest scenario using the submitted multiplier and charge', function () {
+it('stores a no-down-payment interest scenario using the backend special formula', function () {
     actingAsPOSCreditUser();
 
     $item = availablePOSCreditItem([
@@ -473,7 +473,10 @@ it('stores a no-down-payment interest scenario using the submitted multiplier an
                 'item_type' => 'gadgets',
             ],
         ],
+        'is_no_down_payment' => true,
         'loan_contract_price' => 10000,
+        'lcp_markup_rate' => 1.1,
+        'lcp_additional_charge' => 300,
         'down_payment' => 0,
         'promisory_note_value' => 10000,
         'number_of_terms' => 12,
@@ -481,11 +484,11 @@ it('stores a no-down-payment interest scenario using the submitted multiplier an
         'promisory_note_value_interest_additional_charge' => $interestConfig['fixed_charge'],
         'receipt_number' => 'CR-RCPT-NO-DP',
     ]);
+    $expectedLoanContractPrice = posCreditMoney(10000 * 1.1 + 300);
     $expectedFinalPromissoryNoteValue = posCreditMoney(
-        $payload['promisory_note_value'] * $payload['promisory_note_value_interest']
-            + $payload['promisory_note_value_interest_additional_charge']
+        $expectedLoanContractPrice * 1.33 + 600
     );
-    $expectedInterestAndCharges = posCreditMoney($expectedFinalPromissoryNoteValue - $payload['promisory_note_value']);
+    $expectedInterestAndCharges = posCreditMoney($expectedFinalPromissoryNoteValue - $expectedLoanContractPrice);
     $expectedMonthlyPayment = posCreditMoney($expectedFinalPromissoryNoteValue / $payload['number_of_terms']);
 
     $this->post(route('pos-credit.store'), $payload)
@@ -496,7 +499,11 @@ it('stores a no-down-payment interest scenario using the submitted multiplier an
         ->where('receipt_number', 'CR-RCPT-NO-DP')
         ->firstOrFail();
 
-    expect(posCreditMoney($order->total_pnv))->toBe($expectedFinalPromissoryNoteValue)
+    expect(posCreditMoney($order->loan_contract_price))->toBe($expectedLoanContractPrice)
+        ->and(posCreditMoney($order->promisory_note_value))->toBe($expectedLoanContractPrice)
+        ->and(posCreditMoney($order->promisory_note_value_interest))->toBe(1.33)
+        ->and(posCreditMoney($order->promisory_note_value_interest_additional_charge))->toBe(600.0)
+        ->and(posCreditMoney($order->total_pnv))->toBe($expectedFinalPromissoryNoteValue)
         ->and(posCreditMoney($order->monthly_payment))->toBe($expectedMonthlyPayment)
         ->and(posCreditMoney($order->remaining_balance))->toBe($expectedFinalPromissoryNoteValue)
         ->and(posCreditMoney($order->total_pnv - $order->promisory_note_value))->toBe($expectedInterestAndCharges)
@@ -506,6 +513,56 @@ it('stores a no-down-payment interest scenario using the submitted multiplier an
     foreach ($order->installment_order_payments as $payment) {
         expect(posCreditMoney($payment->amount_due))->toBe($expectedMonthlyPayment);
     }
+});
+
+it('ignores tampered frontend financial totals and saves backend computed credit totals', function () {
+    actingAsPOSCreditUser();
+
+    $item = availablePOSCreditItem([
+        'item_type' => 'appliances',
+        'serial' => 'CREDIT-TAMPERED-TOTALS',
+        'srp' => 10000,
+    ]);
+
+    $payload = validPOSCreditPayload([
+        'is_no_interest' => false,
+        'items' => [
+            [
+                'item_id' => $item->id,
+                'serial' => $item->serial,
+                'description' => $item->description,
+                'model' => $item->model,
+                'srp' => 10000,
+                'item_type' => 'appliances',
+            ],
+        ],
+        'loan_contract_price' => 1,
+        'lcp_markup_rate' => 1.1,
+        'lcp_additional_charge' => 300,
+        'down_payment' => 2300,
+        'promisory_note_value' => 1,
+        'number_of_terms' => 6,
+        'promisory_note_value_interest' => 1.18,
+        'promisory_note_value_interest_additional_charge' => 300,
+        'receipt_number' => 'CR-RCPT-TAMPERED',
+    ]);
+
+    $this->post(route('pos-credit.store'), $payload)
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $order = InstallmentOrder::with('installment_order_payments')
+        ->where('receipt_number', 'CR-RCPT-TAMPERED')
+        ->firstOrFail();
+
+    $expectedLoanContractPrice = posCreditMoney(10000 * 1.1 + 300);
+    $expectedPromissoryNoteValue = posCreditMoney($expectedLoanContractPrice - 2300);
+    $expectedFinalPromissoryNoteValue = posCreditMoney($expectedPromissoryNoteValue * 1.18 + 300);
+
+    expect(posCreditMoney($order->loan_contract_price))->toBe($expectedLoanContractPrice)
+        ->and(posCreditMoney($order->promisory_note_value))->toBe($expectedPromissoryNoteValue)
+        ->and(posCreditMoney($order->total_pnv))->toBe($expectedFinalPromissoryNoteValue)
+        ->and(posCreditPaymentScheduleTotal($order))->toBe($expectedFinalPromissoryNoteValue);
 });
 
 it('updates existing customer reference and investigation details during checkout', function () {

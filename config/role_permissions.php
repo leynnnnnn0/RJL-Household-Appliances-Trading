@@ -92,4 +92,10 @@ return [
             'can access credit pos',
         ],
     ],
+    'auditModule' => [
+        'label' => 'Audit Module',
+        'permissions' => [
+            'can view audit logs',
+        ],
+    ],
 ];

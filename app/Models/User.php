@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, SoftDeletes, HasRoles;
+    use Auditable, HasFactory, HasRoles, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -28,7 +30,14 @@ class User extends Authenticatable
         'password',
     ];
 
-    protected $appends = ['full_name']; 
+    protected $appends = ['full_name'];
+
+    protected $auditExclude = [
+        'password',
+        'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+    ];
 
     public function getFullNameAttribute()
     {
@@ -40,7 +49,7 @@ class User extends Authenticatable
         return $query->orderBy('first_name')->orderBy('last_name')->get()->map(function ($user) {
             return [
                 'id' => $user->id,
-                'full_name' => $user->full_name
+                'full_name' => $user->full_name,
             ];
         });
     }

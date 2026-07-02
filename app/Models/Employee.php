@@ -4,20 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class Employee extends Model
+class Employee extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\EmployeeFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'first_name',
         'last_name',
-        'remarks'
-    ];  
+        'remarks',
+    ];
 
     protected $appends = [
-        'full_name'
+        'full_name',
     ];
 
     public function getFullNameAttribute()
@@ -30,7 +32,7 @@ class Employee extends Model
         return $query->orderBy('first_name')->orderBy('last_name')->get()->map(function ($employee) {
             return [
                 'id' => $employee->id,
-                'full_name' => $employee->full_name
+                'full_name' => $employee->full_name,
             ];
         });
     }

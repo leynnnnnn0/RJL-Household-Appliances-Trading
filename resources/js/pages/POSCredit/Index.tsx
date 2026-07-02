@@ -558,6 +558,7 @@ export default function Index({
                 receipt_number: receiptNumber || null,
                 transaction_date: transactionDate,
                 is_no_interest: noInterestRate,
+                is_no_down_payment: noDownPayment,
                 documents: uploadedFiles.map((file) => file.file),
             },
             {

@@ -4,17 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class Location extends Model
+class Location extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\LocationFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'name',
         'address',
-        'remarks'
+        'remarks',
     ];
 
     public function items()
@@ -35,14 +36,11 @@ class Location extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::deleting(function ($location) {
             if ($location->items()->withTrashed()->exists()) {
                 throw new \Exception('Cannot delete location. It has associated items.');
             }
         });
     }
-    
-
-
 }

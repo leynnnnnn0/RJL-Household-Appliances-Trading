@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class Customer extends Model
+class Customer extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\CustomerFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'first_name',
@@ -19,18 +21,17 @@ class Customer extends Model
         'province',
         'zipcode',
         'country',
-        'phone_number'
+        'phone_number',
     ];
 
-     protected $appends = [
-        'full_name'
+    protected $appends = [
+        'full_name',
     ];
 
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
     }
-
 
     public function orders()
     {
@@ -56,5 +57,4 @@ class Customer extends Model
     {
         return $this->hasMany(AdditionalDocument::class);
     }
-
 }

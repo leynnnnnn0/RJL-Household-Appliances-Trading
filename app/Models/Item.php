@@ -5,27 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class Item extends Model
+class Item extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\ItemFactory> */
-    use HasFactory, SoftDeletes;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'supplier', // nullable
         'location_id', // nullable
-        'item_type', // furniture or appliances or gadgets 
+        'item_type', // furniture or appliances or gadgets
         'dr_no', // nullable
         'description', // required
         'model', // required
         'serial', // required
-        'quantity', // 1 
+        'quantity', // 1
         'srp', // Unit price
         'unit_cost', // required
         'date_of_purchase', // random
         'date_out', // null
         'size', // nullable
-        'remarks'
+        'remarks',
     ];
 
     public function transfer_data()
@@ -37,6 +39,7 @@ class Item extends Model
     {
         return $this->belongsTo(Supplier::class, 'supplier', 'slug');
     }
+
     public function location()
     {
         return $this->belongsTo(Location::class);
@@ -70,7 +73,6 @@ class Item extends Model
     {
         return $this->hasMany(InstallmentOrderItem::class);
     }
-
 
     public function order_item()
     {

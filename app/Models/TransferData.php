@@ -4,17 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class TransferData extends Model
+class TransferData extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\TransferDataFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'item_id',
         'from_location_id',
         'to_location_id',
-        'remarks'
+        'remarks',
     ];
 
     public function item()

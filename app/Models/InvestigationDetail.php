@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class InvestigationDetail extends Model
+class InvestigationDetail extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\InvestigationDetailFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'customer_id',
@@ -21,7 +23,7 @@ class InvestigationDetail extends Model
         'civil_status',
         'spouse_name',
         'spouse_contact_number',
-    ];  
+    ];
 
     public function customer()
     {

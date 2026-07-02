@@ -26,6 +26,7 @@ import {
   List, 
   Map, 
   PersonStandingIcon, 
+  ScrollText,
   Settings, 
   StoreIcon, 
   UserSquare2Icon, 
@@ -48,11 +49,17 @@ const mainNavItems: NavItem[] = [
     icon: IconTools,
     permission: 'can view items'
   },
-    {
+  {
     title: 'Roles',
     href: '/roles',
     icon: Settings,
     permission: 'can access roles',
+  },
+  {
+    title: 'Audits',
+    href: '/audits',
+    icon: ScrollText,
+    permission: 'can view audit logs',
   },
 ];
 

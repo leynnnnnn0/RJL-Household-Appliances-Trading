@@ -1,9 +1,10 @@
 <?php
 
-use App\Http\Controllers\BranchController;
-use App\Http\Controllers\BulkPaymentController;
 use App\Http\Controllers\API\CustomerController as ApiCustomerController;
 use App\Http\Controllers\API\InstallmentOrderController as ApiInstallmentOrderController;
+use App\Http\Controllers\AuditController;
+use App\Http\Controllers\BranchController;
+use App\Http\Controllers\BulkPaymentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerDocumentController;
 use App\Http\Controllers\DashboardController;
@@ -204,6 +205,10 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::resource('roles', RoleController::class)->middleware('permission:can manage roles');
+
+    Route::get('/audits', [AuditController::class, 'index'])
+        ->middleware('permission:can view audit logs')
+        ->name('audits.index');
 
     /*
     TODO

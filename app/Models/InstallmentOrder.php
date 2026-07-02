@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-use App\Http\Controllers\InstallmentOrderRemark;
 use App\Models\InstallmentOrderRemark as ModelsInstallmentOrderRemark;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class InstallmentOrder extends Model
+class InstallmentOrder extends Model implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\InstallmentOrderFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $fillable = [
         'customer_id',
@@ -37,7 +38,7 @@ class InstallmentOrder extends Model
         'reason_for_cancellation',
         'void_date',
         'voider_id',
-  
+
         'is_completed',
 
         'is_accelerated',
@@ -53,7 +54,7 @@ class InstallmentOrder extends Model
         'is_reactivated',
         'reactivation_reason',
         'reactivation_date',
-        'reactivator_id'
+        'reactivator_id',
     ];
 
     protected $appends = [
@@ -62,7 +63,7 @@ class InstallmentOrder extends Model
         'total_pnv',
         'monthly_payment',
         'total_advanced_payment',
-        'total_rebate_amount'
+        'total_rebate_amount',
     ];
 
     public function branch()
@@ -79,6 +80,7 @@ class InstallmentOrder extends Model
     {
         $data = $this->installment_order_payments;
         $total = $data->count() > 0 ? $data->sum('rebate_amount') : 0;
+
         return $total;
     }
 
@@ -90,6 +92,7 @@ class InstallmentOrder extends Model
             });
 
         $total = $data->count() > 0 ? $data->sum('amount') : 0;
+
         return $total;
     }
 
@@ -103,14 +106,15 @@ class InstallmentOrder extends Model
                 $dueDate = Carbon::parse($transaction->due_date);
                 $paidDate = Carbon::parse($transaction->paid_date);
                 $status = $transaction->status;
-                if ($status != 'paid' && $status != 'partial') return;
-               
+                if ($status != 'paid' && $status != 'partial') {
+                    return;
+                }
+
                 return $transaction->amount_due > 0 && $paidDate->lt($dueDate) && $dueDate->gt($previousDue);
             })
             ->sum('amount_paid');
 
     }
-
 
     public function getNextDueDate($transactionDate)
     {
@@ -141,8 +145,8 @@ class InstallmentOrder extends Model
         }
 
         return [
-            'due_date'      => $dueDate->format('Y-m-d'),
-            'previous_due'  => $previousDue->format('Y-m-d'),
+            'due_date' => $dueDate->format('Y-m-d'),
+            'previous_due' => $previousDue->format('Y-m-d'),
         ];
     }
 
@@ -152,10 +156,10 @@ class InstallmentOrder extends Model
         $interest = floatval($this->promisory_note_value_interest);
         $additional = floatval($this->promisory_note_value_interest_additional_charge);
 
-
-        if($interest < 0.01) {
+        if ($interest < 0.01) {
             return $this->loan_contract_price - $this->down_payment;
         }
+
         return $noteValue * $interest + $additional;
     }
 
@@ -168,7 +172,9 @@ class InstallmentOrder extends Model
 
         $totalToPay = ($noteValue * $interest) + $additional;
 
-        if($totalToPay == 0) $totalToPay = $this->loan_contract_price;
+        if ($totalToPay == 0) {
+            $totalToPay = $this->loan_contract_price;
+        }
 
         return $totalToPay - $paid - $this->acceleration_discount;
     }
