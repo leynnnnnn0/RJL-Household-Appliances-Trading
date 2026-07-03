@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\Audits\AuditLogger;
+use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Event;
@@ -37,6 +38,13 @@ class AppServiceProvider extends ServiceProvider
             if ($event->user instanceof User) {
                 app(AuditLogger::class)->logAuthEvent('logout', $event->user);
             }
+        });
+
+        Event::listen(Failed::class, function (Failed $event) {
+            app(AuditLogger::class)->logFailedLogin(
+                $event->user instanceof User ? $event->user : null,
+                $event->credentials,
+            );
         });
     }
 }

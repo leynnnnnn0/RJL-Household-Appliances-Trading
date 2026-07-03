@@ -1,6 +1,12 @@
+import AuditEventBadge from '@/components/audits/audit-event-badge';
+import {
+    formatAuditDate,
+    modelName,
+    titleCase,
+} from '@/components/audits/audit-formatters';
 import ModuleHeading from '@/components/cards/module-heading';
 import Pagination from '@/components/pagination';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SearchInput } from '@/components/ui/search-input';
 import {
@@ -20,8 +26,8 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Paginated } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { Search } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Eye, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface AuditRecord {
@@ -31,8 +37,7 @@ interface AuditRecord {
     auditable_type: string;
     auditable_name: string;
     auditable_id: number | string;
-    old_values: Record<string, unknown>;
-    new_values: Record<string, unknown>;
+    change_count: number;
     url: string | null;
     ip_address: string | null;
     user_agent: string | null;
@@ -124,7 +129,7 @@ export default function Index({
                             <SelectItem value="all">All Models</SelectItem>
                             {auditableTypes.map((type) => (
                                 <SelectItem key={type} value={type}>
-                                    {className(type)}
+                                    {modelName(type)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -141,6 +146,9 @@ export default function Index({
                                 <TableHead>Changes</TableHead>
                                 <TableHead>IP</TableHead>
                                 <TableHead>Date</TableHead>
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -167,14 +175,28 @@ export default function Index({
                                                 </p>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="max-w-sm">
-                                            <ChangePreview audit={audit} />
+                                        <TableCell>
+                                            <ChangeSummary audit={audit} />
                                         </TableCell>
                                         <TableCell>
                                             {audit.ip_address || '-'}
                                         </TableCell>
                                         <TableCell>
-                                            {formatDate(audit.created_at)}
+                                            {formatAuditDate(audit.created_at)}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                asChild
+                                                size="sm"
+                                                variant="outline"
+                                            >
+                                                <Link
+                                                    href={`/audits/${audit.id}`}
+                                                >
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    View
+                                                </Link>
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -207,15 +229,30 @@ export default function Index({
                                             </p>
                                             <p className="mt-1 text-sm text-muted-foreground">
                                                 {audit.user} ·{' '}
-                                                {formatDate(audit.created_at)}
+                                                {formatAuditDate(
+                                                    audit.created_at,
+                                                )}
                                             </p>
                                         </div>
                                         <AuditEventBadge event={audit.event} />
                                     </div>
-                                    <ChangePreview audit={audit} />
-                                    <p className="text-xs text-muted-foreground">
-                                        {audit.ip_address || 'No IP recorded'}
-                                    </p>
+                                    <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                                        <ChangeSummary audit={audit} />
+                                        <span>
+                                            {audit.ip_address ||
+                                                'No IP recorded'}
+                                        </span>
+                                    </div>
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        className="w-full"
+                                    >
+                                        <Link href={`/audits/${audit.id}`}>
+                                            <Eye className="mr-2 h-4 w-4" />
+                                            View Details
+                                        </Link>
+                                    </Button>
                                 </CardContent>
                             </Card>
                         ))
@@ -231,69 +268,19 @@ export default function Index({
 function EmptyAuditRow() {
     return (
         <TableRow>
-            <TableCell colSpan={6} className="py-10 text-center text-gray-500">
+            <TableCell colSpan={7} className="py-10 text-center text-gray-500">
                 No audits found
             </TableCell>
         </TableRow>
     );
 }
 
-function AuditEventBadge({ event }: { event: string }) {
-    const className =
-        event === 'deleted' || event === 'logout'
-            ? 'border-red-200 bg-red-50 text-red-700'
-            : event === 'created' || event === 'login'
-              ? 'border-green-200 bg-green-50 text-green-700'
-              : 'border-gray-200 bg-gray-50 text-gray-700';
-
+function ChangeSummary({ audit }: { audit: AuditRecord }) {
     return (
-        <Badge variant="outline" className={className}>
-            {titleCase(event)}
-        </Badge>
+        <span className="text-sm text-muted-foreground">
+            {audit.change_count > 0
+                ? `${audit.change_count} changed ${audit.change_count === 1 ? 'field' : 'fields'}`
+                : 'No value changes'}
+        </span>
     );
-}
-
-function ChangePreview({ audit }: { audit: AuditRecord }) {
-    const values = Object.keys(audit.new_values).length
-        ? audit.new_values
-        : audit.old_values;
-    const entries = Object.entries(values).slice(0, 4);
-
-    if (entries.length === 0) {
-        return <span className="text-sm text-muted-foreground">No values</span>;
-    }
-
-    return (
-        <div className="space-y-1 text-sm">
-            {entries.map(([key, value]) => (
-                <div key={key} className="grid grid-cols-[120px_1fr] gap-2">
-                    <span className="truncate text-muted-foreground">
-                        {key}
-                    </span>
-                    <span className="truncate font-medium">
-                        {String(value ?? '-')}
-                    </span>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function titleCase(value: string) {
-    return value
-        .replace(/[_-]/g, ' ')
-        .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function className(value: string) {
-    return value.split('\\').pop() || value;
-}
-
-function formatDate(value: string | null) {
-    if (!value) return '-';
-
-    return new Intl.DateTimeFormat('en-PH', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    }).format(new Date(value));
 }

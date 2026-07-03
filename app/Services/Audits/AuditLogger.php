@@ -30,4 +30,27 @@ class AuditLogger
             'tags' => 'authentication',
         ]);
     }
+
+    public function logFailedLogin(?User $user, array $credentials, ?Request $request = null): void
+    {
+        $request ??= request();
+
+        Audit::create([
+            'user_type' => $user ? User::class : null,
+            'user_id' => $user?->id,
+            'event' => 'failed_login',
+            'auditable_type' => User::class,
+            'auditable_id' => $user?->id ?? 0,
+            'old_values' => [],
+            'new_values' => [
+                'email' => $credentials['email'] ?? null,
+                'user_found' => (bool) $user,
+                'event' => 'failed_login',
+            ],
+            'url' => $request->fullUrl(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'tags' => 'authentication',
+        ]);
+    }
 }

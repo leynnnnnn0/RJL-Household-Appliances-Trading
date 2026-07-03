@@ -209,6 +209,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/audits', [AuditController::class, 'index'])
         ->middleware('permission:can view audit logs')
         ->name('audits.index');
+    Route::get('/audits/{audit}', [AuditController::class, 'show'])
+        ->middleware('permission:can view audit logs')
+        ->name('audits.show');
 
     /*
     TODO

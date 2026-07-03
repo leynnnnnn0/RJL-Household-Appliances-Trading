@@ -41,8 +41,7 @@ class AuditController extends Controller
                 'auditable_type' => $audit->auditable_type,
                 'auditable_name' => class_basename($audit->auditable_type),
                 'auditable_id' => $audit->auditable_id,
-                'old_values' => $audit->old_values ?? [],
-                'new_values' => $audit->new_values ?? [],
+                'change_count' => max(count($audit->old_values ?? []), count($audit->new_values ?? [])),
                 'url' => $audit->url,
                 'ip_address' => $audit->ip_address,
                 'user_agent' => $audit->user_agent,
@@ -59,6 +58,36 @@ class AuditController extends Controller
             ],
             'events' => Audit::query()->select('event')->distinct()->orderBy('event')->pluck('event'),
             'auditableTypes' => Audit::query()->select('auditable_type')->distinct()->orderBy('auditable_type')->pluck('auditable_type'),
+        ]);
+    }
+
+    public function show(Audit $audit): Response
+    {
+        $audit->load('user');
+
+        return Inertia::render('Audit/Show', [
+            'audit' => [
+                'id' => $audit->id,
+                'event' => $audit->event,
+                'user' => $audit->user ? [
+                    'id' => $audit->user->id,
+                    'name' => $audit->user->full_name,
+                    'email' => $audit->user->email,
+                ] : null,
+                'auditable' => [
+                    'type' => $audit->auditable_type,
+                    'name' => class_basename($audit->auditable_type),
+                    'id' => $audit->auditable_id,
+                ],
+                'old_values' => $audit->old_values ?? [],
+                'new_values' => $audit->new_values ?? [],
+                'url' => $audit->url,
+                'ip_address' => $audit->ip_address,
+                'user_agent' => $audit->user_agent,
+                'tags' => $audit->tags,
+                'created_at' => $audit->created_at?->toISOString(),
+                'updated_at' => $audit->updated_at?->toISOString(),
+            ],
         ]);
     }
 }
