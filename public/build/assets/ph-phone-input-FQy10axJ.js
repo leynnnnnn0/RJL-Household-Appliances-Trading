@@ -1,6 +1,0 @@
-import{b as y,c as X,j as p}from"./app-C10iPuMe.js";import{I as v}from"./input-B592-ase.js";import{a as N}from"./button-snqtYB0E.js";/**
- * @license lucide-react v0.475.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const j=[["rect",{width:"14",height:"20",x:"5",y:"2",rx:"2",ry:"2",key:"1yt0o3"}],["path",{d:"M12 18h.01",key:"mhygvu"}]],C=y("Smartphone",j);function P(c){const e=X.c(14);let a,t,l,o;if(e[0]!==c){const{value:h,onChange:u,className:d,...f}=c;o=h,a=d,t=f,l=x=>{const g=x.target.value.replace(/\D/g,"").slice(0,11);u(g)},e[0]=c,e[1]=a,e[2]=t,e[3]=l,e[4]=o}else a=e[1],t=e[2],l=e[3],o=e[4];const i=l;let n;e[5]===Symbol.for("react.memo_cache_sentinel")?(n=p.jsx(C,{className:"absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"}),e[5]=n):n=e[5];const m=t.placeholder??"09XXXXXXXXX";let s;e[6]!==a?(s=N("pl-9",a),e[6]=a,e[7]=s):s=e[7];let r;return e[8]!==i||e[9]!==t||e[10]!==m||e[11]!==s||e[12]!==o?(r=p.jsxs("div",{className:"relative",children:[n,p.jsx(v,{...t,type:"tel",inputMode:"numeric",maxLength:11,pattern:"09[0-9]{9}",autoComplete:"tel-national",value:o,onChange:i,placeholder:m,className:s})]}),e[8]=i,e[9]=t,e[10]=m,e[11]=s,e[12]=o,e[13]=r):r=e[13],r}export{P};
