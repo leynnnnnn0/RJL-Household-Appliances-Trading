@@ -170,7 +170,8 @@ class AgingReportService
 
         if ($unpaidPayments->isNotEmpty()) {
             $oldestLateOrUnpaid = $scheduledPayments
-                ->filter(fn (array $payment) => $payment['remaining'] > 0 || ! $payment['paid_on_time'])
+                ->filter(fn (array $payment) => $payment['remaining'] > 0
+                    || (! $payment['paid_on_time'] && $payment['paid_in_report_window']))
                 ->sortBy('cycle_month')
                 ->first();
             $includedPayments = $scheduledPayments

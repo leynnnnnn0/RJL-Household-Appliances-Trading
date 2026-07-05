@@ -385,6 +385,80 @@ it('does not show paid current schedules that were paid before the report window
         );
 });
 
+it('ignores old late payments resolved before the current report window when aging an account', function () {
+    actingAsSalesAnalyticsUser();
+    $branch = Branch::factory()->create();
+
+    createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'AGING-OLD-LATE-RESOLVED',
+        'number_of_terms' => 6,
+        'promisory_note_value' => 7840,
+        'transaction_date' => '2026-02-25',
+    ], 'appliances', [
+        [
+            'installment_number' => 0,
+            'due_date' => '2026-02-25',
+            'amount_due' => 1306.67,
+            'amount_paid' => 1306.67,
+            'paid_date' => '2026-04-11',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 1,
+            'due_date' => '2026-03-25',
+            'amount_due' => 1306.67,
+            'amount_paid' => 1306.67,
+            'paid_date' => '2026-05-01',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 2,
+            'due_date' => '2026-04-25',
+            'amount_due' => 1306.67,
+            'amount_paid' => 1306.67,
+            'paid_date' => '2026-06-04',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 3,
+            'due_date' => '2026-05-25',
+            'amount_due' => 1306.67,
+            'amount_paid' => 1306.67,
+            'paid_date' => '2026-07-02',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 4,
+            'due_date' => '2026-06-25',
+            'amount_due' => 1306.67,
+            'amount_paid' => 373.32,
+            'paid_date' => '2026-07-02',
+            'status' => 'partial',
+        ],
+        [
+            'installment_number' => 5,
+            'due_date' => '2026-07-25',
+            'amount_due' => 1306.67,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ],
+    ]);
+
+    $this->get(route('aging.index', [
+        'as_of_date' => '2026-07-06',
+        'branch_id' => $branch->id,
+        'item_type' => 'all',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('agingTables.current.total_accounts', 0)
+            ->where('agingTables.1_30.total_accounts', 1)
+            ->where('agingTables.1_30.rows.0.order_number', 'AGING-OLD-LATE-RESOLVED')
+            ->where('agingTables.90_plus.total_accounts', 0)
+        );
+});
+
 it('validates sales filters', function () {
     actingAsSalesAnalyticsUser();
 
