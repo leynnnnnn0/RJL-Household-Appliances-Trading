@@ -18,12 +18,24 @@ interface AgingTableProps {
     preview?: boolean;
 }
 
+function agingRowClass(row: AgingRow) {
+    if (row.is_final_payment_paid) {
+        return 'bg-sky-50 hover:bg-sky-100';
+    }
+
+    if (row.is_paid) {
+        return 'bg-yellow-50 hover:bg-yellow-100';
+    }
+
+    return 'bg-white hover:bg-slate-50';
+}
+
 function MobileAgingRow({ row }: { row: AgingRow }) {
     return (
         <button
             type="button"
             onClick={() => router.visit(`/pos-installment-orders/${row.order_number}`)}
-            className="w-full rounded-xl border bg-white p-4 text-left transition-colors hover:bg-slate-50"
+            className={`w-full rounded-xl border p-4 text-left transition-colors ${agingRowClass(row)}`}
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -49,7 +61,7 @@ function MobileAgingRow({ row }: { row: AgingRow }) {
                     <p>{formatPeso(row.monthly_installment)}</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-2">
-                    <p className="text-xs font-semibold text-muted-foreground">Days</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Age</p>
                     <p>{row.days_overdue}</p>
                 </div>
             </div>
@@ -71,7 +83,7 @@ export function AgingTable({ bucket, filters, table, preview = false }: AgingTab
                                 <HelpCircle className="h-3.5 w-3.5" />
                             </TooltipTrigger>
                             <TooltipContent>
-                                Accounts are grouped here by how many days their unpaid installment due dates are past the report date.
+                                Accounts are grouped by the oldest unpaid schedule in the cutoff cycle. Paid current rows are yellow; paid final schedules are blue.
                             </TooltipContent>
                         </Tooltip>
                     </div>
@@ -117,7 +129,7 @@ export function AgingTable({ bucket, filters, table, preview = false }: AgingTab
                                 <th className="p-3 text-right font-bold">MI</th>
                                 <th className="p-3 text-right font-bold">PNV</th>
                                 <th className="p-3 text-right font-bold">Remaining Balance</th>
-                                <th className="p-3 text-right font-bold">Days</th>
+                                <th className="p-3 text-right font-bold">Age</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -125,7 +137,7 @@ export function AgingTable({ bucket, filters, table, preview = false }: AgingTab
                                 <tr
                                     key={`${row.order_id}-${row.bucket}`}
                                     onClick={() => router.visit(`/pos-installment-orders/${row.order_number}`)}
-                                    className="cursor-pointer border-b hover:bg-slate-50"
+                                    className={`cursor-pointer border-b ${agingRowClass(row)}`}
                                 >
                                     <td className="p-3 font-semibold">{row.customer_name}</td>
                                     <td className="max-w-[220px] truncate p-3">{row.address}</td>

@@ -32,6 +32,8 @@ export interface AgingRow {
     amount_paid: number;
     remaining_balance: number;
     installments_count: number;
+    is_paid: boolean;
+    is_final_payment_paid: boolean;
 }
 
 export interface AgingTableData {
@@ -41,6 +43,24 @@ export interface AgingTableData {
     total_paid: number;
     total_balance: number;
     rows: AgingRow[];
+}
+
+export interface NewReleaseRow {
+    order_id: number;
+    order_number: string;
+    customer_name: string;
+    branch: string;
+    item_type: string;
+    model: string;
+    term: number;
+    transaction_date: string;
+    pnv: number;
+}
+
+export interface NewReleasesTableData {
+    total_accounts: number;
+    total_pnv: number;
+    rows: NewReleaseRow[];
 }
 
 export interface SalesAnalytics {

@@ -14,10 +14,17 @@
         .right { text-align: right; }
         .total-row td { background: #ffedd5; font-weight: bold; }
         .muted { color: #6b7280; }
+        .paid-row td { background: #fef9c3; }
+        .final-paid-row td { background: #e0f2fe; }
     </style>
 </head>
 <body>
-    <h1>Sales Aging Report</h1>
+    <h1>
+        Sales Aging Report
+        @if ($bucket !== 'all')
+            - {{ $bucketLabels[$bucket] }}
+        @endif
+    </h1>
     <div class="meta">
         Month: {{ \Carbon\Carbon::createFromFormat('Y-m', $filters['month'])->format('F Y') }}
         &nbsp;|&nbsp; As of: {{ \Carbon\Carbon::parse($filters['as_of_date'])->format('F d, Y') }}
@@ -38,12 +45,12 @@
                     <th class="right">MI</th>
                     <th class="right">PNV</th>
                     <th class="right">Remaining Balance</th>
-                    <th class="right">Days Overdue</th>
+                    <th class="right">Age</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($table['rows'] as $row)
-                    <tr>
+                    <tr class="{{ $row['is_final_payment_paid'] ? 'final-paid-row' : ($row['is_paid'] ? 'paid-row' : '') }}">
                         <td>{{ $row['customer_name'] }}</td>
                         <td>{{ $row['address'] }}</td>
                         <td>{{ $row['model'] }}</td>

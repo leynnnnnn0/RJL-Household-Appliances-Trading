@@ -51,6 +51,8 @@ export default function AgingBucket({
                     extraParams={{ bucket }}
                     showSearch
                     showDownloadAll
+                    downloadLabel={`Download ${bucketLabel} PDF`}
+                    downloadParams={{ bucket }}
                 />
                 <AgingTable bucket={bucket} filters={filters} table={table} />
             </div>

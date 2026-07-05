@@ -19,6 +19,8 @@ interface SalesFiltersProps {
     showSearch?: boolean;
     showDownloadAll?: boolean;
     downloadPath?: string;
+    downloadLabel?: string;
+    downloadParams?: Record<string, string>;
 }
 
 export function SalesFiltersCard({
@@ -29,6 +31,8 @@ export function SalesFiltersCard({
     showSearch = false,
     showDownloadAll = false,
     downloadPath = '/aging/download-pdf',
+    downloadLabel = 'Download All PDF',
+    downloadParams = { bucket: 'all' },
 }: SalesFiltersProps) {
     const [search, setSearch] = useState(filters.search || '');
 
@@ -68,7 +72,7 @@ export function SalesFiltersCard({
         );
     };
 
-    const downloadAllUrl = `${downloadPath}?${salesQueryString(filters, { bucket: 'all' })}`;
+    const downloadUrl = `${downloadPath}?${salesQueryString(filters, downloadParams)}`;
 
     return (
         <Card>
@@ -118,7 +122,7 @@ export function SalesFiltersCard({
                 {showDownloadAll && (
                     <div className="flex items-end">
                         <Button asChild className="w-full">
-                            <a href={downloadAllUrl}>Download All PDF</a>
+                            <a href={downloadUrl}>{downloadLabel}</a>
                         </Button>
                     </div>
                 )}
