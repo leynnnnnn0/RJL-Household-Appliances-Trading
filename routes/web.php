@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgingController;
 use App\Http\Controllers\API\CustomerController as ApiCustomerController;
 use App\Http\Controllers\API\InstallmentOrderController as ApiInstallmentOrderController;
 use App\Http\Controllers\AuditController;
@@ -137,8 +138,9 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:can view installment orders sales')->group(function () {
         Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');
-        Route::get('/sales/aging', [SalesController::class, 'showBucket'])->name('sales.aging.show');
-        Route::get('/sales/aging/download-pdf', [SalesController::class, 'downloadPdf'])->name('sales.aging.download-pdf');
+        Route::get('/aging', [AgingController::class, 'index'])->name('aging.index');
+        Route::get('/aging/bucket', [AgingController::class, 'showBucket'])->name('aging.bucket.show');
+        Route::get('/aging/download-pdf', [AgingController::class, 'downloadPdf'])->name('aging.download-pdf');
     });
 
     /*

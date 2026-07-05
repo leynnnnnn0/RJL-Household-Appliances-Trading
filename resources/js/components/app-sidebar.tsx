@@ -71,6 +71,12 @@ const salesNavItems: NavItem[] = [
     permission: 'can view installment orders sales'
   },
   {
+    title: 'Aging',
+    href: '/aging',
+    icon: ChartArea,
+    permission: 'can view installment orders sales'
+  },
+  {
     title: 'POS Cash Orders',
     href: '/pos-cash-orders',
     icon: IconMoneybag,

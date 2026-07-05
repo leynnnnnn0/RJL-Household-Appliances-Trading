@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Sales;
+namespace App\Http\Requests\Aging;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class DownloadSalesAgingPdfRequest extends FormRequest
+class ShowAgingBucketRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,7 +15,7 @@ class DownloadSalesAgingPdfRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'bucket' => ['nullable', Rule::in(['all', 'current', '1_30', '31_60', '61_90', '90_plus'])],
+            'bucket' => ['required', Rule::in(['current', '1_30', '31_60', '61_90', '90_plus'])],
             'month' => ['nullable', 'date_format:Y-m'],
             'as_of_date' => ['nullable', 'date'],
             'branch_id' => ['nullable', 'string'],

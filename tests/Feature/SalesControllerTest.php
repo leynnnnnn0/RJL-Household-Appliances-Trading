@@ -15,6 +15,10 @@ use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->withoutVite();
+});
+
 function actingAsSalesAnalyticsUser(): User
 {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -87,7 +91,7 @@ function createSalesReportOrder(array $overrides = [], string $itemType = 'appli
     return $order;
 }
 
-it('renders the sales module with aging buckets, filters, and analytics', function () {
+it('renders the sales module with filters, summary, and analytics', function () {
     actingAsSalesAnalyticsUser();
     $branch = Branch::factory()->create(['name' => 'Main Sales Branch']);
 
@@ -121,13 +125,47 @@ it('renders the sales module with aging buckets, filters, and analytics', functi
             ->where('filters.month', '2026-06')
             ->where('filters.as_of_date', '2026-06-30')
             ->where('summary.accounts', 5)
+            ->has('analytics.monthly_trend', 12)
+            ->has('analytics.category_sales')
+            ->missing('agingTables')
+        );
+});
+
+it('renders the aging module with bucket previews', function () {
+    actingAsSalesAnalyticsUser();
+    $branch = Branch::factory()->create(['name' => 'Main Aging Branch']);
+
+    createSalesReportOrder(['branch_id' => $branch->id, 'order_number' => 'AGING-CURRENT'], 'appliances', [
+        ['installment_number' => 1, 'due_date' => '2026-06-30', 'amount_due' => 1000],
+    ]);
+    createSalesReportOrder(['branch_id' => $branch->id, 'order_number' => 'AGING-30'], 'gadgets', [
+        ['installment_number' => 1, 'due_date' => '2026-06-15', 'amount_due' => 2000, 'amount_paid' => 500],
+    ]);
+    createSalesReportOrder(['branch_id' => $branch->id, 'order_number' => 'AGING-60'], 'furniture', [
+        ['installment_number' => 1, 'due_date' => '2026-05-15', 'amount_due' => 3000],
+    ]);
+    createSalesReportOrder(['branch_id' => $branch->id, 'order_number' => 'AGING-90'], 'appliances', [
+        ['installment_number' => 1, 'due_date' => '2026-04-15', 'amount_due' => 4000],
+    ]);
+    createSalesReportOrder(['branch_id' => $branch->id, 'order_number' => 'AGING-PLUS'], 'appliances', [
+        ['installment_number' => 1, 'due_date' => '2026-03-01', 'amount_due' => 5000],
+    ]);
+
+    $this->get(route('aging.index', [
+        'as_of_date' => '2026-06-30',
+        'branch_id' => $branch->id,
+        'item_type' => 'all',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Aging/Index')
+            ->where('filters.month', '2026-06')
+            ->where('filters.as_of_date', '2026-06-30')
             ->where('agingTables.current.total_accounts', 1)
             ->where('agingTables.1_30.total_balance', 1500)
             ->where('agingTables.31_60.total_accounts', 1)
             ->where('agingTables.61_90.total_accounts', 1)
             ->where('agingTables.90_plus.total_accounts', 1)
-            ->has('analytics.monthly_trend', 12)
-            ->has('analytics.category_sales')
         );
 });
 
@@ -146,17 +184,17 @@ it('shows a full aging bucket page and downloads pdf reports', function () {
         'item_type' => 'all',
     ];
 
-    $this->get(route('sales.aging.show', $query))
+    $this->get(route('aging.bucket.show', $query))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Sales/Bucket')
+            ->component('Aging/Bucket')
             ->where('bucket', '1_30')
             ->where('table.total_balance', 2500)
             ->has('table.rows', 1)
         );
 
-    $this->get(route('sales.aging.download-pdf', $query))->assertOk();
-    $this->get(route('sales.aging.download-pdf', array_merge($query, ['bucket' => 'all'])))->assertOk();
+    $this->get(route('aging.download-pdf', $query))->assertOk();
+    $this->get(route('aging.download-pdf', array_merge($query, ['bucket' => 'all'])))->assertOk();
 });
 
 it('filters sales aging bucket pages by customer name', function () {
@@ -178,7 +216,7 @@ it('filters sales aging bucket pages by customer name', function () {
         ['installment_number' => 1, 'due_date' => '2026-06-10', 'amount_due' => 1500],
     ]);
 
-    $this->get(route('sales.aging.show', [
+    $this->get(route('aging.bucket.show', [
         'bucket' => '1_30',
         'as_of_date' => '2026-06-30',
         'branch_id' => $branch->id,
@@ -187,7 +225,7 @@ it('filters sales aging bucket pages by customer name', function () {
     ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Sales/Bucket')
+            ->component('Aging/Bucket')
             ->where('filters.search', 'Maria')
             ->where('table.total_accounts', 1)
             ->where('table.rows.0.customer_name', 'Maria Santos')
@@ -210,6 +248,18 @@ it('defaults the sales report date to the seventh day of the selected month', fu
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Sales/Index')
+            ->where('filters.month', '2026-03')
+            ->where('filters.as_of_date', '2026-03-07')
+        );
+});
+
+it('defaults the aging report date to the seventh day of the selected month', function () {
+    actingAsSalesAnalyticsUser();
+
+    $this->get(route('aging.index', ['month' => '2026-03']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Aging/Index')
             ->where('filters.month', '2026-03')
             ->where('filters.as_of_date', '2026-03-07')
         );

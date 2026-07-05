@@ -17,6 +17,8 @@ interface SalesFiltersProps {
     action?: string;
     extraParams?: Record<string, string>;
     showSearch?: boolean;
+    showDownloadAll?: boolean;
+    downloadPath?: string;
 }
 
 export function SalesFiltersCard({
@@ -25,6 +27,8 @@ export function SalesFiltersCard({
     action = '/sales',
     extraParams = {},
     showSearch = false,
+    showDownloadAll = false,
+    downloadPath = '/aging/download-pdf',
 }: SalesFiltersProps) {
     const [search, setSearch] = useState(filters.search || '');
 
@@ -64,7 +68,7 @@ export function SalesFiltersCard({
         );
     };
 
-    const downloadAllUrl = `/sales/aging/download-pdf?${salesQueryString(filters, { bucket: 'all' })}`;
+    const downloadAllUrl = `${downloadPath}?${salesQueryString(filters, { bucket: 'all' })}`;
 
     return (
         <Card>
@@ -111,11 +115,13 @@ export function SalesFiltersCard({
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex items-end">
-                    <Button asChild className="w-full">
-                        <a href={downloadAllUrl}>Download All PDF</a>
-                    </Button>
-                </div>
+                {showDownloadAll && (
+                    <div className="flex items-end">
+                        <Button asChild className="w-full">
+                            <a href={downloadAllUrl}>Download All PDF</a>
+                        </Button>
+                    </div>
+                )}
                 {showSearch && (
                     <form onSubmit={submitSearch} className="sm:col-span-2 lg:col-span-4">
                         <FilterLabel

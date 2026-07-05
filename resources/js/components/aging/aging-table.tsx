@@ -3,8 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { router } from '@inertiajs/react';
 import { FileDown, HelpCircle, Search } from 'lucide-react';
-import { formatPeso, salesQueryString } from './formatters';
-import type { AgingRow, AgingTableData, SalesBucketKey, SalesFilters } from './types';
+import { formatPeso, salesQueryString } from '../sales/formatters';
+import type {
+    AgingRow,
+    AgingTableData,
+    SalesBucketKey,
+    SalesFilters,
+} from '../sales/types';
 
 interface AgingTableProps {
     bucket: SalesBucketKey;
@@ -77,14 +82,14 @@ export function AgingTable({ bucket, filters, table, preview = false }: AgingTab
                 <div className="flex flex-col gap-2 sm:flex-row">
                     {preview && (
                         <Button variant="outline" asChild>
-                            <a href={`/sales/aging?${query}`}>
+                            <a href={`/aging/bucket?${query}`}>
                                 <Search className="h-4 w-4" />
                                 View More
                             </a>
                         </Button>
                     )}
                     <Button variant="outline" asChild>
-                        <a href={`/sales/aging/download-pdf?${query}`}>
+                        <a href={`/aging/download-pdf?${query}`}>
                             <FileDown className="h-4 w-4" />
                             PDF
                         </a>

@@ -1,13 +1,19 @@
+import { AgingTable } from '@/components/aging/aging-table';
 import ModuleHeading from '@/components/cards/module-heading';
-import { AgingTable } from '@/components/sales/aging-table';
 import { SalesFiltersCard } from '@/components/sales/sales-filters';
-import type { AgingTableData, SalesBranch, SalesBucketKey, SalesFilters } from '@/components/sales/types';
+import { salesQueryString } from '@/components/sales/formatters';
+import type {
+    AgingTableData,
+    SalesBranch,
+    SalesBucketKey,
+    SalesFilters,
+} from '@/components/sales/types';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
-interface SalesBucketPageProps {
+interface AgingBucketPageProps {
     filters: SalesFilters;
     bucket: SalesBucketKey;
     bucketLabel: string;
@@ -15,26 +21,36 @@ interface SalesBucketPageProps {
     table: AgingTableData;
 }
 
-export default function SalesBucket({ filters, bucket, bucketLabel, branches, table }: SalesBucketPageProps) {
+export default function AgingBucket({
+    filters,
+    bucket,
+    bucketLabel,
+    branches,
+    table,
+}: AgingBucketPageProps) {
     return (
         <AppLayout>
             <Head title={bucketLabel} />
             <div className="space-y-6">
-                <ModuleHeading title={bucketLabel} description="Full installment receivables list for this aging bucket">
+                <ModuleHeading
+                    title={bucketLabel}
+                    description="Full installment receivables list for this aging bucket"
+                >
                     <Button variant="outline" asChild>
-                        <a href={`/sales?as_of_date=${filters.as_of_date}&branch_id=${filters.branch_id}&item_type=${filters.item_type}`}>
+                        <Link href={`/aging?${salesQueryString(filters)}`}>
                             <ArrowLeft className="h-4 w-4" />
-                            Back to Sales
-                        </a>
+                            Back to Aging
+                        </Link>
                     </Button>
                 </ModuleHeading>
 
                 <SalesFiltersCard
                     branches={branches}
                     filters={filters}
-                    action="/sales/aging"
+                    action="/aging/bucket"
                     extraParams={{ bucket }}
                     showSearch
+                    showDownloadAll
                 />
                 <AgingTable bucket={bucket} filters={filters} table={table} />
             </div>

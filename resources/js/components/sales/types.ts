@@ -56,7 +56,6 @@ export interface SalesAnalytics {
 export interface SalesIndexProps {
     filters: SalesFilters;
     branches: SalesBranch[];
-    bucketLabels: Record<SalesBucketKey, string>;
     summary: {
         accounts: number;
         active_accounts: number;
@@ -65,6 +64,5 @@ export interface SalesIndexProps {
         risk_balance: number;
         collection_rate: number;
     };
-    agingTables: Record<SalesBucketKey, AgingTableData>;
     analytics: SalesAnalytics;
 }
