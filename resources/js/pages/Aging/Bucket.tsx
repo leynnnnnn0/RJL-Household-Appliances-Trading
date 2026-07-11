@@ -1,11 +1,12 @@
 import { AgingTable } from '@/components/aging/aging-table';
 import ModuleHeading from '@/components/cards/module-heading';
-import { SalesFiltersCard } from '@/components/sales/sales-filters';
 import { salesQueryString } from '@/components/sales/formatters';
+import { SalesFiltersCard } from '@/components/sales/sales-filters';
 import type {
     AgingTableData,
     SalesBranch,
     SalesBucketKey,
+    SalesCollector,
     SalesFilters,
 } from '@/components/sales/types';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ interface AgingBucketPageProps {
     bucket: SalesBucketKey;
     bucketLabel: string;
     branches: SalesBranch[];
+    collectors: SalesCollector[];
     table: AgingTableData;
 }
 
@@ -26,6 +28,7 @@ export default function AgingBucket({
     bucket,
     bucketLabel,
     branches,
+    collectors,
     table,
 }: AgingBucketPageProps) {
     return (
@@ -46,6 +49,8 @@ export default function AgingBucket({
 
                 <SalesFiltersCard
                     branches={branches}
+                    collectors={collectors}
+                    showCutoffRange
                     filters={filters}
                     action="/aging/bucket"
                     extraParams={{ bucket }}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Aging\DownloadAgingPdfRequest;
 use App\Http\Requests\Aging\IndexAgingRequest;
 use App\Http\Requests\Aging\ShowAgingBucketRequest;
+use App\Http\Requests\Aging\ShowAgingDetailsRequest;
 use App\Services\Aging\AgingReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Inertia\Inertia;
@@ -21,6 +22,11 @@ class AgingController extends Controller
     public function showBucket(ShowAgingBucketRequest $request)
     {
         return Inertia::render('Aging/Bucket', $this->aging->bucketPage($request->validated()));
+    }
+
+    public function showDetails(ShowAgingDetailsRequest $request)
+    {
+        return Inertia::render('Aging/Details', $this->aging->details($request->validated()));
     }
 
     public function downloadPdf(DownloadAgingPdfRequest $request)

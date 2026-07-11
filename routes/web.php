@@ -139,6 +139,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:can view installment orders sales')->group(function () {
         Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');
         Route::get('/aging', [AgingController::class, 'index'])->name('aging.index');
+        Route::get('/aging-report/details', [AgingController::class, 'showDetails'])->name('aging.details');
         Route::get('/aging/bucket', [AgingController::class, 'showBucket'])->name('aging.bucket.show');
         Route::get('/aging/download-pdf', [AgingController::class, 'downloadPdf'])->name('aging.download-pdf');
     });

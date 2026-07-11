@@ -5,12 +5,49 @@ export interface SalesFilters {
     branch_id: string;
     item_type: string;
     as_of_date: string;
+    cutoff_start: string;
+    collector_id: string;
     search: string;
 }
 
 export interface SalesBranch {
     id: number;
     name: string;
+}
+
+export interface SalesCollector {
+    id: number;
+    name: string;
+}
+
+export interface AgingBucketStatistic {
+    label: string;
+    accounts: number;
+    paid_accounts: number;
+    unpaid_accounts: number;
+    account_percentage: number;
+    expected_amount: number;
+    collected_amount: number;
+    outstanding_amount: number;
+    collection_percentage: number;
+}
+
+export interface AgingStatistics {
+    cutoff: { start: string; end: string };
+    accounts: { total: number; fully_paid: number; outstanding: number };
+    aging_distribution: Record<
+        'current' | '30_days' | '60_days' | '90_plus',
+        AgingBucketStatistic
+    >;
+    collection_summary: {
+        expected_amount: number;
+        collected_amount: number;
+        outstanding_amount: number;
+        collection_percentage: number;
+    };
+    advance_payments: { count: number; amount: number };
+    rebates: { count: number; amount: number };
+    revenue: { without_advance: number; including_advance: number };
 }
 
 export interface AgingRow {
@@ -64,11 +101,26 @@ export interface NewReleasesTableData {
 }
 
 export interface SalesAnalytics {
-    monthly_trend: { month: string; accounts: number; sales: number; collections: number }[];
+    monthly_trend: {
+        month: string;
+        accounts: number;
+        sales: number;
+        collections: number;
+    }[];
     category_sales: { type: string; sales: number; units: number }[];
     insights: {
-        best_month?: { month: string; accounts: number; sales: number; collections: number };
-        worst_month?: { month: string; accounts: number; sales: number; collections: number };
+        best_month?: {
+            month: string;
+            accounts: number;
+            sales: number;
+            collections: number;
+        };
+        worst_month?: {
+            month: string;
+            accounts: number;
+            sales: number;
+            collections: number;
+        };
         top_category?: { type: string; sales: number; units: number };
     };
 }

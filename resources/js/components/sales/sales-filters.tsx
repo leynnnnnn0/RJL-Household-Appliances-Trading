@@ -3,16 +3,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { SearchInput } from '@/components/ui/search-input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { router } from '@inertiajs/react';
 import { HelpCircle, Search } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 import { salesQueryString } from './formatters';
-import type { SalesBranch, SalesFilters } from './types';
+import type { SalesBranch, SalesCollector, SalesFilters } from './types';
 
 interface SalesFiltersProps {
     branches: SalesBranch[];
+    collectors?: SalesCollector[];
+    showCutoffRange?: boolean;
     filters: SalesFilters;
     action?: string;
     extraParams?: Record<string, string>;
@@ -25,6 +37,8 @@ interface SalesFiltersProps {
 
 export function SalesFiltersCard({
     branches,
+    collectors,
+    showCutoffRange = false,
     filters,
     action = '/sales',
     extraParams = {},
@@ -76,12 +90,32 @@ export function SalesFiltersCard({
 
     return (
         <Card>
-            <CardContent className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+            <CardContent className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-5">
+                {showCutoffRange && (
+                    <div>
+                        <FilterLabel
+                            htmlFor="sales-cutoff-start"
+                            label="Cutoff Start"
+                            tooltip="Payments on or after this date are included in period collection statistics."
+                        />
+                        <DatePicker
+                            id="sales-cutoff-start"
+                            value={filters.cutoff_start}
+                            onChange={(value) =>
+                                applyFilter('cutoff_start', value)
+                            }
+                        />
+                    </div>
+                )}
                 <div>
                     <FilterLabel
                         htmlFor="sales-as-of-date"
-                        label="Report Date"
-                        tooltip="The report is calculated as of this date. By default, Sales opens on the 7th day of the current month."
+                        label={showCutoffRange ? 'Cutoff End' : 'Report Date'}
+                        tooltip={
+                            showCutoffRange
+                                ? 'The aging report is calculated as of this date; period payments on this date are excluded.'
+                                : 'The report is calculated as of this date.'
+                        }
                     />
                     <DatePicker
                         id="sales-as-of-date"
@@ -90,30 +124,82 @@ export function SalesFiltersCard({
                     />
                 </div>
                 <div>
-                    <FilterLabel label="Branch" tooltip="Limits receivables, collections, and analytics to one business branch." />
-                    <Select value={filters.branch_id} onValueChange={(value) => applyFilter('branch_id', value)}>
+                    <FilterLabel
+                        label="Branch"
+                        tooltip="Limits receivables, collections, and analytics to one business branch."
+                    />
+                    <Select
+                        value={filters.branch_id}
+                        onValueChange={(value) =>
+                            applyFilter('branch_id', value)
+                        }
+                    >
                         <SelectTrigger>
                             <SelectValue placeholder="All branches" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Branches</SelectItem>
                             {branches.map((branch) => (
-                                <SelectItem key={branch.id} value={String(branch.id)}>
+                                <SelectItem
+                                    key={branch.id}
+                                    value={String(branch.id)}
+                                >
                                     {branch.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </div>
+                {collectors && (
+                    <div>
+                        <FilterLabel
+                            label="Collector"
+                            tooltip="Limits the report to accounts handled by one collector during this cutoff period."
+                        />
+                        <Select
+                            value={filters.collector_id}
+                            onValueChange={(value) =>
+                                applyFilter('collector_id', value)
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="All collectors" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    All Collectors
+                                </SelectItem>
+                                {collectors.map((collector) => (
+                                    <SelectItem
+                                        key={collector.id}
+                                        value={String(collector.id)}
+                                    >
+                                        {collector.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                 <div>
-                    <FilterLabel label="Item Type" tooltip="Filters accounts and analytics by the primary item category." />
-                    <Select value={filters.item_type} onValueChange={(value) => applyFilter('item_type', value)}>
+                    <FilterLabel
+                        label="Item Type"
+                        tooltip="Filters accounts and analytics by the primary item category."
+                    />
+                    <Select
+                        value={filters.item_type}
+                        onValueChange={(value) =>
+                            applyFilter('item_type', value)
+                        }
+                    >
                         <SelectTrigger>
                             <SelectValue placeholder="All item types" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Types</SelectItem>
-                            <SelectItem value="appliances">Appliances</SelectItem>
+                            <SelectItem value="appliances">
+                                Appliances
+                            </SelectItem>
                             <SelectItem value="furniture">Furniture</SelectItem>
                             <SelectItem value="gadgets">Gadgets</SelectItem>
                         </SelectContent>
@@ -127,7 +213,10 @@ export function SalesFiltersCard({
                     </div>
                 )}
                 {showSearch && (
-                    <form onSubmit={submitSearch} className="sm:col-span-2 lg:col-span-4">
+                    <form
+                        onSubmit={submitSearch}
+                        className="sm:col-span-2 lg:col-span-4"
+                    >
                         <FilterLabel
                             htmlFor="sales-aging-search"
                             label="Customer Search"

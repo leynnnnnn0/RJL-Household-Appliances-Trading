@@ -1,12 +1,15 @@
+import { AgingStatisticsDashboard } from '@/components/aging/aging-statistics-dashboard';
 import { AgingTable } from '@/components/aging/aging-table';
 import { NewReleasesTable } from '@/components/aging/new-releases-table';
 import ModuleHeading from '@/components/cards/module-heading';
 import { SalesFiltersCard } from '@/components/sales/sales-filters';
 import type {
+    AgingStatistics,
     AgingTableData,
     NewReleasesTableData,
     SalesBranch,
     SalesBucketKey,
+    SalesCollector,
     SalesFilters,
 } from '@/components/sales/types';
 import AppLayout from '@/layouts/app-layout';
@@ -23,6 +26,8 @@ const bucketOrder: SalesBucketKey[] = [
 interface AgingIndexProps {
     filters: SalesFilters;
     branches: SalesBranch[];
+    collectors: SalesCollector[];
+    statistics: AgingStatistics;
     bucketLabels: Record<SalesBucketKey, string>;
     agingTables: Record<SalesBucketKey, AgingTableData>;
     newReleases: NewReleasesTableData;
@@ -31,6 +36,8 @@ interface AgingIndexProps {
 export default function AgingIndex({
     filters,
     branches,
+    collectors,
+    statistics,
     agingTables,
     newReleases,
 }: AgingIndexProps) {
@@ -45,9 +52,16 @@ export default function AgingIndex({
 
                 <SalesFiltersCard
                     branches={branches}
+                    collectors={collectors}
+                    showCutoffRange
                     filters={filters}
                     action="/aging"
                     showDownloadAll
+                />
+
+                <AgingStatisticsDashboard
+                    statistics={statistics}
+                    filters={filters}
                 />
 
                 <NewReleasesTable table={newReleases} />

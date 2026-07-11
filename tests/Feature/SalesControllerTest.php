@@ -5,6 +5,7 @@ use App\Models\Customer;
 use App\Models\InstallmentOrder;
 use App\Models\InstallmentOrderItem;
 use App\Models\InstallmentOrderPayment;
+use App\Models\InstallmentOrderPaymentHistory;
 use App\Models\Item;
 use App\Models\Location;
 use App\Models\User;
@@ -347,6 +348,202 @@ it('keeps an account aged when the previous debt was paid late but the current d
         );
 });
 
+it('keeps a caught-up account in 30-day aging when its prior schedule was paid after cutoff start', function () {
+    actingAsSalesAnalyticsUser();
+    $branch = Branch::factory()->create();
+
+    createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'AGING-LATE-MAY-CAUGHT-UP',
+    ], 'appliances', [
+        [
+            'installment_number' => 3,
+            'due_date' => '2026-05-13',
+            'amount_due' => 1742.29,
+            'amount_paid' => 1742.29,
+            'paid_date' => '2026-06-08',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 4,
+            'due_date' => '2026-06-13',
+            'amount_due' => 1692.29,
+            'amount_paid' => 1692.29,
+            'paid_date' => '2026-07-05',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 5,
+            'due_date' => '2026-07-13',
+            'amount_due' => 1692.29,
+            'amount_paid' => 1692.29,
+            'paid_date' => '2026-07-05',
+            'status' => 'paid',
+        ],
+    ]);
+
+    $this->get(route('aging.index', [
+        'cutoff_start' => '2026-06-07',
+        'as_of_date' => '2026-07-07',
+        'branch_id' => $branch->id,
+        'item_type' => 'all',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('agingTables.current.total_accounts', 0)
+            ->where('agingTables.1_30.total_accounts', 1)
+            ->where('agingTables.1_30.rows.0.order_number', 'AGING-LATE-MAY-CAUGHT-UP')
+            ->where('agingTables.1_30.rows.0.due_date', 'May 13, 2026')
+            ->where('agingTables.1_30.rows.0.is_paid', true)
+            ->where('agingTables.1_30.rows.0.remaining_balance', 0)
+            ->where('statistics.aging_distribution.30_days.paid_accounts', 1)
+        );
+});
+
+it('shows completed accounts paid during cutoff as current and excludes older completed accounts', function () {
+    actingAsSalesAnalyticsUser();
+    $branch = Branch::factory()->create();
+
+    createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'AGING-COMPLETED-IN-CUTOFF',
+        'is_completed' => true,
+    ], 'appliances', [
+        [
+            'installment_number' => 1,
+            'due_date' => '2026-03-13',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'paid_date' => '2026-07-05',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 2,
+            'due_date' => '2026-06-13',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'paid_date' => '2026-07-05',
+            'status' => 'paid',
+        ],
+    ]);
+    createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'AGING-COMPLETED-BEFORE-CUTOFF',
+        'is_completed' => true,
+    ], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-03-13',
+        'amount_due' => 1000,
+        'amount_paid' => 1000,
+        'paid_date' => '2026-06-06',
+        'status' => 'paid',
+    ]]);
+
+    $this->get(route('aging.index', [
+        'cutoff_start' => '2026-06-07',
+        'as_of_date' => '2026-07-07',
+        'branch_id' => $branch->id,
+        'item_type' => 'all',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('agingTables.current.total_accounts', 1)
+            ->where('agingTables.current.rows.0.order_number', 'AGING-COMPLETED-IN-CUTOFF')
+            ->where('agingTables.current.rows.0.is_paid', true)
+            ->where('agingTables.current.rows.0.is_final_payment_paid', true)
+            ->where('agingTables.90_plus.total_accounts', 0)
+            ->where('statistics.accounts.total', 1)
+        );
+});
+
+it('treats advance-only completed accounts as advances instead of current aging', function () {
+    actingAsSalesAnalyticsUser();
+    $branch = Branch::factory()->create();
+
+    $order = createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'AGING-COMPLETED-BY-ADVANCE',
+        'is_completed' => true,
+    ], 'appliances', [
+        [
+            'installment_number' => 1,
+            'due_date' => '2026-05-28',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'paid_date' => '2026-04-28',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 2,
+            'due_date' => '2026-06-28',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'paid_date' => '2026-05-15',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 3,
+            'due_date' => '2026-07-28',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'paid_date' => '2026-06-13',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 4,
+            'due_date' => '2026-08-28',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'paid_date' => '2026-07-03',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 5,
+            'due_date' => '2026-09-28',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'paid_date' => '2026-07-03',
+            'status' => 'paid',
+        ],
+        [
+            'installment_number' => 6,
+            'due_date' => '2026-10-28',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'paid_date' => '2026-07-03',
+            'status' => 'paid',
+        ],
+    ]);
+
+    $filters = [
+        'cutoff_start' => '2026-06-07',
+        'as_of_date' => '2026-07-07',
+        'branch_id' => $branch->id,
+        'item_type' => 'all',
+    ];
+
+    $this->get(route('aging.index', $filters))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('statistics.accounts.total', 0)
+            ->where('agingTables.current.total_accounts', 0)
+            ->where('agingTables.90_plus.total_accounts', 0)
+            ->where('statistics.advance_payments.count', 4)
+            ->where('statistics.advance_payments.amount', 4000)
+            ->where('statistics.revenue.without_advance', 0)
+            ->where('statistics.revenue.including_advance', 4000)
+        );
+
+    $this->get(route('aging.details', [...$filters, 'type' => 'advance-payments']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('totalRecords', 4)
+            ->where('totalAmount', 4000)
+            ->where('records.total', 4)
+            ->where('records.data.0.installment_order_id', $order->id)
+        );
+});
+
 it('does not show paid current schedules that were paid before the report window', function () {
     actingAsSalesAnalyticsUser();
     $branch = Branch::factory()->create();
@@ -512,4 +709,260 @@ it('rolls the default aging report date after the sixth day cutoff', function ()
         );
 
     Carbon::setTestNow();
+});
+
+it('computes filtered aging dashboard statistics without double counting cash, advances, or rebates', function () {
+    actingAsSalesAnalyticsUser();
+    $branch = Branch::factory()->create();
+    $collector = User::factory()->create(['first_name' => 'Cora', 'last_name' => 'Collector']);
+
+    $partialCurrent = createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'STATS-CURRENT-PARTIAL',
+    ], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-07-20',
+        'amount_due' => 1000,
+        'amount_paid' => 600,
+        'rebate_amount' => 100,
+        'paid_date' => '2026-07-20',
+        'status' => 'partial',
+    ]]);
+    $partialPayment = $partialCurrent->installment_order_payments()->first();
+    InstallmentOrderPaymentHistory::create([
+        'payment_id' => $partialPayment->id,
+        'amount' => 600,
+        'payment_method' => 'cash',
+        'paid_date' => '2026-07-20',
+        'user_id' => $collector->id,
+        'branch_id' => $branch->id,
+    ]);
+
+    $paidCurrent = createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'STATS-CURRENT-PAID',
+    ], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-07-10',
+        'amount_due' => 300,
+        'amount_paid' => 300,
+        'paid_date' => '2026-07-12',
+        'status' => 'paid',
+    ]]);
+    $paidPayment = $paidCurrent->installment_order_payments()->first();
+    InstallmentOrderPaymentHistory::create([
+        'payment_id' => $paidPayment->id,
+        'amount' => 300,
+        'payment_method' => 'cash',
+        'paid_date' => '2026-07-12',
+        'user_id' => $collector->id,
+        'branch_id' => $branch->id,
+    ]);
+
+    createSalesReportOrder(['branch_id' => $branch->id, 'order_number' => 'STATS-30'], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-06-20',
+        'amount_due' => 800,
+    ]]);
+    createSalesReportOrder(['branch_id' => $branch->id, 'order_number' => 'STATS-60'], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-05-20',
+        'amount_due' => 400,
+    ]]);
+    createSalesReportOrder(['branch_id' => $branch->id, 'order_number' => 'STATS-90-PLUS'], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-04-20',
+        'amount_due' => 200,
+    ]]);
+
+    $advanceOrder = createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'STATS-ADVANCE',
+    ], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-09-07',
+        'amount_due' => 500,
+        'amount_paid' => 500,
+        'paid_date' => '2026-07-20',
+        'status' => 'paid',
+    ]]);
+    $advancePayment = $advanceOrder->installment_order_payments()->first();
+    InstallmentOrderPaymentHistory::create([
+        'payment_id' => $advancePayment->id,
+        'amount' => 500,
+        'payment_method' => 'cash',
+        'paid_date' => '2026-07-20',
+        'user_id' => $collector->id,
+        'branch_id' => $branch->id,
+    ]);
+
+    $this->get(route('aging.index', [
+        'cutoff_start' => '2026-07-07',
+        'as_of_date' => '2026-08-07',
+        'branch_id' => $branch->id,
+        'item_type' => 'all',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('statistics.accounts.total', 5)
+            ->where('statistics.accounts.fully_paid', 1)
+            ->where('statistics.accounts.outstanding', 4)
+            ->where('statistics.aging_distribution.current.accounts', 2)
+            ->where('statistics.aging_distribution.current.paid_accounts', 1)
+            ->where('statistics.aging_distribution.current.unpaid_accounts', 1)
+            ->where('statistics.aging_distribution.current.account_percentage', 40)
+            ->where('statistics.aging_distribution.30_days.account_percentage', 20)
+            ->where('statistics.aging_distribution.60_days.account_percentage', 20)
+            ->where('statistics.aging_distribution.90_plus.account_percentage', 20)
+            ->where('statistics.collection_summary.expected_amount', 2600)
+            ->where('statistics.collection_summary.collected_amount', 900)
+            ->where('statistics.collection_summary.outstanding_amount', 1700)
+            ->where('statistics.collection_summary.collection_percentage', 34.62)
+            ->where('statistics.advance_payments.count', 1)
+            ->where('statistics.advance_payments.amount', 500)
+            ->where('statistics.rebates.count', 1)
+            ->where('statistics.rebates.amount', 100)
+            ->where('statistics.revenue.without_advance', 900)
+            ->where('statistics.revenue.including_advance', 1400)
+            ->has('collectors', 1)
+        );
+
+    $detailFilters = [
+        'cutoff_start' => '2026-07-07',
+        'as_of_date' => '2026-08-07',
+        'branch_id' => $branch->id,
+        'item_type' => 'all',
+    ];
+
+    $expectedDetails = [
+        'total-accounts' => [5, null],
+        'paid-accounts' => [1, null],
+        'unpaid-accounts' => [4, null],
+        'current' => [2, null],
+        'aging-30' => [1, null],
+        'aging-60' => [1, null],
+        'aging-90' => [1, null],
+        'expected-collection' => [5, 2600],
+        'collected' => [2, 900],
+        'outstanding' => [4, 1700],
+        'collection-percentage' => [5, null],
+        'advance-payments' => [1, 500],
+        'rebates' => [1, 100],
+        'revenue-without-advance' => [2, 900],
+        'revenue-with-advance' => [3, 1400],
+    ];
+
+    foreach ($expectedDetails as $type => [$count, $amount]) {
+        $this->get(route('aging.details', [...$detailFilters, 'type' => $type]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Aging/Details')
+                ->where('type', $type)
+                ->where('totalRecords', $count)
+                ->where('totalAmount', $amount)
+                ->where('records.total', $count)
+                ->has('columns')
+            );
+    }
+
+    $this->get(route('aging.details', [
+        ...$detailFilters,
+        'type' => 'advance-payments',
+        'detail_search' => 'STATS-ADVANCE',
+        'sort' => 'due_date',
+        'direction' => 'desc',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('records.total', 1)
+            ->where('records.data.0.installment_order_id', $advanceOrder->id)
+            ->where('records.data.0.order_number', 'STATS-ADVANCE')
+            ->where('records.data.0.payment_schedule_id', $advancePayment->id)
+            ->where('records.data.0.due_date', '2026-09-07')
+            ->where('records.data.0.paid_date', '2026-07-20')
+            ->where('records.data.0.amount_paid', 500)
+            ->where('tableFilters.search', 'STATS-ADVANCE')
+            ->where('tableFilters.sort', 'due_date')
+            ->where('tableFilters.direction', 'desc')
+        );
+
+    $this->get(route('aging.details', [
+        ...$detailFilters,
+        'type' => 'paid-accounts',
+        'aging_category' => 'current',
+        'payment_status' => 'paid',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('totalRecords', 1)
+            ->where('records.total', 1)
+            ->where('records.data.0.order_number', 'STATS-CURRENT-PAID')
+            ->where('contextFilters.aging_category', 'current')
+            ->where('contextFilters.payment_status', 'paid')
+        );
+
+    $this->get(route('aging.details', [...$detailFilters, 'type' => 'not-a-statistic']))
+        ->assertSessionHasErrors('type');
+});
+
+it('uses a half-open cutoff period and scopes aging statistics to the selected collector', function () {
+    actingAsSalesAnalyticsUser();
+    $branch = Branch::factory()->create();
+    $selectedCollector = User::factory()->create();
+    $otherCollector = User::factory()->create();
+
+    $selectedOrder = createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'COLLECTOR-SELECTED',
+    ], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-07-20',
+        'amount_due' => 1000,
+        'amount_paid' => 1000,
+        'paid_date' => '2026-07-07',
+        'status' => 'paid',
+    ]]);
+    InstallmentOrderPaymentHistory::create([
+        'payment_id' => $selectedOrder->installment_order_payments()->first()->id,
+        'amount' => 1000,
+        'payment_method' => 'cash',
+        'paid_date' => '2026-07-07',
+        'user_id' => $selectedCollector->id,
+        'branch_id' => $branch->id,
+    ]);
+
+    $otherOrder = createSalesReportOrder([
+        'branch_id' => $branch->id,
+        'order_number' => 'COLLECTOR-OTHER',
+    ], 'appliances', [[
+        'installment_number' => 1,
+        'due_date' => '2026-07-20',
+        'amount_due' => 700,
+        'amount_paid' => 700,
+        'paid_date' => '2026-08-07',
+        'status' => 'paid',
+    ]]);
+    InstallmentOrderPaymentHistory::create([
+        'payment_id' => $otherOrder->installment_order_payments()->first()->id,
+        'amount' => 700,
+        'payment_method' => 'cash',
+        'paid_date' => '2026-08-07',
+        'user_id' => $otherCollector->id,
+        'branch_id' => $branch->id,
+    ]);
+
+    $this->get(route('aging.index', [
+        'cutoff_start' => '2026-07-07',
+        'as_of_date' => '2026-08-07',
+        'branch_id' => $branch->id,
+        'collector_id' => $selectedCollector->id,
+        'item_type' => 'all',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.collector_id', (string) $selectedCollector->id)
+            ->where('statistics.accounts.total', 1)
+            ->where('statistics.revenue.without_advance', 1000)
+            ->where('statistics.revenue.including_advance', 1000)
+        );
 });
