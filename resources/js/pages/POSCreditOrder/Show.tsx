@@ -239,11 +239,15 @@ export default function Show({
                 p.status === 'overdue' ||
                 p.status === 'partial',
         ).length || 0;
+    
+    const isActive = !transaction.is_completed && !transaction.is_voided && !transaction.is_defaulted && !transaction.is_reactivated && !transaction.is_accelerated;
 
-    const overduePayments =
+
+    const overduePayments = isActive ?
         transaction.installment_order_payments?.filter((p) =>
             isOverdue(p.due_date, p.status),
-        ).length || 0;
+        ).length || 0 : 0;
+    
 
     const handlePaymentSubmit = () => {
         if (!window.can('can record installment order payment')) {
@@ -2748,7 +2752,7 @@ export default function Show({
                                         discount,
                                     );
                                     const amountPaid = (
-                                        Number(transaction.remaining_balance) -
+                                        Number(remainingBalance) -
                                         discount
                                     ).toFixed(2);
                                     accelerationForm.setData(
